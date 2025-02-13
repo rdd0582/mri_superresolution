@@ -11,12 +11,27 @@ import matplotlib.pyplot as plt
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
-from models.cnn_model import CNNSuperRes
+from models.cnn_model import CNNSuperRes  # simple model
 
 def infer(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = CNNSuperRes().to(device)
-    model.load_state_dict(torch.load(args.model_path, map_location=device))
+    
+    # Choose model and checkpoint
+    if args.model_type == "simple":
+        model = CNNSuperRes().to(device)
+        checkpoint_name = "cnn.pth"
+    elif args.model_type == "edsr":
+        from models.edsr_model import EDSRSuperRes
+        model = EDSRSuperRes(scale=args.scale).to(device)
+        checkpoint_name = "edsr.pth"
+    else:
+        raise ValueError(f"Unknown model type: {args.model_type}")
+
+    checkpoint_path = os.path.join(args.checkpoint_dir, checkpoint_name)
+    if not os.path.exists(checkpoint_path):
+        raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
+    
+    model.load_state_dict(torch.load(checkpoint_path, map_location=device))
     model.eval()
 
     transform = transforms.ToTensor()
@@ -38,11 +53,10 @@ def infer(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Infer high resolution MRI from low resolution input")
-    parser.add_argument('--model_path', type=str, default='./checkpoints/cnn_superres.pth',
-                        help="Path to the trained model checkpoint")
-    parser.add_argument('--input_image', type=str, required=True,
-                        help="Path to the low resolution input image")
-    parser.add_argument('--output_image', type=str, default='output.png',
-                        help="Path to save the output high resolution image")
+    parser.add_argument('--input_image', type=str, required=True, help="Path to the low resolution input image")
+    parser.add_argument('--output_image', type=str, default='output.png', help="Path to save the output high resolution image")
+    parser.add_argument('--model_type', type=str, choices=['simple', 'edsr'], default='simple', help="Type of CNN model to use: 'simple' or 'edsr'")
+    parser.add_argument('--checkpoint_dir', type=str, default='./checkpoints', help="Directory where model checkpoints are saved")
+    parser.add_argument('--scale', type=int, default=1, help="Upscaling factor for EDSR model. Use 1 if the input and target sizes are the same.")
     args = parser.parse_args()
     infer(args)
