@@ -1,0 +1,40 @@
+# Ignore large data and generated files
+
+# Omit the big dataset folder
+/dataset/
+
+# Omit large downsampled images (.nii.gz files)
+/downsampled/
+
+# Omit training data (if these images are too heavy to track)
+/training_data_1.5T/
+
+# Omit model checkpoints (binary files that can be regenerated)
+/checkpoints/
+
+# ---------------------------
+# Python-related ignores
+
+# Ignore Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ---------------------------
+# Environment / Virtual Environments
+
+.env
+.venv/
+env/
+venv/
+
+# ---------------------------
+# Output and temporary files
+
+# Ignore generated output images
+output.png
+
+# ---------------------------
+# OS generated files (Windows)
+Thumbs.db
+desktop.ini
