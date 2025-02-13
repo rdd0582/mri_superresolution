@@ -8,7 +8,7 @@
 
 # Omit training data (if these images are too heavy to track)
 /training_data_1.5T/
-
+/training_data/
 # Omit model checkpoints (binary files that can be regenerated)
 /checkpoints/
 
