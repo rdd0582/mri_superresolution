@@ -119,10 +119,10 @@ Both extraction scripts allow customization of:
 ---
 
 ## License
-[Insert your license here]
+[AGPL v3]
 
 ---
 
 ## Contact
-For any questions or feedback, please reach out to **[your contact info]**.
+For any questions or feedback, please reach out to rupertd909@gmail.com.
 
