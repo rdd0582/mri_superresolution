@@ -1,83 +1,131 @@
 #!/usr/bin/env python
 import os
+import sys
+
+# Update sys.path so that the project root is included before importing other modules
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+import argparse
 import nibabel as nib
 import numpy as np
-import matplotlib.pyplot as plt
-from nibabel.processing import resample_to_output
+import cv2  # For image resizing and saving
+from scipy.ndimage import gaussian_filter
+from utils.preprocessing import preprocess_slice  # Reuse the preprocessing function
 
-def downsample_image(nifti_file, output_dir, target_voxel=(2.0, 2.0, 2.0)):
+def simulate_15T_data(data, noise_std=10, blur_sigma=1.0):
     """
-    Downsample a 3D NIfTI image to target_voxel size and save it with a _1.5T suffix.
+    Simulate a 1.5T image from high-quality data by applying Gaussian blur and adding
+    Rician-like noise.
+    """
+    # Apply Gaussian blur to mimic a smoother appearance
+    blurred = gaussian_filter(data, sigma=blur_sigma)
+    
+    # Create Rician-like noise by combining two independent Gaussian noise fields.
+    noise1 = np.random.normal(0, noise_std, data.shape)
+    noise2 = np.random.normal(0, noise_std, data.shape)
+    simulated = np.sqrt((blurred + noise1)**2 + noise2**2)
+    return simulated
+
+def generate_filename(subject, slice_idx, timepoint=None):
+    """
+    Generate a filename with the following format:
+      SubjectName[_T{timepoint}]_s{slice_idx:03d}.png
+    (No modality suffix is added so that paired images have identical names.)
+    """
+    if timepoint is not None:
+        return f"{subject}_T{timepoint}_s{slice_idx:03d}.png"
+    else:
+        return f"{subject}_s{slice_idx:03d}.png"
+
+def extract_slices_3d(data, subject, output_dir, timepoint=None,
+                      n_slices=10, lower_percent=0.2, upper_percent=0.8, target_size=(224, 224)):
+    """
+    Extract n_slices equally spaced from the central portion of a 3D volume,
+    preprocess (robust normalization, letterbox resize), and save each slice.
+    """
+    num_slices = data.shape[2]
+    lower_index = int(lower_percent * num_slices)
+    upper_index = int(upper_percent * num_slices)
+    slice_indices = np.linspace(lower_index, upper_index, n_slices, dtype=int)
+
+    for idx in slice_indices:
+        slice_data = data[:, :, idx]
+        processed_slice = preprocess_slice(slice_data, target_size=target_size)
+        filename = generate_filename(subject, idx, timepoint)
+        output_path = os.path.join(output_dir, filename)
+        cv2.imwrite(output_path, processed_slice)
+        print(f"Saved: {output_path}")
+
+def extract_slices(nifti_file, output_dir, n_slices=10,
+                   lower_percent=0.2, upper_percent=0.8, target_size=(224, 224),
+                   noise_std=10, blur_sigma=1.0):
+    """
+    Load a NIfTI file, simulate a 1.5T appearance, and extract slices.
+    Supports both 3D and 4D data.
     """
     img = nib.load(nifti_file)
-    if img.ndim != 3:
-        print(f"Skipping non-3D file: {nifti_file}")
-        return None
-    resampled_img = resample_to_output(img, voxel_sizes=target_voxel)
-    base_name = os.path.splitext(os.path.basename(nifti_file))[0]
-    output_file = os.path.join(output_dir, f"{base_name}_1.5T.nii.gz")
-    nib.save(resampled_img, output_file)
-    print(f"Saved downsampled image: {output_file}")
-    return output_file
+    data = img.get_fdata()
+    subject = os.path.splitext(os.path.basename(nifti_file))[0]
 
-def extract_slices_from_downsampled(ds_nifti_file, orig_nifti_file, output_dir, n_slices=10, lower_percent=0.2, upper_percent=0.8):
-    """
-    Extract slices from the downsampled image (ds_nifti_file) but name them using slice indices
-    computed from the original full-resolution image (orig_nifti_file).
-    """
-    import os, numpy as np, matplotlib.pyplot as plt, nibabel as nib
-
-    # Load the original (full-resolution) image to get the full number of slices.
-    orig_img = nib.load(orig_nifti_file)
-    orig_data = orig_img.get_fdata()
-    full_num_slices = orig_data.shape[2]
-
-    # Load the downsampled image.
-    ds_img = nib.load(ds_nifti_file)
-    ds_data = ds_img.get_fdata()
-    ds_num_slices = ds_data.shape[2]
-
-    # Compute desired slice indices based on the full-resolution image.
-    lower_index_full = int(lower_percent * full_num_slices)
-    upper_index_full = int(upper_percent * full_num_slices)
-    full_slice_indices = np.linspace(lower_index_full, upper_index_full, n_slices, dtype=int)
-
-    # Use the original file's base name.
-    base_name = os.path.splitext(os.path.basename(orig_nifti_file))[0]
-
-    for full_idx in full_slice_indices:
-        # Map the full-res index to an index in the downsampled image.
-        # This computes the proportional index and rounds it.
-        ds_idx = int(round(full_idx * ds_num_slices / full_num_slices))
-        ds_idx = min(ds_idx, ds_num_slices - 1)  # ensure we don't go out of bounds
-
-        slice_data = ds_data[:, :, ds_idx]
-        output_filename = f"{base_name}_slice{full_idx}.png"
-        output_path = os.path.join(output_dir, output_filename)
-
-        # (Optional) flip the slice horizontally if desired.
-        flipped_slice = np.fliplr(slice_data.T)
-        plt.imshow(flipped_slice, cmap='gray', origin='lower')
-        plt.axis('off')
-        plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
-        plt.close()
-        print(f"Saved downsampled slice as: {output_path}")
-
-        
-
+    if data.ndim == 3:
+        sim_data = simulate_15T_data(data, noise_std=noise_std, blur_sigma=blur_sigma)
+        extract_slices_3d(sim_data, subject, output_dir,
+                          n_slices=n_slices, lower_percent=lower_percent,
+                          upper_percent=upper_percent, target_size=target_size)
+    elif data.ndim == 4:
+        num_timepoints = data.shape[3]
+        print(f"Processing 4D file with {num_timepoints} time points: {nifti_file}")
+        for t in range(num_timepoints):
+            data_3d = data[:, :, :, t]
+            sim_data_3d = simulate_15T_data(data_3d, noise_std=noise_std, blur_sigma=blur_sigma)
+            extract_slices_3d(sim_data_3d, subject, output_dir, timepoint=t,
+                              n_slices=n_slices, lower_percent=lower_percent,
+                              upper_percent=upper_percent, target_size=target_size)
+    else:
+        print(f"Unexpected data dimensionality for {nifti_file}: {data.ndim}D")
+        return
 
 if __name__ == '__main__':
-    import os
-    import nibabel as nib
-    os.makedirs('./downsampled', exist_ok=True)
-    os.makedirs('./training_data_1.5T', exist_ok=True)
-    
-    for root, dirs, files in os.walk('./dataset'):
-        for file in files:
-            if file.endswith('.nii') or file.endswith('.nii.gz'):
-                orig_path = os.path.join(root, file)
-                print(f"Processing {orig_path}")
-                ds_file = downsample_image(orig_path, './downsampled', target_voxel=(2.0, 2.0, 2.0))
-                if ds_file is not None:
-                    extract_slices_from_downsampled(ds_file, orig_path, './training_data_1.5T', n_slices=10)
+    parser = argparse.ArgumentParser(
+        description="Simulate 1.5T images from high-resolution NIfTI scans and extract slices."
+    )
+    parser.add_argument('--datasets_dir', type=str, default='./datasets', 
+                        help='Directory containing dataset subfolders')
+    parser.add_argument('--output_dir', type=str, default='./training_data_1.5T', 
+                        help='Output directory for simulated 1.5T slices')
+    parser.add_argument('--n_slices', type=int, default=10, 
+                        help='Number of slices to extract per volume')
+    parser.add_argument('--lower_percent', type=float, default=0.2, 
+                        help='Lower percentile for slice selection')
+    parser.add_argument('--upper_percent', type=float, default=0.8, 
+                        help='Upper percentile for slice selection')
+    parser.add_argument('--target_size', type=int, nargs=2, default=[224, 224], 
+                        help='Target size for resizing slices (width height)')
+    parser.add_argument('--noise_std', type=float, default=10, 
+                        help='Standard deviation for noise')
+    parser.add_argument('--blur_sigma', type=float, default=1.0, 
+                        help='Sigma for Gaussian blur')
 
+    args = parser.parse_args()
+
+    datasets_dir = args.datasets_dir
+    output_dir = args.output_dir
+    os.makedirs(output_dir, exist_ok=True)
+    
+    for set_name in os.listdir(datasets_dir):
+        set_path = os.path.join(datasets_dir, set_name)
+        if os.path.isdir(set_path):
+            print(f"Processing dataset: {set_name}")
+            for root, dirs, files in os.walk(set_path):
+                for file in files:
+                    if file.endswith('.nii') or file.endswith('.nii.gz'):
+                        nifti_path = os.path.join(root, file)
+                        print(f"Processing {nifti_path}")
+                        try:
+                            extract_slices(nifti_path, output_dir,
+                                           n_slices=args.n_slices, target_size=tuple(args.target_size),
+                                           noise_std=args.noise_std, blur_sigma=args.blur_sigma)
+                        except Exception as e:
+                            print(f"Error processing {nifti_path}: {e}")

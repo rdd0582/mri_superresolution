@@ -1,44 +1,81 @@
+#!/usr/bin/env python
 import argparse
+import json
 import os
 import sys
+import time
 from pathlib import Path
+
 import torch
-import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-# Add the project root directory to the Python path
-project_root = Path(__file__).parent.parent
-sys.path.append(str(project_root))
+# Add the project root directory (one level up from the scripts folder)
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from utils.dataset import MRISuperResDataset
-from models.cnn_model import CNNSuperRes  # simple model
+from utils.losses import CombinedLoss  # Import the consolidated loss function
+from models.cnn_model import CNNSuperRes  # Simple CNN model
 
 def train(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print("Using device:", device)
     
+    # Log device info.
+    print(json.dumps({"type": "info", "message": f"Using device: {device}"}), flush=True)
+    
+    # Log training parameters.
+    params = {
+        "type": "params",
+        "full_res_dir": args.full_res_dir,
+        "low_res_dir": args.low_res_dir,
+        "batch_size": args.batch_size,
+        "epochs": args.epochs,
+        "learning_rate": args.learning_rate,
+        "model_type": args.model_type,
+        "scale": args.scale,
+    }
+    print(json.dumps(params), flush=True)
+    
+    # Prepare dataset and DataLoader.
     dataset = MRISuperResDataset(full_res_dir=args.full_res_dir, low_res_dir=args.low_res_dir)
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
     
-    # Choose model
+    # Choose the model.
     if args.model_type == "simple":
         model = CNNSuperRes().to(device)
         checkpoint_name = "cnn.pth"
     elif args.model_type == "edsr":
-        from models.edsr_model import EDSRSuperRes
+        from models.edsr_model import EDSRSuperRes  # Import EDSR model if needed.
         model = EDSRSuperRes(scale=args.scale).to(device)
         checkpoint_name = "edsr.pth"
     else:
+        error_msg = {"type": "error", "message": f"Unknown model type: {args.model_type}"}
+        print(json.dumps(error_msg), flush=True)
         raise ValueError(f"Unknown model type: {args.model_type}")
-
-    criterion = nn.MSELoss()
+    
+    # Use the custom combined loss function imported from utils.losses.
+    criterion = CombinedLoss(alpha=0.85, window_size=11, sigma=1.5, val_range=1.0, device=device)
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     
+    print(json.dumps({"type": "info", "message": "Starting training"}), flush=True)
+    
     for epoch in range(args.epochs):
+        start_time = time.time()
         model.train()
         running_loss = 0.0
-        for low, full in dataloader:
+        total_batches = len(dataloader)
+        
+        # Emit epoch start info.
+        print(json.dumps({
+            "type": "epoch_start",
+            "epoch": epoch + 1,
+            "total_epochs": args.epochs,
+            "total_batches": total_batches
+        }), flush=True)
+        
+        for batch_idx, (low, full) in enumerate(dataloader, start=1):
             low, full = low.to(device), full.to(device)
             optimizer.zero_grad()
             outputs = model(low)
@@ -46,13 +83,37 @@ def train(args):
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-        avg_loss = running_loss / len(dataloader)
-        print(f"Epoch [{epoch+1}/{args.epochs}], Loss: {avg_loss:.4f}")
+            
+            # Emit batch progress.
+            batch_msg = {
+                "type": "batch_update",
+                "epoch": epoch + 1,
+                "batch": batch_idx,
+                "total_batches": total_batches,
+                "loss": loss.item()
+            }
+            print(json.dumps(batch_msg), flush=True)
+        
+        avg_loss = running_loss / total_batches
+        elapsed_time = time.time() - start_time
+        
+        # Emit epoch summary.
+        epoch_summary = {
+            "type": "epoch_summary",
+            "epoch": epoch + 1,
+            "avg_loss": avg_loss,
+            "elapsed": elapsed_time
+        }
+        print(json.dumps(epoch_summary), flush=True)
     
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     checkpoint_path = os.path.join(args.checkpoint_dir, checkpoint_name)
     torch.save(model.state_dict(), checkpoint_path)
-    print(f"Model saved to {checkpoint_path}")
+    
+    print(json.dumps({
+        "type": "info",
+        "message": f"Training completed. Model saved to {checkpoint_path}"
+    }), flush=True)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Train CNN for MRI Superresolution")

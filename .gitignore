@@ -1,7 +1,7 @@
 # Ignore large data and generated files
 
 # Omit the big dataset folder
-/dataset/
+/datasets/
 
 # Omit large downsampled images (.nii.gz files)
 /downsampled/

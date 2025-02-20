@@ -1,0 +1,12 @@
+Revision history for OpenfMRI dataset ds000177
+
+1.0.1 2017-10-11
+  
+  - Added orientation warning to README
+  - Added CogAtlasID field to task-breathing_bold.json
+  - Added dataset_description.json
+
+1.0.0 2016-04-20
+  
+  - Initial release
+

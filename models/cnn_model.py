@@ -3,7 +3,7 @@ import torch.nn as nn
 
 class CNNSuperRes(nn.Module):
     def __init__(self):
-        super(CNNSuperRes, self).__init__()
+        super().__init__()
         # A simple architecture with a skip connection for superresolution
         self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
         self.relu  = nn.ReLU(inplace=True)

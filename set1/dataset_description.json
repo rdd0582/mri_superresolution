@@ -1,0 +1,14 @@
+{
+	"Name": "Effects of mouth breathing on hippocampal activity examined by 3T fMRI",
+	"BIDSVersion": "1.0.2",
+	"License": "CC0",
+	"Authors": [
+		"Chan-A Park",
+		"Nambeom Kim",
+		"Yeong-Bae Lee",
+		"Young-Bo Kim",
+		"Chaejoon Cheong",
+		"Chang-Ki Kang"
+	],
+	"Funding": ["Gachon University research fund (GCU-2015-0061)", "Basic Science Research Program through the National Research Foundation of Korea (NRF) funded by the Ministry of Science, ICT & Future Planning (2015R1C1A1A02036462)"]
+}

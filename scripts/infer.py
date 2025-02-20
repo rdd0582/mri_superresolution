@@ -37,7 +37,11 @@ def infer(args):
     transform = transforms.ToTensor()
     inv_transform = transforms.ToPILImage()
     
-    low_res_image = Image.open(args.input_image).convert('L')
+    try:
+        low_res_image = Image.open(args.input_image).convert('L')
+    except Exception as e:
+        raise ValueError(f"Failed to open input image: {args.input_image}. Error: {e}")
+    
     low_res_tensor = transform(low_res_image).unsqueeze(0).to(device)
     
     with torch.no_grad():

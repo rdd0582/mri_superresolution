@@ -3,7 +3,7 @@ import torch.nn as nn
 
 class ResidualBlock(nn.Module):
     def __init__(self, num_features):
-        super(ResidualBlock, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=1)
         self.relu  = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=1)
@@ -21,7 +21,10 @@ class EDSRSuperRes(nn.Module):
         If scale > 1, the network upsamples the input by the given scale factor.
         If scale == 1, the upsampling block is skipped.
         """
-        super(EDSRSuperRes, self).__init__()
+        super().__init__()
+        
+        if scale < 1:
+            raise ValueError("Scale factor must be >= 1")
         self.scale = scale
 
         # Initial feature extraction
