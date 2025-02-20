@@ -10,13 +10,17 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
+# Enable cuDNN benchmarking for fixed input sizes.
+import torch.backends.cudnn as cudnn
+cudnn.benchmark = True
+
 # Add the project root directory (one level up from the scripts folder)
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from utils.dataset import MRISuperResDataset
-from utils.losses import CombinedLoss  # Import the consolidated loss function
+from utils.losses import CombinedLoss  # Custom loss with cached SSIM window
 from models.cnn_model import CNNSuperRes  # Simple CNN model
 
 def train(args):
@@ -38,9 +42,15 @@ def train(args):
     }
     print(json.dumps(params), flush=True)
     
-    # Prepare dataset and DataLoader.
+    # Prepare dataset and DataLoader with GPU-friendly settings.
     dataset = MRISuperResDataset(full_res_dir=args.full_res_dir, low_res_dir=args.low_res_dir)
-    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+    dataloader = DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=4,      # Adjust based on your CPU cores
+        pin_memory=True
+    )
     
     # Choose the model.
     if args.model_type == "simple":
@@ -55,11 +65,15 @@ def train(args):
         print(json.dumps(error_msg), flush=True)
         raise ValueError(f"Unknown model type: {args.model_type}")
     
-    # Use the custom combined loss function imported from utils.losses.
+    # Use the custom combined loss function (with cached SSIM window)
     criterion = CombinedLoss(alpha=0.85, window_size=11, sigma=1.5, val_range=1.0, device=device)
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     
     print(json.dumps({"type": "info", "message": "Starting training"}), flush=True)
+    
+    # Set up mixed precision training.
+    from torch.cuda.amp import autocast, GradScaler
+    scaler = GradScaler()
     
     for epoch in range(args.epochs):
         start_time = time.time()
@@ -76,12 +90,15 @@ def train(args):
         }), flush=True)
         
         for batch_idx, (low, full) in enumerate(dataloader, start=1):
-            low, full = low.to(device), full.to(device)
+            # Transfer data to GPU with non-blocking calls.
+            low, full = low.to(device, non_blocking=True), full.to(device, non_blocking=True)
             optimizer.zero_grad()
-            outputs = model(low)
-            loss = criterion(outputs, full)
-            loss.backward()
-            optimizer.step()
+            with autocast():
+                outputs = model(low)
+                loss = criterion(outputs, full)
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
             running_loss += loss.item()
             
             # Emit batch progress.
