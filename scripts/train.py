@@ -48,7 +48,7 @@ def train(args):
         dataset,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=4,      # Adjust based on your CPU cores
+        num_workers=2,      # Adjust based on your CPU cores
         pin_memory=True
     )
     
