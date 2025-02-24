@@ -2,10 +2,10 @@
 import cv2
 import numpy as np
 
-def letterbox_resize(image, target_size=(224, 224)):
+def letterbox_resize(image, target_size):
     """
     Resize an image to fit within target_size while preserving its aspect ratio.
-    Pads with black pixels to reach the target dimensions.
+    Pads with the image's mean intensity to reach the target dimensions.
     """
     h, w = image.shape
     target_w, target_h = target_size
@@ -13,12 +13,15 @@ def letterbox_resize(image, target_size=(224, 224)):
     new_w, new_h = int(w * scale), int(h * scale)
     resized = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_AREA)
     
-    # Create a black canvas and center the resized image
-    canvas = np.zeros((target_h, target_w), dtype=image.dtype)
+    # Compute the mean intensity of the image for padding.
+    mean_val = int(image.mean())
+    canvas = np.full((target_h, target_w), mean_val, dtype=image.dtype)
+    
     x_offset = (target_w - new_w) // 2
     y_offset = (target_h - new_h) // 2
     canvas[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = resized
     return canvas
+
 
 def robust_normalize(slice_data, lower_percentile=1, upper_percentile=99):
     """
@@ -31,14 +34,17 @@ def robust_normalize(slice_data, lower_percentile=1, upper_percentile=99):
     normalized = (clipped - lower) / (upper - lower) if upper != lower else clipped
     return normalized
 
-def preprocess_slice(slice_data, target_size=(224, 224)):
+def preprocess_slice(slice_data, target_size=None):
     """
     Normalize intensities robustly, convert to 0-255 uint8, and letterbox resize.
+    If target_size is None, letterbox the image into a square with side equal to
+    the maximum dimension of the original slice (preserving full resolution).
     """
     slice_norm = robust_normalize(slice_data)
     slice_uint8 = np.uint8(slice_norm * 255)
-    if target_size:
-        slice_resized = letterbox_resize(slice_uint8, target_size)
-    else:
-        slice_resized = slice_uint8
-    return slice_resized
+    if target_size is None:
+        h, w = slice_uint8.shape
+        target_size = (max(w, h), max(w, h))
+    slice_letterboxed = letterbox_resize(slice_uint8, target_size)
+    return slice_letterboxed
+

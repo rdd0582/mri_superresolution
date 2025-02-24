@@ -14,10 +14,13 @@ import cv2  # For image resizing and saving
 from scipy.ndimage import gaussian_filter
 from utils.preprocessing import preprocess_slice  # Reuse the preprocessing function
 
-def simulate_15T_data(data, noise_std=10, blur_sigma=1.0):
+def simulate_15T_data(data, noise_std=5, blur_sigma=0.5):
     """
     Simulate a 1.5T image from high-quality data by applying Gaussian blur and adding
     Rician-like noise.
+
+    The noise_std and blur_sigma defaults have been further reduced to better resemble
+    a 1.5T scan.
     """
     # Apply Gaussian blur to mimic a smoother appearance
     blurred = gaussian_filter(data, sigma=blur_sigma)
@@ -40,10 +43,11 @@ def generate_filename(subject, slice_idx, timepoint=None):
         return f"{subject}_s{slice_idx:03d}.png"
 
 def extract_slices_3d(data, subject, output_dir, timepoint=None,
-                      n_slices=10, lower_percent=0.2, upper_percent=0.8, target_size=(224, 224)):
+                      n_slices=10, lower_percent=0.2, upper_percent=0.8, target_size=None):
     """
     Extract n_slices equally spaced from the central portion of a 3D volume,
-    preprocess (robust normalization, letterbox resize), and save each slice.
+    preprocess (robust normalization, letterbox resize preserving full resolution),
+    and save each slice.
     """
     num_slices = data.shape[2]
     lower_index = int(lower_percent * num_slices)
@@ -59,8 +63,8 @@ def extract_slices_3d(data, subject, output_dir, timepoint=None,
         print(f"Saved: {output_path}")
 
 def extract_slices(nifti_file, output_dir, n_slices=10,
-                   lower_percent=0.2, upper_percent=0.8, target_size=(224, 224),
-                   noise_std=10, blur_sigma=1.0):
+                   lower_percent=0.2, upper_percent=0.8, target_size=None,
+                   noise_std=5, blur_sigma=0.5):
     """
     Load a NIfTI file, simulate a 1.5T appearance, and extract slices.
     Supports both 3D and 4D data.
@@ -101,11 +105,13 @@ if __name__ == '__main__':
                         help='Lower percentile for slice selection')
     parser.add_argument('--upper_percent', type=float, default=0.8, 
                         help='Upper percentile for slice selection')
-    parser.add_argument('--target_size', type=int, nargs=2, default=[224, 224], 
-                        help='Target size for resizing slices (width height)')
-    parser.add_argument('--noise_std', type=float, default=10, 
+    # Set target_size default to None for full-resolution extraction.
+    parser.add_argument('--target_size', type=int, nargs=2, default=None, 
+                        help='Target size for resizing slices (width height), set to None for full resolution')
+    # Further reduced defaults for noise and blur
+    parser.add_argument('--noise_std', type=float, default=5, 
                         help='Standard deviation for noise')
-    parser.add_argument('--blur_sigma', type=float, default=1.0, 
+    parser.add_argument('--blur_sigma', type=float, default=0.5, 
                         help='Sigma for Gaussian blur')
 
     args = parser.parse_args()
@@ -119,13 +125,20 @@ if __name__ == '__main__':
         if os.path.isdir(set_path):
             print(f"Processing dataset: {set_name}")
             for root, dirs, files in os.walk(set_path):
+                # Only process directories named "anat"
+                if os.path.basename(root).lower() != "anat":
+                    continue
                 for file in files:
                     if file.endswith('.nii') or file.endswith('.nii.gz'):
                         nifti_path = os.path.join(root, file)
                         print(f"Processing {nifti_path}")
                         try:
                             extract_slices(nifti_path, output_dir,
-                                           n_slices=args.n_slices, target_size=tuple(args.target_size),
-                                           noise_std=args.noise_std, blur_sigma=args.blur_sigma)
+                                           n_slices=args.n_slices,
+                                           target_size=args.target_size,
+                                           lower_percent=args.lower_percent,
+                                           upper_percent=args.upper_percent,
+                                           noise_std=args.noise_std,
+                                           blur_sigma=args.blur_sigma)
                         except Exception as e:
                             print(f"Error processing {nifti_path}: {e}")

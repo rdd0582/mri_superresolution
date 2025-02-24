@@ -66,7 +66,7 @@ def train(args):
         raise ValueError(f"Unknown model type: {args.model_type}")
     
     # Use the custom combined loss function (with cached SSIM window)
-    criterion = CombinedLoss(alpha=0.50, window_size=11, sigma=1.5, val_range=1.0, device=device) #0.85
+    criterion = CombinedLoss(alpha=0.95, window_size=11, sigma=1.5, val_range=1.0, device=device) #0.85
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     
     print(json.dumps({"type": "info", "message": "Starting training"}), flush=True)

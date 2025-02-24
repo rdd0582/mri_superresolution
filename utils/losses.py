@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 
+# The SSIM-related functions are kept for compatibility but are not used.
 def gaussian_window(window_size: int, sigma: float):
     """Creates a 1D Gaussian window."""
     gauss = torch.tensor(
@@ -22,6 +23,7 @@ def ssim(img1, img2, window_size=11, sigma=1.5, val_range=1.0, device=torch.devi
     """
     Compute SSIM index between img1 and img2.
     If a precomputed window is provided, it is used directly.
+    This function is retained for compatibility but is not used in CombinedLoss.
     """
     channel = img1.size(1)
     if window is None:
@@ -47,30 +49,22 @@ def ssim(img1, img2, window_size=11, sigma=1.5, val_range=1.0, device=torch.devi
 
 class CombinedLoss(nn.Module):
     """
-    Combines L1 loss and SSIM loss:
+    A plug-and-play loss function originally combining L1 and SSIM losses:
       loss = alpha * (1 - SSIM) + (1 - alpha) * L1_loss
-    The Gaussian window for SSIM is precomputed and cached.
+    For your purposes, only the L1 loss is used.
     """
     def __init__(self, alpha=0.85, window_size=11, sigma=1.5, val_range=1.0, device=torch.device("cpu")):
         super().__init__()
-        self.alpha = alpha
+        self.alpha = alpha  # Retained for compatibility.
         self.l1_loss = nn.L1Loss()
         self.window_size = window_size
         self.sigma = sigma
         self.val_range = val_range
         self.device = device
-        # Precompute and cache the window (assumes single-channel images).
+        # The SSIM window is still precomputed for plug-and-play compatibility.
         self.register_buffer("window", create_window(window_size, 1, sigma, device))
     
     def forward(self, output, target):
-        l1 = self.l1_loss(output, target)
-        ssim_val = ssim(
-            output, target,
-            window_size=self.window_size,
-            sigma=self.sigma,
-            val_range=self.val_range,
-            device=self.device,
-            window=self.window
-        )
-        loss = self.alpha * (1 - ssim_val) + (1 - self.alpha) * l1
+        # Instead of combining SSIM and L1, only the L1 loss is computed.
+        loss = self.l1_loss(output, target)
         return loss

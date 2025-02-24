@@ -26,10 +26,11 @@ def generate_filename(subject, slice_idx, timepoint=None):
         return f"{subject}_s{slice_idx:03d}.png"
 
 def extract_slices_3d(data, subject, output_dir, timepoint=None,
-                      n_slices=10, lower_percent=0.2, upper_percent=0.8, target_size=(224, 224)):
+                      n_slices=10, lower_percent=0.2, upper_percent=0.8, target_size=None):
     """
     Extract n_slices equally spaced from the central portion of a 3D volume,
-    preprocess (robust normalization, letterbox resize), and save each slice.
+    preprocess (robust normalization, letterbox resize preserving full resolution),
+    and save each slice.
     """
     num_slices = data.shape[2]
     lower_index = int(lower_percent * num_slices)
@@ -39,13 +40,14 @@ def extract_slices_3d(data, subject, output_dir, timepoint=None,
     for idx in slice_indices:
         slice_data = data[:, :, idx]
         processed_slice = preprocess_slice(slice_data, target_size=target_size)
+        
         filename = generate_filename(subject, idx, timepoint)
         output_path = os.path.join(output_dir, filename)
         cv2.imwrite(output_path, processed_slice)
         print(f"Saved: {output_path}")
 
 def extract_slices(nifti_file, output_dir, n_slices=10,
-                   lower_percent=0.2, upper_percent=0.8, target_size=(224, 224)):
+                   lower_percent=0.2, upper_percent=0.8, target_size=None):
     """
     Load a NIfTI file and extract slices from a full‐resolution scan.
     Supports both 3D and 4D data.
@@ -72,7 +74,7 @@ def extract_slices(nifti_file, output_dir, n_slices=10,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="Extract full-resolution slices from NIfTI scans."
+        description="Extract full-resolution anatomical slices from NIfTI scans."
     )
     parser.add_argument('--datasets_dir', type=str, default='./datasets', 
                         help='Directory containing dataset subfolders')
@@ -84,8 +86,6 @@ if __name__ == '__main__':
                         help='Lower percentile for slice selection')
     parser.add_argument('--upper_percent', type=float, default=0.8, 
                         help='Upper percentile for slice selection')
-    parser.add_argument('--target_size', type=int, nargs=2, default=[224, 224], 
-                        help='Target size for resizing slices (width height)')
 
     args = parser.parse_args()
 
@@ -93,18 +93,24 @@ if __name__ == '__main__':
     output_dir = args.output_dir
     os.makedirs(output_dir, exist_ok=True)
     
+    # Loop over dataset folders (e.g., set1, set2, ...)
     for set_name in os.listdir(datasets_dir):
         set_path = os.path.join(datasets_dir, set_name)
         if os.path.isdir(set_path):
             print(f"Processing dataset: {set_name}")
+            # Walk through the entire directory tree
             for root, dirs, files in os.walk(set_path):
+                # Process only directories named "anat"
+                if os.path.basename(root).lower() != "anat":
+                    continue
                 for file in files:
                     if file.endswith('.nii') or file.endswith('.nii.gz'):
                         nifti_path = os.path.join(root, file)
                         print(f"Processing {nifti_path}")
                         try:
                             extract_slices(nifti_path, output_dir,
-                                           n_slices=args.n_slices, target_size=tuple(args.target_size),
-                                           lower_percent=args.lower_percent, upper_percent=args.upper_percent)
+                                           n_slices=args.n_slices,
+                                           lower_percent=args.lower_percent,
+                                           upper_percent=args.upper_percent)
                         except Exception as e:
                             print(f"Error processing {nifti_path}: {e}")
