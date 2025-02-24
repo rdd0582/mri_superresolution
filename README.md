@@ -1,128 +1,168 @@
 # MRI Superresolution Project
 
-This project leverages paired full-resolution and downsampled MRI images to train a **Convolutional Neural Network (CNN)** that enhances low-quality (simulated 1.5T) scans into high-quality (3T) images.
+This project upscales 1.5 Tesla MRI scans to appear as if they were taken with higher-resolution scanners (3T or 7T) using Deep Learning models implemented in PyTorch.
 
 ## Features
-- Extracts 2D slices from 3D **NIfTI** MRI images.
-- Downsamples MRI scans to simulate lower resolution.
-- Trains a **CNN model** to enhance low-resolution images.
-- Performs inference to generate super-resolved MRI scans.
 
----
+- **Dataset Extraction**: Extract full-resolution and downsampled (simulated 1.5T) datasets from NIfTI files
+- **Training**: Train models using paired high-resolution and simulated low-resolution MRI slices
+- **Inference**: Perform super-resolution on new MRI images
+- **Models Available**:
+  - **CNNSuperRes**: A simple CNN with residual connections
+  - **EDSRSuperRes**: An enhanced deep super-resolution model with residual blocks and optional upscaling
+
+## Prerequisites
+
+- Python 3.8+
+- Required dependencies:
+  ```bash
+  pip install -r requirements.txt
+  ```
+- For Windows users, install curses support:
+  ```bash
+  pip install windows-curses
+  ```
+
+## Dataset
+
+The MRI data used in this project is from:
+
+- **Title**: raw_HC001-HC005.tar.gz
+- **Created by**: Jessica Royer
+- **Published on**: OSF by Center for Open Science
+- **Publication Year**: 2021
+- **Direct URL**: https://osf.io/4vfas
+- **Note**: The raw data is part of a larger dataset available at https://osf.io/z8mu5
 
 ## Project Structure
+
 ```
-project_root/
-├── dataset/                   # Original 3T NIfTI images.
-├── training_data/             # PNG slices extracted from full-resolution images.
-├── training_data_1.5T/        # PNG slices extracted from downsampled images.
-├── models/                    # Contains the CNN model (see `cnn_model.py`).
-├── scripts/                   # Main scripts for extraction, downsampling, training, and inference.
-│   ├── extract_full_res.py    # Extract slices from full-resolution NIfTI files.
-│   ├── downsample_extract.py  # Downsample NIfTI files and extract slices from them.
-│   ├── train.py               # Train the CNN model using paired data.
-│   └── infer.py               # Run inference with the trained model.
-├── utils/                     # Dataset loader for paired images.
-├── launch.py                  # Launcher script to trigger different actions.
-└── requirements.txt           # Required Python packages.
+mri_cnn_project/
+├── __init__.py
+├── launch.py                # Launcher for curses-based UI
+├── models/
+│   ├── __init__.py
+│   ├── cnn_model.py         # Simple CNN Model
+│   └── edsr_model.py        # EDSR Model
+├── scripts/
+│   ├── __init__.py
+│   ├── downsample_extract.py # Simulate 1.5T data and extract slices
+│   ├── extract_full_res.py   # Extract full-resolution slices
+│   ├── infer.py              # Inference script
+│   └── train.py              # Training script
+└── utils/
+    ├── __init__.py
+    ├── dataset.py            # Dataset management and augmentation
+    ├── losses.py             # Custom loss function (L1 loss)
+    └── preprocessing.py      # Image preprocessing utilities
 ```
-
----
-
-## Installation
-### 1. Clone the Repository
-```bash
-git clone https://github.com/yourusername/mri-superresolution.git
-cd mri-superresolution
-```
-
-### 2. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-**Required Packages:**
-- Python **3.7+**
-- PyTorch & torchvision
-- nibabel
-- matplotlib
-- numpy
-- Pillow
-- argparse
-
----
 
 ## Usage
-A single **launcher script (`launch.py`)** provides easy access to different functions.
 
-### Extract Full-Resolution Slices
-```bash
-python launch.py --action extract_full
-```
-This script:
-- Traverses the `./dataset/` directory for **NIfTI** files.
-- Extracts **10** equally spaced slices from the center of each 3D volume (default).
-- Saves the slices as **PNG images** in `./training_data/`.
+You can either use the command-line interface or the curses-based launcher.
 
-### Downsample and Extract Slices
-```bash
-python launch.py --action downsample
-```
-This script:
-- Downsamples **3D NIfTI** volumes to simulate **1.5T MRI scans**.
-- Extracts slices from the downsampled images.
-- Saves PNG images in `./training_data_1.5T/`.
+### Option 1: Using the Launcher
 
-### Train the Model
-```bash
-python launch.py --action train
-```
-This script:
-- Loads paired PNG images from `./training_data/` (high-res) and `./training_data_1.5T/` (low-res).
-- Trains a **CNN model** using **MSE loss** and the **Adam optimizer**.
-- Saves the trained model’s checkpoint in `./checkpoints/`.
+To start the curses-based launcher:
 
-#### Customize Training Parameters
 ```bash
-python launch.py --action train --epochs 20 --batch_size 16 --learning_rate 0.001
+python launch.py
 ```
 
-### Run Inference
+The launcher provides the following menu options:
+
+1. **Extract Full-Resolution Dataset**: Extracts high-resolution slices
+2. **Extract Downsampled Dataset**: Simulates 1.5T images and extracts slices
+3. **Train Model**: Trains either the Simple CNN or EDSR model
+4. **Infer Image**: Runs inference on a low-resolution image
+5. **Exit**: Exits the launcher
+
+### Option 2: Using Command-Line Interface
+
+You can also run scripts directly using the command line.
+
+#### 1. Extract Full-Resolution Dataset
 ```bash
-python launch.py --action infer --input_image <path_to_low_res_png>
+python scripts/extract_full_res.py --datasets_dir ./datasets --output_dir ./training_data
 ```
-This script:
-- Loads the trained model from `./checkpoints/cnn_superres.pth`.
-- Processes the low-resolution input image.
-- Generates a super-resolved image (`output.png`).
 
-#### Customize Inference Parameters
+#### 2. Extract Downsampled Dataset
 ```bash
-python launch.py --action infer --model_path ./checkpoints/cnn_superres.pth --input_image ./training_data_1.5T/sample.png --output_image result.png
+python scripts/downsample_extract.py --datasets_dir ./datasets --output_dir ./training_data_1.5T
 ```
 
----
+#### 3. Train Model
 
-## Customization
+To train the Simple CNN model:
+```bash
+python scripts/train.py --full_res_dir ./training_data --low_res_dir ./training_data_1.5T --model_type simple
+```
 
-### Modify the Model Architecture
-Edit `models/cnn_model.py` to experiment with different **CNN architectures**.
+To train the EDSR model:
+```bash
+python scripts/train.py --full_res_dir ./training_data --low_res_dir ./training_data_1.5T --model_type edsr --scale 2
+```
 
-### Adjust Data Handling
-Modify `utils/dataset.py` to customize how paired images are **loaded** or **augmented**.
+#### 4. Infer Image
 
-### Change Slicing Parameters
-Both extraction scripts allow customization of:
-- **Number of slices** (`n_slices`)
-- **Volume range** (`lower_percent`, `upper_percent`)
+To run inference using the Simple CNN model:
+```bash
+python scripts/infer.py --input_image ./input.png --output_image ./output.png --model_type simple
+```
 
----
+To run inference using the EDSR model:
+```bash
+python scripts/infer.py --input_image ./input.png --output_image ./output.png --model_type edsr --scale 2
+```
+
+## Models Overview
+
+### 1. CNNSuperRes
+- A basic CNN architecture with residual connections
+- Fast and suitable for real-time applications
+
+### 2. EDSRSuperRes
+- Advanced architecture with multiple residual blocks
+- Optional upsampling using PixelShuffle
+- High-quality super-resolution suitable for medical imaging
+
+## Loss Function
+
+The project uses CombinedLoss which includes:
+- L1 Loss (Mean Absolute Error)
+- SSIM (Structural Similarity Index) is not currently used but can be easily re-enabled
+
+## Augmentation Techniques
+
+- Horizontal flipping
+- Small random rotations (-5 to 5 degrees)
+- Brightness and contrast adjustments
+
+## Checkpoints
+
+Trained model checkpoints are saved in the `./checkpoints` directory:
+- `cnn.pth`: Checkpoint for the Simple CNN model
+- `edsr.pth`: Checkpoint for the EDSR model
+
+## Contribution
+
+Contributions are welcome! If you find a bug or want to add a feature, feel free to submit a pull request.
+
+## Citation
+
+If you use this project or its components, please cite the dataset:
+
+```
+@misc{Royer2021MRIData,
+  author = {Jessica Royer},
+  title = {raw_HC001-HC005.tar.gz},
+  year = {2021},
+  url = {https://osf.io/4vfas},
+  publisher = {OSF},
+  organization = {Center for Open Science}
+}
+```
 
 ## License
-[AGPL v3]
 
----
-
-## Contact
-For any questions or feedback, please reach out to rupertd909@gmail.com.
-
+This project is licensed under the MIT License. See the LICENSE file for details.
