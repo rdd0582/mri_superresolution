@@ -1,10 +1,12 @@
 # Ignore large data and generated files
 
 # Omit the big dataset folder
-/datasets/
+
 
 # Omit large downsampled images (.nii.gz files)
 /downsampled/
+/datasets/
+*.bak
 
 # Omit training data (if these images are too heavy to track)
 /training_data_1.5T/
