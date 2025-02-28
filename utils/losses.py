@@ -49,22 +49,46 @@ def ssim(img1, img2, window_size=11, sigma=1.5, val_range=1.0, device=torch.devi
 
 class CombinedLoss(nn.Module):
     """
-    A plug-and-play loss function originally combining L1 and SSIM losses:
+    A combined loss function that uses both L1 and SSIM losses:
       loss = alpha * (1 - SSIM) + (1 - alpha) * L1_loss
-    For your purposes, only the L1 loss is used.
+    
+    This combines the pixel-wise accuracy (L1) with structural similarity (SSIM)
+    for better perceptual quality in medical images.
     """
-    def __init__(self, alpha=0.85, window_size=11, sigma=1.5, val_range=1.0, device=torch.device("cpu")):
+    def __init__(self, alpha=0.5, window_size=11, sigma=1.5, val_range=1.0, device=torch.device("cpu")):
         super().__init__()
-        self.alpha = alpha  # Retained for compatibility.
+        self.alpha = alpha
         self.l1_loss = nn.L1Loss()
         self.window_size = window_size
         self.sigma = sigma
         self.val_range = val_range
         self.device = device
-        # The SSIM window is still precomputed for plug-and-play compatibility.
         self.register_buffer("window", create_window(window_size, 1, sigma, device))
     
     def forward(self, output, target):
-        # Instead of combining SSIM and L1, only the L1 loss is computed.
-        loss = self.l1_loss(output, target)
-        return loss
+        # Compute L1 loss
+        l1_loss_val = self.l1_loss(output, target)
+        
+        # Compute SSIM loss
+        ssim_val = ssim(output, target, self.window_size, self.sigma, 
+                        self.val_range, self.device, self.window)
+        ssim_loss = 1 - ssim_val
+        
+        # Combine losses
+        combined_loss = self.alpha * ssim_loss + (1 - self.alpha) * l1_loss_val
+        return combined_loss
+
+class PSNR(nn.Module):
+    """
+    Peak Signal-to-Noise Ratio (PSNR) metric.
+    Higher values indicate better image quality.
+    """
+    def __init__(self, max_val=1.0):
+        super().__init__()
+        self.max_val = max_val
+    
+    def forward(self, output, target):
+        mse = F.mse_loss(output, target)
+        if mse == 0:
+            return torch.tensor(float('inf'))
+        return 20 * torch.log10(self.max_val / torch.sqrt(mse))

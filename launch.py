@@ -162,11 +162,14 @@ def handle_selection(stdscr, selection):
     elif selection == "Train Model":
         full_res_dir = get_user_input(stdscr, "Full-res dataset directory", "./training_data")
         low_res_dir = get_user_input(stdscr, "Low-res dataset directory", "./training_data_1.5T")
-        model_type = get_user_input(stdscr, "Model type (simple/edsr)", "simple", required=True)
+        model_type = get_user_input(stdscr, "Model type (simple/edsr/unet)", "simple", required=True)
         batch_size = get_user_input(stdscr, "Batch size", "16")
-        epochs = get_user_input(stdscr, "Epochs", "10")
+        epochs = get_user_input(stdscr, "Epochs", "50")
         learning_rate = get_user_input(stdscr, "Learning rate", "1e-3")
         checkpoint_dir = get_user_input(stdscr, "Checkpoint directory", "./checkpoints")
+        validation_split = get_user_input(stdscr, "Validation split (0-1)", "0.2")
+        patience = get_user_input(stdscr, "Early stopping patience", "10")
+        ssim_weight = get_user_input(stdscr, "SSIM loss weight (0-1)", "0.5")
         
         # Build the list of parameters.
         params = [
@@ -177,24 +180,50 @@ def handle_selection(stdscr, selection):
             "--learning_rate", learning_rate,
             "--checkpoint_dir", checkpoint_dir,
             "--model_type", model_type,
+            "--validation_split", validation_split,
+            "--patience", patience,
+            "--ssim_weight", ssim_weight,
         ]
+        
         if model_type.lower() == "edsr":
             scale = get_user_input(stdscr, "Scale factor (EDSR)", "1")
             params += ["--scale", scale]
+        elif model_type.lower() == "unet":
+            base_filters = get_user_input(stdscr, "Base filters for U-Net", "64")
+            params += ["--base_filters", base_filters]
         
         # For training, we expect structured logging (JSON messages).
         launch_script(stdscr, "scripts/train.py", params, structured=True)
     elif selection == "Infer Image":
         input_image = get_user_input(stdscr, "Input image path", required=True)
         output_image = get_user_input(stdscr, "Output image path", "output.png")
-        model_type = get_user_input(stdscr, "Model type (simple/edsr)", "simple", required=True)
+        target_image = get_user_input(stdscr, "Target image path (optional for metrics)", "")
+        model_type = get_user_input(stdscr, "Model type (simple/edsr/unet)", "simple", required=True)
         checkpoint_dir = get_user_input(stdscr, "Checkpoint directory", "./checkpoints")
-        launch_script(stdscr, "scripts/infer.py", [
+        show_comparison = get_user_input(stdscr, "Show comparison (y/n)", "y")
+        
+        # Build the list of parameters
+        params = [
             "--input_image", input_image,
             "--output_image", output_image,
             "--model_type", model_type,
             "--checkpoint_dir", checkpoint_dir
-        ], structured=False)
+        ]
+        
+        if target_image:
+            params += ["--target_image", target_image]
+            
+        if show_comparison.lower() in ('y', 'yes', 'true'):
+            params += ["--show_comparison"]
+            
+        if model_type.lower() == "edsr":
+            scale = get_user_input(stdscr, "Scale factor (EDSR)", "1")
+            params += ["--scale", scale]
+        elif model_type.lower() == "unet":
+            base_filters = get_user_input(stdscr, "Base filters for U-Net", "64")
+            params += ["--base_filters", base_filters]
+            
+        launch_script(stdscr, "scripts/infer.py", params, structured=False)
     elif selection == "Exit":
         raise SystemExit
 
