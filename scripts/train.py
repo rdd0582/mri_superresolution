@@ -347,7 +347,7 @@ def train(args):
         "model_type": args.model_type,
         "scale": args.scale,
         "validation_split": args.validation_split,
-        "patience": args.patience,
+        "patience": args.lr_patience,
         "loss_type": args.loss_type,
         "optimizer_type": args.optimizer_type,
         "scheduler_type": args.scheduler_type,
