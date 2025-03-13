@@ -25,11 +25,14 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Import project modules
-from utils.dataset import MRISuperResDataset, create_subject_aware_split, PatchDataset
-from utils.losses import CombinedLoss, PSNR, MS_SSIM, ContentLoss, AdaptiveLoss, ssim
+from utils.dataset import MRISuperResDataset, create_subject_aware_split, PatchDataset, MRIDataset
+from utils.losses import CombinedLoss, PSNR, MS_SSIM, ContentLoss, AdaptiveLoss, ssim, SSIM
 from models.cnn_model import CNNSuperRes
 from models.edsr_model import EDSRSuperRes
 from models.unet_model import UNetSuperRes
+from torchvision import transforms
+from torch.utils.data import random_split
+from contextlib import nullcontext
 
 # Configure logging
 logging.basicConfig(
@@ -350,6 +353,9 @@ def train(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
+    # Initialize gradient scaler for mixed precision training
+    scaler = torch.cuda.amp.GradScaler(enabled=args.mixed_precision)
+
     # Create model
     if args.model_type == 'unet':
         model = UNetSuperRes(
@@ -396,7 +402,7 @@ def train(args):
     )
 
     # Create datasets
-    train_dataset = MRIDataset(
+    train_dataset = MRISuperResDataset(
         full_res_dir=args.full_res_dir,
         low_res_dir=args.low_res_dir,
         transform=transforms.Compose([
@@ -407,11 +413,11 @@ def train(args):
         augmentation_params={
             'flip_prob': args.flip_prob,
             'rotate_prob': args.rotate_prob,
-            'rotate_angle': args.rotate_angle,
+            'rotate_range': (-args.rotate_angle, args.rotate_angle),
             'brightness_prob': args.brightness_prob,
-            'brightness_factor': args.brightness_factor,
+            'brightness_range': (1.0-args.brightness_factor, 1.0+args.brightness_factor),
             'contrast_prob': args.contrast_prob,
-            'contrast_factor': args.contrast_factor,
+            'contrast_range': (1.0-args.contrast_factor, 1.0+args.contrast_factor),
             'noise_prob': args.noise_prob,
             'noise_std': args.noise_std
         } if args.augmentation else None
