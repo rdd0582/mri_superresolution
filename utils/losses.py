@@ -2,60 +2,171 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
+from torch.autograd import Variable
 
-# The SSIM-related functions are kept for compatibility but are not used.
 def gaussian_window(window_size: int, sigma: float):
     """Creates a 1D Gaussian window."""
-    gauss = torch.tensor(
-        [math.exp(-(x - window_size // 2)**2 / (2 * sigma**2)) for x in range(window_size)],
-        dtype=torch.float32
-    )
+    # More efficient implementation using torch.linspace
+    coords = torch.arange(window_size, dtype=torch.float32)
+    coords -= window_size // 2
+    
+    # Gaussian function
+    gauss = torch.exp(-(coords ** 2) / (2 * sigma ** 2))
     return gauss / gauss.sum()
 
 def create_window(window_size: int, channel: int, sigma: float, device: torch.device):
     """Creates a 2D Gaussian window (kernel) for SSIM computation."""
-    _1D_window = gaussian_window(window_size, sigma).unsqueeze(1)
-    _2D_window = _1D_window @ _1D_window.t()  # Outer product to get 2D window
-    window = _2D_window.expand(channel, 1, window_size, window_size).to(device)
+    _1D_window = gaussian_window(window_size, sigma).to(device).unsqueeze(1)
+    _2D_window = _1D_window.mm(_1D_window.t())
+    window = _2D_window.expand(channel, 1, window_size, window_size).contiguous()
     return window
 
-def ssim(img1, img2, window_size=11, sigma=1.5, val_range=1.0, device=torch.device("cpu"), window=None):
+def ssim(img1, img2, window_size=11, sigma=1.5, val_range=1.0, device=None, window=None, size_average=True):
     """
     Compute SSIM index between img1 and img2.
-    If a precomputed window is provided, it is used directly.
-    This function is retained for compatibility but is not used in CombinedLoss.
+    Improved implementation with better memory efficiency.
     """
+    if device is None:
+        device = img1.device
+        
     channel = img1.size(1)
+    
     if window is None:
         window = create_window(window_size, channel, sigma, device)
     
-    mu1 = F.conv2d(img1, window, padding=window_size // 2, groups=channel)
-    mu2 = F.conv2d(img2, window, padding=window_size // 2, groups=channel)
+    # Pad images if needed
+    pad = window_size // 2
     
-    mu1_sq = mu1 * mu1
-    mu2_sq = mu2 * mu2
+    mu1 = F.conv2d(img1, window, padding=pad, groups=channel)
+    mu2 = F.conv2d(img2, window, padding=pad, groups=channel)
+    
+    mu1_sq = mu1.pow(2)
+    mu2_sq = mu2.pow(2)
     mu1_mu2 = mu1 * mu2
-
-    sigma1_sq = F.conv2d(img1 * img1, window, padding=window_size // 2, groups=channel) - mu1_sq
-    sigma2_sq = F.conv2d(img2 * img2, window, padding=window_size // 2, groups=channel) - mu2_sq
-    sigma12 = F.conv2d(img1 * img2, window, padding=window_size // 2, groups=channel) - mu1_mu2
-
-    # Constants for numerical stability.
+    
+    sigma1_sq = F.conv2d(img1 * img1, window, padding=pad, groups=channel) - mu1_sq
+    sigma2_sq = F.conv2d(img2 * img2, window, padding=pad, groups=channel) - mu2_sq
+    sigma12 = F.conv2d(img1 * img2, window, padding=pad, groups=channel) - mu1_mu2
+    
+    # Constants for numerical stability
     C1 = (0.01 * val_range) ** 2
     C2 = (0.03 * val_range) ** 2
-
+    
     ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
-    return ssim_map.mean()
+    
+    if size_average:
+        return ssim_map.mean()
+    else:
+        return ssim_map.mean(1).mean(1).mean(1)
+
+class MS_SSIM(nn.Module):
+    """
+    Multi-Scale Structural Similarity Index (MS-SSIM)
+    Evaluates image similarity at multiple scales for more robust assessment
+    """
+    def __init__(self, window_size=11, sigma=1.5, val_range=1.0, device=torch.device("cpu"), 
+                 weights=None, levels=5):
+        super(MS_SSIM, self).__init__()
+        self.window_size = window_size
+        self.sigma = sigma
+        self.val_range = val_range
+        self.device = device
+        
+        # Default weights for MS-SSIM
+        if weights is None:
+            weights = torch.FloatTensor([0.0448, 0.2856, 0.3001, 0.2363, 0.1333]).to(device)
+        
+        self.weights = weights
+        self.levels = levels
+        self.register_buffer("window", create_window(window_size, 1, sigma, device))
+    
+    def forward(self, img1, img2):
+        weights = self.weights
+        levels = self.levels
+        
+        # Check if images are too small for the requested number of levels
+        min_size = min(img1.size(2), img1.size(3))
+        max_levels = int(math.log2(min_size)) - 2  # Ensure minimum size of 9 at coarsest level
+        levels = min(levels, max_levels)
+        
+        # Adjust weights if levels changed
+        if levels < len(weights):
+            weights = weights[:levels] / weights[:levels].sum()
+        
+        mssim = []
+        mcs = []
+        
+        for i in range(levels):
+            ssim_val, cs = self._ssim(img1, img2, self.window, self.val_range, return_cs=True)
+            mssim.append(ssim_val)
+            mcs.append(cs)
+            
+            if i < levels - 1:
+                img1 = F.avg_pool2d(img1, kernel_size=2, stride=2)
+                img2 = F.avg_pool2d(img2, kernel_size=2, stride=2)
+        
+        # Convert lists to tensors
+        mssim = torch.stack(mssim)
+        mcs = torch.stack(mcs)
+        
+        # Calculate MS-SSIM
+        # Use the last scale SSIM and the product of all contrast sensitivities
+        msssim = torch.prod(mcs[:-1] ** weights[:-1]) * (mssim[-1] ** weights[-1])
+        
+        return msssim
+    
+    def _ssim(self, img1, img2, window, val_range, size_average=True, return_cs=False):
+        """Internal SSIM calculation with contrast sensitivity option"""
+        channel = img1.size(1)
+        
+        # Pad images if needed
+        pad = self.window_size // 2
+        
+        mu1 = F.conv2d(img1, window, padding=pad, groups=channel)
+        mu2 = F.conv2d(img2, window, padding=pad, groups=channel)
+        
+        mu1_sq = mu1.pow(2)
+        mu2_sq = mu2.pow(2)
+        mu1_mu2 = mu1 * mu2
+        
+        sigma1_sq = F.conv2d(img1 * img1, window, padding=pad, groups=channel) - mu1_sq
+        sigma2_sq = F.conv2d(img2 * img2, window, padding=pad, groups=channel) - mu2_sq
+        sigma12 = F.conv2d(img1 * img2, window, padding=pad, groups=channel) - mu1_mu2
+        
+        # Constants for numerical stability
+        C1 = (0.01 * val_range) ** 2
+        C2 = (0.03 * val_range) ** 2
+        
+        # Contrast sensitivity
+        cs_map = (2 * sigma12 + C2) / (sigma1_sq + sigma2_sq + C2)
+        # SSIM
+        ssim_map = ((2 * mu1_mu2 + C1) * cs_map) / ((mu1_sq + mu2_sq + C1))
+        
+        if size_average:
+            cs = cs_map.mean()
+            ssim_val = ssim_map.mean()
+        else:
+            cs = cs_map.mean(1).mean(1).mean(1)
+            ssim_val = ssim_map.mean(1).mean(1).mean(1)
+            
+        if return_cs:
+            return ssim_val, cs
+        else:
+            return ssim_val
 
 class CombinedLoss(nn.Module):
     """
-    A combined loss function that uses both L1 and SSIM losses:
-      loss = alpha * (1 - SSIM) + (1 - alpha) * L1_loss
+    Enhanced combined loss function with multiple components:
+    - L1 Loss for pixel-wise accuracy
+    - SSIM or MS-SSIM for structural similarity
+    - Optional edge detection loss for preserving boundaries
+    - Optional frequency domain loss
     
-    This combines the pixel-wise accuracy (L1) with structural similarity (SSIM)
-    for better perceptual quality in medical images.
+    Allows dynamic weighting of components during training.
     """
-    def __init__(self, alpha=0.5, window_size=11, sigma=1.5, val_range=1.0, device=torch.device("cpu")):
+    def __init__(self, alpha=0.5, window_size=11, sigma=1.5, val_range=1.0, 
+                 device=torch.device("cpu"), use_ms_ssim=False, use_edge_loss=False,
+                 use_freq_loss=False, edge_weight=0.1, freq_weight=0.1):
         super().__init__()
         self.alpha = alpha
         self.l1_loss = nn.L1Loss()
@@ -63,19 +174,82 @@ class CombinedLoss(nn.Module):
         self.sigma = sigma
         self.val_range = val_range
         self.device = device
+        self.use_ms_ssim = use_ms_ssim
+        self.use_edge_loss = use_edge_loss
+        self.use_freq_loss = use_freq_loss
+        self.edge_weight = edge_weight
+        self.freq_weight = freq_weight
+        
+        # Register window buffer for SSIM
         self.register_buffer("window", create_window(window_size, 1, sigma, device))
+        
+        # Create MS-SSIM module if needed
+        if use_ms_ssim:
+            self.ms_ssim = MS_SSIM(window_size, sigma, val_range, device)
+            
+        # Edge detection kernels (Sobel)
+        if use_edge_loss:
+            sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).view(1, 1, 3, 3)
+            sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32).view(1, 1, 3, 3)
+            self.register_buffer("sobel_x", sobel_x.repeat(1, 1, 1, 1))
+            self.register_buffer("sobel_y", sobel_y.repeat(1, 1, 1, 1))
+    
+    def edge_loss(self, output, target):
+        """Compute edge preservation loss using Sobel filters"""
+        # Apply Sobel filters
+        output_x = F.conv2d(output, self.sobel_x, padding=1)
+        output_y = F.conv2d(output, self.sobel_y, padding=1)
+        target_x = F.conv2d(target, self.sobel_x, padding=1)
+        target_y = F.conv2d(target, self.sobel_y, padding=1)
+        
+        # Compute edge magnitude
+        output_mag = torch.sqrt(output_x**2 + output_y**2 + 1e-10)
+        target_mag = torch.sqrt(target_x**2 + target_y**2 + 1e-10)
+        
+        # L1 loss on edge magnitudes
+        return F.l1_loss(output_mag, target_mag)
+    
+    def frequency_loss(self, output, target):
+        """Compute loss in frequency domain using FFT"""
+        # Apply FFT
+        output_fft = torch.fft.fft2(output)
+        target_fft = torch.fft.fft2(target)
+        
+        # Compute magnitude spectrum
+        output_mag = torch.abs(output_fft)
+        target_mag = torch.abs(target_fft)
+        
+        # L1 loss on magnitude spectrum
+        return F.l1_loss(output_mag, target_mag)
     
     def forward(self, output, target):
-        # Compute L1 loss
+        # Compute L1 loss (pixel-wise)
         l1_loss_val = self.l1_loss(output, target)
         
-        # Compute SSIM loss
-        ssim_val = ssim(output, target, self.window_size, self.sigma, 
-                        self.val_range, self.device, self.window)
+        # Compute structural similarity loss
+        if self.use_ms_ssim:
+            # Multi-scale SSIM
+            ssim_val = self.ms_ssim(output, target)
+        else:
+            # Single-scale SSIM
+            ssim_val = ssim(output, target, self.window_size, self.sigma, 
+                           self.val_range, self.device, self.window)
+        
         ssim_loss = 1 - ssim_val
         
-        # Combine losses
+        # Base combined loss
         combined_loss = self.alpha * ssim_loss + (1 - self.alpha) * l1_loss_val
+        
+        # Add edge preservation loss if enabled
+        if self.use_edge_loss:
+            edge_loss_val = self.edge_loss(output, target)
+            combined_loss += self.edge_weight * edge_loss_val
+        
+        # Add frequency domain loss if enabled
+        if self.use_freq_loss:
+            freq_loss_val = self.frequency_loss(output, target)
+            combined_loss += self.freq_weight * freq_loss_val
+        
         return combined_loss
 
 class PSNR(nn.Module):
@@ -83,12 +257,90 @@ class PSNR(nn.Module):
     Peak Signal-to-Noise Ratio (PSNR) metric.
     Higher values indicate better image quality.
     """
-    def __init__(self, max_val=1.0):
+    def __init__(self, max_val=1.0, epsilon=1e-10):
         super().__init__()
         self.max_val = max_val
+        self.epsilon = epsilon  # Small constant to avoid division by zero
     
     def forward(self, output, target):
+        # Ensure output and target have the same shape
+        if output.shape != target.shape:
+            raise ValueError(f"Output shape {output.shape} doesn't match target shape {target.shape}")
+        
+        # Calculate MSE
         mse = F.mse_loss(output, target)
-        if mse == 0:
-            return torch.tensor(float('inf'))
-        return 20 * torch.log10(self.max_val / torch.sqrt(mse))
+        
+        # Add epsilon to avoid log(0) or division by zero
+        psnr = 20 * torch.log10(self.max_val / torch.sqrt(mse + self.epsilon))
+        return psnr
+
+class ContentLoss(nn.Module):
+    """
+    Content loss based on feature maps from a pretrained network.
+    Useful for perceptual quality assessment.
+    """
+    def __init__(self, feature_extractor=None):
+        super().__init__()
+        
+        # If no feature extractor is provided, use a simple one
+        if feature_extractor is None:
+            # Simple feature extractor (can be replaced with VGG or other pretrained networks)
+            self.feature_extractor = nn.Sequential(
+                nn.Conv2d(1, 64, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(64, 64, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+                nn.Conv2d(64, 128, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(128, 128, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+            )
+            # Freeze the feature extractor
+            for param in self.feature_extractor.parameters():
+                param.requires_grad = False
+        else:
+            self.feature_extractor = feature_extractor
+    
+    def forward(self, output, target):
+        # Extract features
+        output_features = self.feature_extractor(output)
+        target_features = self.feature_extractor(target)
+        
+        # Calculate L2 loss between feature maps
+        return F.mse_loss(output_features, target_features)
+
+class AdaptiveLoss(nn.Module):
+    """
+    Adaptive loss that dynamically adjusts weights during training
+    based on the relative magnitudes of different loss components.
+    """
+    def __init__(self, loss_modules, initial_weights=None):
+        super().__init__()
+        self.loss_modules = nn.ModuleList(loss_modules)
+        
+        # Initialize weights
+        if initial_weights is None:
+            initial_weights = torch.ones(len(loss_modules)) / len(loss_modules)
+        
+        self.register_buffer("weights", initial_weights)
+        self.register_buffer("running_losses", torch.zeros(len(loss_modules)))
+        self.momentum = 0.9
+    
+    def forward(self, output, target):
+        # Compute individual losses
+        losses = [module(output, target) for module in self.loss_modules]
+        losses_tensor = torch.stack(losses)
+        
+        # Update running averages of losses
+        if self.training:
+            self.running_losses = self.momentum * self.running_losses + (1 - self.momentum) * losses_tensor
+            
+            # Normalize weights inversely proportional to running losses
+            # This gives more weight to losses with smaller values
+            inv_losses = 1.0 / (self.running_losses + 1e-8)
+            self.weights = inv_losses / inv_losses.sum()
+        
+        # Compute weighted sum
+        total_loss = (self.weights * losses_tensor).sum()
+        return total_loss
