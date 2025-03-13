@@ -77,10 +77,7 @@ class MRISuperResDataset(Dataset):
             'contrast_prob': 0.3,
             'contrast_range': (0.9, 1.1),
             'noise_prob': 0.2,
-            'noise_std': 0.01,
-            'elastic_prob': 0.2,
-            'elastic_alpha': 50,
-            'elastic_sigma': 5
+            'noise_std': 0.01
         }
         
         if augmentation_params is not None:
