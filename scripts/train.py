@@ -332,100 +332,104 @@ def validate(model, val_loader, criterion, metrics, device, epoch, args):
     return avg_val_loss, avg_metrics
 
 def train(args):
-    """Main training function."""
+    """Train the MRI quality enhancement model"""
+    # Set random seed for reproducibility
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(args.seed)
+        torch.cuda.manual_seed_all(args.seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+    # Create output directories
+    os.makedirs(args.checkpoint_dir, exist_ok=True)
+    if args.use_tensorboard:
+        os.makedirs(args.log_dir, exist_ok=True)
+
     # Set device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    log_message(f"Using device: {device}")
-    
-    # Log training parameters
-    log_message({
-        "full_res_dir": args.full_res_dir,
-        "low_res_dir": args.low_res_dir,
-        "batch_size": args.batch_size,
-        "epochs": args.epochs,
-        "learning_rate": args.learning_rate,
-        "model_type": args.model_type,
-        "scale": args.scale,
-        "validation_split": args.validation_split,
-        "patience": args.lr_patience,
-        "loss_type": args.loss_type,
-        "optimizer_type": args.optimizer_type,
-        "scheduler_type": args.scheduler_type,
-        "augmentation": args.augmentation,
-        "use_patches": args.use_patches,
-        "mixed_precision": args.mixed_precision
-    }, "params")
-    
-    # Set up TensorBoard if available
-    if TENSORBOARD_AVAILABLE and args.use_tensorboard:
-        log_dir = os.path.join(args.log_dir, f"{args.model_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
-        writer = SummaryWriter(log_dir=log_dir)
-        log_message(f"TensorBoard logs will be saved to {log_dir}")
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
+
+    # Create model
+    if args.model_type == 'unet':
+        model = UNetSuperRes(
+            in_channels=1,
+            out_channels=1,
+            base_filters=args.base_filters
+        )
     else:
-        writer = None
-    
-    # Set up augmentation parameters
-    augmentation_params = {
-        'flip_prob': args.flip_prob,
-        'rotate_prob': args.rotate_prob,
-        'rotate_range': (-args.rotate_angle, args.rotate_angle),
-        'brightness_prob': args.brightness_prob,
-        'brightness_range': (1.0 - args.brightness_factor, 1.0 + args.brightness_factor),
-        'contrast_prob': args.contrast_prob,
-        'contrast_range': (1.0 - args.contrast_factor, 1.0 + args.contrast_factor),
-        'noise_prob': args.noise_prob,
-        'noise_std': args.noise_std
-    }
-    
-    # Prepare dataset
-    full_dataset = MRISuperResDataset(
+        raise ValueError(f"Unsupported model type: {args.model_type}")
+
+    # Move model to device
+    model = model.to(device)
+
+    # Create optimizer
+    if args.optimizer_type == 'adam':
+        optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+    elif args.optimizer_type == 'adamw':
+        optimizer = optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+    elif args.optimizer_type == 'sgd':
+        optimizer = optim.SGD(model.parameters(), lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
+    else:
+        raise ValueError(f"Unsupported optimizer type: {args.optimizer_type}")
+
+    # Create scheduler
+    if args.scheduler_type == 'cosine':
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+    elif args.scheduler_type == 'reduce_on_plateau':
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.lr_factor, patience=args.lr_patience)
+    else:
+        raise ValueError(f"Unsupported scheduler type: {args.scheduler_type}")
+
+    # Create loss functions
+    criterion = CombinedLoss(
+        loss_type=args.loss_type,
+        ssim_weight=args.ssim_weight,
+        window_size=args.window_size,
+        sigma=args.sigma,
+        use_ms_ssim=args.use_ms_ssim,
+        use_edge_loss=args.use_edge_loss,
+        edge_weight=args.edge_weight,
+        use_freq_loss=args.use_freq_loss,
+        freq_weight=args.freq_weight
+    )
+
+    # Create datasets
+    train_dataset = MRIDataset(
         full_res_dir=args.full_res_dir,
         low_res_dir=args.low_res_dir,
+        transform=transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.5], std=[0.5])
+        ]),
         augmentation=args.augmentation,
-        augmentation_params=augmentation_params if args.augmentation else None,
-        normalize=True
+        augmentation_params={
+            'flip_prob': args.flip_prob,
+            'rotate_prob': args.rotate_prob,
+            'rotate_angle': args.rotate_angle,
+            'brightness_prob': args.brightness_prob,
+            'brightness_factor': args.brightness_factor,
+            'contrast_prob': args.contrast_prob,
+            'contrast_factor': args.contrast_factor,
+            'noise_prob': args.noise_prob,
+            'noise_std': args.noise_std
+        } if args.augmentation else None
     )
-    
+
     # Split dataset
-    if args.subject_aware_split:
-        train_dataset, val_dataset, test_dataset = create_subject_aware_split(
-            full_dataset,
-            val_ratio=args.validation_split,
-            test_ratio=args.test_split,
-            seed=args.seed
-        )
-    else:
-        # Traditional random split
-        dataset_size = len(full_dataset)
-        val_size = int(dataset_size * args.validation_split)
-        test_size = int(dataset_size * args.test_split)
-        train_size = dataset_size - val_size - test_size
-        
-        generator = torch.Generator().manual_seed(args.seed)
-        train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(
-            full_dataset, [train_size, val_size, test_size], generator=generator
-        )
-    
-    # Use patch dataset if enabled
-    if args.use_patches:
-        train_dataset = PatchDataset(
-            train_dataset,
-            patch_size=args.patch_size,
-            stride=args.patch_stride
-        )
-        log_message(f"Using patches of size {args.patch_size}x{args.patch_size} with stride {args.patch_stride}")
-        log_message(f"Training dataset size: {len(train_dataset)} patches")
-    
-    # Create DataLoaders
+    train_size = int((1 - args.validation_split - args.test_split) * len(train_dataset))
+    val_size = int(args.validation_split * len(train_dataset))
+    test_size = len(train_dataset) - train_size - val_size
+    train_dataset, val_dataset, test_dataset = random_split(train_dataset, [train_size, val_size, test_size])
+
+    # Create data loaders
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=args.num_workers,
-        pin_memory=True,
-        drop_last=True
+        pin_memory=True
     )
-    
     val_loader = DataLoader(
         val_dataset,
         batch_size=args.batch_size,
@@ -433,326 +437,317 @@ def train(args):
         num_workers=args.num_workers,
         pin_memory=True
     )
-    
-    # Create model
-    model_args = {
-        'in_channels': 1,
-        'out_channels': 1,
-        'scale_factor': args.scale,
-        'num_features': args.num_features,
-        'num_blocks': args.num_blocks,
-        'num_res_blocks': args.num_res_blocks,
-        'res_scale': args.res_scale,
-        'use_mean_shift': args.use_mean_shift,
-        'base_filters': args.base_filters,
-        'depth': args.depth,
-        'norm_type': args.norm_type,
-        'use_attention': args.use_attention,
-        'residual_mode': args.residual_mode,
-        'bilinear': args.bilinear
-    }
-    
-    model, checkpoint_name = create_model(args.model_type, device, **model_args)
-    
-    # Create loss function
-    loss_args = {
-        'ssim_weight': args.ssim_weight,
-        'window_size': args.window_size,
-        'sigma': args.sigma,
-        'val_range': 1.0,
-        'use_ms_ssim': args.use_ms_ssim,
-        'use_edge_loss': args.use_edge_loss,
-        'use_freq_loss': args.use_freq_loss,
-        'edge_weight': args.edge_weight,
-        'freq_weight': args.freq_weight
-    }
-    
-    criterion = create_criterion(args.loss_type, device, **loss_args)
-    
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.num_workers,
+        pin_memory=True
+    )
+
     # Create metrics
     metrics = {
         'psnr': PSNR(),
-        'ssim': lambda x, y: ssim(x, y, window_size=args.window_size, sigma=args.sigma)
+        'ssim': SSIM(window_size=args.window_size, sigma=args.sigma),
+        'ms_ssim': MS_SSIM(window_size=args.window_size, sigma=args.sigma) if args.use_ms_ssim else None
     }
-    
-    # Create optimizer
-    optimizer_args = {
-        'learning_rate': args.learning_rate,
-        'weight_decay': args.weight_decay,
-        'momentum': args.momentum
-    }
-    
-    optimizer = create_optimizer(args.optimizer_type, model.parameters(), **optimizer_args)
-    
-    # Create scheduler
-    scheduler_args = {
-        'factor': args.lr_factor,
-        'patience': args.lr_patience,
-        't_max': args.epochs,
-        'min_lr': args.min_lr,
-        'max_lr': args.learning_rate,
-        'total_steps': len(train_loader) * args.epochs,
-        'pct_start': args.warmup_pct,
-        'div_factor': 25.0,
-        'final_div_factor': 1e4
-    }
-    
-    scheduler = create_scheduler(args.scheduler_type, optimizer, **scheduler_args)
-    
-    # Set up mixed precision training
-    scaler = torch.cuda.amp.GradScaler(enabled=args.mixed_precision)
-    
-    # Resume from checkpoint if specified
-    start_epoch = 0
-    best_val_loss = float('inf')
-    
-    if args.resume:
-        checkpoint_path = os.path.join(args.checkpoint_dir, f"best_{checkpoint_name}")
-        if os.path.exists(checkpoint_path):
-            start_epoch, best_val_loss = load_checkpoint(
-                checkpoint_path, model, optimizer, scheduler, device
-            )
-            start_epoch += 1  # Start from the next epoch
-    
-    # Early stopping variables
-    early_stop_counter = 0
-    
+
+    # Create tensorboard writer
+    writer = SummaryWriter(args.log_dir) if args.use_tensorboard else None
+
     # Training loop
-    log_message("Starting training")
-    
-    for epoch in range(start_epoch, args.epochs):
-        start_time = time.time()
-        
+    best_val_loss = float('inf')
+    best_model_path = None
+    patience_counter = 0
+
+    # Log training parameters
+    print("\nTraining Parameters:")
+    print(f"Model Type: {args.model_type}")
+    print(f"Base Filters: {args.base_filters}")
+    print(f"Batch Size: {args.batch_size}")
+    print(f"Epochs: {args.epochs}")
+    print(f"Learning Rate: {args.learning_rate}")
+    print(f"Optimizer: {args.optimizer_type}")
+    print(f"Scheduler: {args.scheduler_type}")
+    print(f"Loss Type: {args.loss_type}")
+    print(f"SSIM Weight: {args.ssim_weight}")
+    print(f"Edge Loss: {args.use_edge_loss}")
+    print(f"Frequency Loss: {args.use_freq_loss}")
+    print(f"Data Augmentation: {args.augmentation}")
+    print(f"Mixed Precision: {args.mixed_precision}")
+    print(f"Patch Size: {args.patch_size if args.use_patches else 'None'}")
+    print(f"Patch Stride: {args.patch_stride if args.use_patches else 'None'}")
+    print(f"Validation Split: {args.validation_split}")
+    print(f"Test Split: {args.test_split}")
+    print(f"Learning Rate Patience: {args.lr_patience}")
+    print(f"Warmup Percentage: {args.warmup_pct}")
+    print(f"Gradient Clipping: {args.grad_clip}")
+    print(f"Weight Decay: {args.weight_decay}")
+    print(f"Momentum: {args.momentum}")
+    print(f"Number of Workers: {args.num_workers}")
+    print(f"Seed: {args.seed}")
+    print("\nStarting training...\n")
+
+    for epoch in range(args.epochs):
         # Training phase
-        avg_train_loss = train_epoch(model, train_loader, criterion, optimizer, device, scaler, epoch, args)
-        
+        model.train()
+        train_loss = 0
+        train_metrics = {name: 0 for name in metrics.keys() if metrics[name] is not None}
+        train_batches = 0
+
+        for batch_idx, (low_res, high_res) in enumerate(train_loader):
+            low_res = low_res.to(device)
+            high_res = high_res.to(device)
+
+            optimizer.zero_grad()
+
+            with torch.cuda.amp.autocast() if args.mixed_precision else nullcontext():
+                output = model(low_res)
+                loss = criterion(output, high_res)
+
+            if args.mixed_precision:
+                scaler.scale(loss).backward()
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
+                optimizer.step()
+
+            train_loss += loss.item()
+            for name, metric in metrics.items():
+                if metric is not None:
+                    train_metrics[name] += metric(output, high_res).item()
+            train_batches += 1
+
+            if batch_idx % args.log_interval == 0:
+                print(f'Train Epoch: {epoch} [{batch_idx * len(low_res)}/{len(train_loader.dataset)} '
+                      f'({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}')
+
+        # Calculate average training metrics
+        train_loss /= train_batches
+        for name in train_metrics:
+            train_metrics[name] /= train_batches
+
         # Validation phase
-        avg_val_loss, avg_metrics = validate(model, val_loader, criterion, metrics, device, epoch, args)
-        
-        # Update learning rate based on validation loss
-        if args.scheduler_type == "plateau":
-            scheduler.step(avg_val_loss)
-        elif scheduler is not None and args.scheduler_type != "onecycle":
-            scheduler.step()
-        
-        # Calculate elapsed time
-        elapsed_time = time.time() - start_time
-        
-        # Log epoch summary
-        epoch_summary = {
-            "epoch": epoch + 1,
-            "train_loss": avg_train_loss,
-            "val_loss": avg_val_loss,
-            "metrics": avg_metrics,
-            "lr": optimizer.param_groups[0]['lr'],
-            "elapsed": elapsed_time
-        }
-        log_message(epoch_summary, "epoch_summary")
-        
-        # Log to TensorBoard if available
-        if writer is not None:
-            writer.add_scalar('Loss/train', avg_train_loss, epoch)
-            writer.add_scalar('Loss/val', avg_val_loss, epoch)
-            for name, value in avg_metrics.items():
-                writer.add_scalar(f'Metrics/{name}', value, epoch)
-            writer.add_scalar('LR', optimizer.param_groups[0]['lr'], epoch)
-        
-        # Check for early stopping and model saving
-        if avg_val_loss < best_val_loss:
-            best_val_loss = avg_val_loss
-            early_stop_counter = 0
-            
-            # Save the best model
-            os.makedirs(args.checkpoint_dir, exist_ok=True)
-            best_checkpoint_path = os.path.join(args.checkpoint_dir, f"best_{checkpoint_name}")
-            
-            save_checkpoint(
-                model, optimizer, scheduler, epoch, avg_val_loss, best_checkpoint_path,
-                metrics=avg_metrics,
-                args=vars(args)
-            )
+        model.eval()
+        val_loss = 0
+        val_metrics = {name: 0 for name in metrics.keys() if metrics[name] is not None}
+        val_batches = 0
+
+        with torch.no_grad():
+            for low_res, high_res in val_loader:
+                low_res = low_res.to(device)
+                high_res = high_res.to(device)
+
+                with torch.cuda.amp.autocast() if args.mixed_precision else nullcontext():
+                    output = model(low_res)
+                    loss = criterion(output, high_res)
+
+                val_loss += loss.item()
+                for name, metric in metrics.items():
+                    if metric is not None:
+                        val_metrics[name] += metric(output, high_res).item()
+                val_batches += 1
+
+        # Calculate average validation metrics
+        val_loss /= val_batches
+        for name in val_metrics:
+            val_metrics[name] /= val_batches
+
+        # Update learning rate
+        if args.scheduler_type == 'reduce_on_plateau':
+            scheduler.step(val_loss)
         else:
-            early_stop_counter += 1
-            if early_stop_counter >= args.patience:
-                log_message(f"Early stopping triggered after {epoch + 1} epochs")
-                break
-        
-        # Save regular checkpoint every checkpoint_interval epochs
-        if args.checkpoint_interval > 0 and (epoch + 1) % args.checkpoint_interval == 0:
-            checkpoint_path = os.path.join(
-                args.checkpoint_dir, 
-                f"{args.model_type}_epoch{epoch+1}_{checkpoint_name}"
-            )
-            save_checkpoint(
-                model, optimizer, scheduler, epoch, avg_val_loss, checkpoint_path,
-                metrics=avg_metrics,
-                args=vars(args)
-            )
-    
-    # Save the final model
-    os.makedirs(args.checkpoint_dir, exist_ok=True)
-    final_checkpoint_path = os.path.join(args.checkpoint_dir, checkpoint_name)
-    
-    # Load the best model if available
-    best_checkpoint_path = os.path.join(args.checkpoint_dir, f"best_{checkpoint_name}")
-    if os.path.exists(best_checkpoint_path):
-        load_checkpoint(best_checkpoint_path, model)
-    
-    # Save the final model
-    torch.save(model.state_dict(), final_checkpoint_path)
-    log_message(f"Training completed. Final model saved to {final_checkpoint_path}")
-    
-    # Close TensorBoard writer
+            scheduler.step()
+
+        # Log metrics
+        print(f'\nEpoch {epoch}:')
+        print(f'Training Loss: {train_loss:.6f}')
+        print(f'Validation Loss: {val_loss:.6f}')
+        for name in train_metrics:
+            print(f'Training {name.upper()}: {train_metrics[name]:.6f}')
+            print(f'Validation {name.upper()}: {val_metrics[name]:.6f}')
+
+        if writer is not None:
+            writer.add_scalar('Loss/train', train_loss, epoch)
+            writer.add_scalar('Loss/val', val_loss, epoch)
+            for name in train_metrics:
+                writer.add_scalar(f'{name.upper()}/train', train_metrics[name], epoch)
+                writer.add_scalar(f'{name.upper()}/val', val_metrics[name], epoch)
+
+        # Save best model
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            patience_counter = 0
+            if best_model_path is not None:
+                os.remove(best_model_path)
+            best_model_path = os.path.join(args.checkpoint_dir, f'best_model_{args.model_type}.pth')
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'train_loss': train_loss,
+                'val_loss': val_loss,
+                'train_metrics': train_metrics,
+                'val_metrics': val_metrics,
+                'args': args
+            }, best_model_path)
+        else:
+            patience_counter += 1
+
+        # Early stopping
+        if patience_counter >= args.lr_patience:
+            print(f'\nEarly stopping triggered after {epoch + 1} epochs')
+            break
+
+    # Test phase
+    print("\nTesting best model...")
+    model.load_state_dict(torch.load(best_model_path)['model_state_dict'])
+    model.eval()
+    test_loss = 0
+    test_metrics = {name: 0 for name in metrics.keys() if metrics[name] is not None}
+    test_batches = 0
+
+    with torch.no_grad():
+        for low_res, high_res in test_loader:
+            low_res = low_res.to(device)
+            high_res = high_res.to(device)
+
+            with torch.cuda.amp.autocast() if args.mixed_precision else nullcontext():
+                output = model(low_res)
+                loss = criterion(output, high_res)
+
+            test_loss += loss.item()
+            for name, metric in metrics.items():
+                if metric is not None:
+                    test_metrics[name] += metric(output, high_res).item()
+            test_batches += 1
+
+    # Calculate average test metrics
+    test_loss /= test_batches
+    for name in test_metrics:
+        test_metrics[name] /= test_batches
+
+    # Log final test results
+    print("\nFinal Test Results:")
+    print(f'Test Loss: {test_loss:.6f}')
+    for name in test_metrics:
+        print(f'Test {name.upper()}: {test_metrics[name]:.6f}')
+
     if writer is not None:
+        writer.add_scalar('Loss/test', test_loss, args.epochs)
+        for name in test_metrics:
+            writer.add_scalar(f'{name.upper()}/test', test_metrics[name], args.epochs)
         writer.close()
 
+    return best_model_path
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Enhanced training for MRI Superresolution")
+    parser = argparse.ArgumentParser(description="Train MRI quality enhancement model")
     
-    # Dataset parameters
-    parser.add_argument('--full_res_dir', type=str, default='./training_data', 
-                        help="Directory of full resolution PNG images")
-    parser.add_argument('--low_res_dir', type=str, default='./training_data_1.5T', 
-                        help="Directory of downsampled PNG images")
-    parser.add_argument('--validation_split', type=float, default=0.2, 
-                        help="Fraction of data to use for validation")
-    parser.add_argument('--test_split', type=float, default=0.1, 
-                        help="Fraction of data to use for testing")
-    parser.add_argument('--subject_aware_split', action='store_true', 
-                        help="Split dataset by subject rather than randomly")
-    parser.add_argument('--seed', type=int, default=42, 
-                        help="Random seed for reproducibility")
+    # Data paths
+    parser.add_argument('--full_res_dir', type=str, required=True,
+                      help='Directory containing high-quality MRI slices')
+    parser.add_argument('--low_res_dir', type=str, required=True,
+                      help='Directory containing low-quality MRI slices')
     
-    # Augmentation parameters
-    parser.add_argument('--augmentation', action='store_true', 
-                        help="Enable data augmentation")
-    parser.add_argument('--flip_prob', type=float, default=0.5, 
-                        help="Probability of horizontal flip")
-    parser.add_argument('--rotate_prob', type=float, default=0.5, 
-                        help="Probability of rotation")
-    parser.add_argument('--rotate_angle', type=float, default=5.0, 
-                        help="Maximum rotation angle in degrees")
-    parser.add_argument('--brightness_prob', type=float, default=0.3, 
-                        help="Probability of brightness adjustment")
-    parser.add_argument('--brightness_factor', type=float, default=0.1, 
-                        help="Maximum brightness adjustment factor")
-    parser.add_argument('--contrast_prob', type=float, default=0.3, 
-                        help="Probability of contrast adjustment")
-    parser.add_argument('--contrast_factor', type=float, default=0.1, 
-                        help="Maximum contrast adjustment factor")
-    parser.add_argument('--noise_prob', type=float, default=0.2, 
-                        help="Probability of adding noise")
-    parser.add_argument('--noise_std', type=float, default=0.01, 
-                        help="Standard deviation of noise")
-    
-    # Patch extraction parameters
-    parser.add_argument('--use_patches', action='store_true', 
-                        help="Train on patches rather than full images")
-    parser.add_argument('--patch_size', type=int, default=64, 
-                        help="Size of patches to extract")
-    parser.add_argument('--patch_stride', type=int, default=32, 
-                        help="Stride between patches")
+    # Model parameters
+    parser.add_argument('--model_type', type=str, default='unet',
+                      choices=['unet'], help='Model architecture')
+    parser.add_argument('--base_filters', type=int, default=32,
+                      help='Number of base filters in the model')
     
     # Training parameters
-    parser.add_argument('--batch_size', type=int, default=16, 
-                        help="Batch size")
-    parser.add_argument('--epochs', type=int, default=50, 
-                        help="Maximum number of training epochs")
-    parser.add_argument('--learning_rate', type=float, default=1e-3, 
-                        help="Learning rate")
-    parser.add_argument('--weight_decay', type=float, default=0.0, 
-                        help="Weight decay (L2 penalty)")
-    parser.add_argument('--momentum', type=float, default=0.9, 
-                        help="Momentum for SGD optimizer")
-    parser.add_argument('--grad_clip', type=float, default=1.0, 
-                        help="Gradient clipping norm (0 to disable)")
-    parser.add_argument('--mixed_precision', action='store_true', 
-                        help="Enable mixed precision training")
-    parser.add_argument('--num_workers', type=int, default=4, 
-                        help="Number of worker threads for data loading")
+    parser.add_argument('--batch_size', type=int, default=8,
+                      help='Batch size for training')
+    parser.add_argument('--epochs', type=int, default=200,
+                      help='Number of epochs to train')
+    parser.add_argument('--learning_rate', type=float, default=1e-4,
+                      help='Initial learning rate')
+    parser.add_argument('--weight_decay', type=float, default=1e-4,
+                      help='Weight decay for optimizer')
+    parser.add_argument('--momentum', type=float, default=0.9,
+                      help='Momentum for SGD optimizer')
     
-    # Optimizer and scheduler parameters
-    parser.add_argument('--optimizer_type', type=str, choices=['adam', 'adamw', 'sgd'], default='adam', 
-                        help="Type of optimizer to use")
-    parser.add_argument('--scheduler_type', type=str, 
-                        choices=['plateau', 'cosine', 'onecycle', 'none'], default='plateau', 
-                        help="Type of learning rate scheduler to use")
-    parser.add_argument('--lr_factor', type=float, default=0.5, 
-                        help="Factor by which to reduce learning rate (for ReduceLROnPlateau)")
-    parser.add_argument('--lr_patience', type=int, default=5, 
-                        help="Patience for learning rate reduction (for ReduceLROnPlateau)")
-    parser.add_argument('--min_lr', type=float, default=1e-6, 
-                        help="Minimum learning rate")
-    parser.add_argument('--warmup_pct', type=float, default=0.3, 
-                        help="Percentage of training for learning rate warmup (for OneCycleLR)")
+    # Optimization
+    parser.add_argument('--optimizer_type', type=str, default='adamw',
+                      choices=['adam', 'adamw', 'sgd'], help='Optimizer type')
+    parser.add_argument('--scheduler_type', type=str, default='cosine',
+                      choices=['cosine', 'reduce_on_plateau'], help='Learning rate scheduler type')
+    parser.add_argument('--lr_factor', type=float, default=0.5,
+                      help='Factor to reduce learning rate by')
+    parser.add_argument('--lr_patience', type=int, default=5,
+                      help='Number of epochs to wait before reducing learning rate')
+    parser.add_argument('--warmup_pct', type=float, default=0.3,
+                      help='Percentage of training to use for warmup')
+    parser.add_argument('--grad_clip', type=float, default=1.0,
+                      help='Gradient clipping value')
     
-    # Loss function parameters
-    parser.add_argument('--loss_type', type=str, 
-                        choices=['combined', 'l1', 'mse', 'ssim', 'content', 'adaptive'], 
-                        default='combined', help="Type of loss function to use")
-    parser.add_argument('--ssim_weight', type=float, default=0.5, 
-                        help="Weight for SSIM loss (0-1)")
-    parser.add_argument('--window_size', type=int, default=11, 
-                        help="Window size for SSIM calculation")
-    parser.add_argument('--sigma', type=float, default=1.5, 
-                        help="Sigma for SSIM calculation")
-    parser.add_argument('--use_ms_ssim', action='store_true', 
-                        help="Use multi-scale SSIM instead of regular SSIM")
-    parser.add_argument('--use_edge_loss', action='store_true', 
-                        help="Add edge preservation loss")
-    parser.add_argument('--use_freq_loss', action='store_true', 
-                        help="Add frequency domain loss")
-    parser.add_argument('--edge_weight', type=float, default=0.1, 
-                        help="Weight for edge preservation loss")
-    parser.add_argument('--freq_weight', type=float, default=0.1, 
-                        help="Weight for frequency domain loss")
+    # Loss function
+    parser.add_argument('--loss_type', type=str, default='combined',
+                      choices=['l1', 'l2', 'combined'], help='Loss function type')
+    parser.add_argument('--ssim_weight', type=float, default=0.7,
+                      help='Weight for SSIM loss component')
+    parser.add_argument('--window_size', type=int, default=11,
+                      help='Window size for SSIM calculation')
+    parser.add_argument('--sigma', type=float, default=1.5,
+                      help='Sigma for SSIM calculation')
+    parser.add_argument('--use_ms_ssim', action='store_true',
+                      help='Use MS-SSIM instead of SSIM')
+    parser.add_argument('--use_edge_loss', action='store_true',
+                      help='Use edge loss component')
+    parser.add_argument('--edge_weight', type=float, default=0.2,
+                      help='Weight for edge loss component')
+    parser.add_argument('--use_freq_loss', action='store_true',
+                      help='Use frequency domain loss component')
+    parser.add_argument('--freq_weight', type=float, default=0.1,
+                      help='Weight for frequency loss component')
     
-    # Model-specific parameters
-    # Simple CNN parameters
-    parser.add_argument('--num_blocks', type=int, default=8, 
-                        help="Number of residual blocks for simple CNN model")
-    parser.add_argument('--num_features', type=int, default=64,
-                        help="Number of features for CNN and EDSR models")
+    # Data augmentation
+    parser.add_argument('--augmentation', action='store_true',
+                      help='Enable data augmentation')
+    parser.add_argument('--flip_prob', type=float, default=0.5,
+                      help='Probability of horizontal/vertical flips')
+    parser.add_argument('--rotate_prob', type=float, default=0.5,
+                      help='Probability of rotation')
+    parser.add_argument('--rotate_angle', type=float, default=5.0,
+                      help='Maximum rotation angle in degrees')
+    parser.add_argument('--brightness_prob', type=float, default=0.3,
+                      help='Probability of brightness adjustment')
+    parser.add_argument('--brightness_factor', type=float, default=0.1,
+                      help='Maximum brightness adjustment factor')
+    parser.add_argument('--contrast_prob', type=float, default=0.3,
+                      help='Probability of contrast adjustment')
+    parser.add_argument('--contrast_factor', type=float, default=0.1,
+                      help='Maximum contrast adjustment factor')
+    parser.add_argument('--noise_prob', type=float, default=0.2,
+                      help='Probability of adding noise')
+    parser.add_argument('--noise_std', type=float, default=0.01,
+                      help='Standard deviation of noise')
     
-    # EDSR parameters
-    parser.add_argument('--num_res_blocks', type=int, default=16,
-                        help="Number of residual blocks for EDSR model")
-    parser.add_argument('--res_scale', type=float, default=0.1,
-                        help="Residual scaling factor for EDSR model")
-    parser.add_argument('--use_mean_shift', action='store_true',
-                        help="Use mean shift in EDSR model")
-    
-    # U-Net parameters
-    parser.add_argument('--base_filters', type=int, default=64,
-                        help="Number of base filters for U-Net model")
-    parser.add_argument('--depth', type=int, default=4,
-                        help="Depth of U-Net model")
-    parser.add_argument('--norm_type', type=str, choices=['batch', 'instance', 'none'],
-                        default='batch', help="Normalization type for U-Net model")
-    parser.add_argument('--use_attention', action='store_true',
-                        help="Use attention mechanism in U-Net model")
-    parser.add_argument('--residual_mode', type=str, choices=['add', 'concat'],
-                        default='add', help="Residual connection mode for U-Net model")
-    parser.add_argument('--bilinear', action='store_true',
-                        help="Use bilinear upsampling in U-Net model")
-    
-    # Common model parameters
-    parser.add_argument('--scale', type=int, default=1,
-                        help="Scale factor for super-resolution")
-    parser.add_argument('--model_type', type=str, choices=['simple', 'edsr', 'unet'],
-                        default='unet', help="Type of model to use")
-    
-    # Checkpoint and logging parameters
+    # Training settings
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoints',
-                        help="Directory to save checkpoints")
-    parser.add_argument('--checkpoint_interval', type=int, default=5,
-                        help="Save checkpoint every N epochs")
-    parser.add_argument('--resume', action='store_true',
-                        help="Resume training from checkpoint")
-    parser.add_argument('--use_tensorboard', action='store_true',
-                        help="Use TensorBoard for logging")
+                      help='Directory to save checkpoints')
     parser.add_argument('--log_dir', type=str, default='./logs',
-                        help="Directory for TensorBoard logs")
+                      help='Directory to save logs')
+    parser.add_argument('--validation_split', type=float, default=0.2,
+                      help='Fraction of data to use for validation')
+    parser.add_argument('--test_split', type=float, default=0.1,
+                      help='Fraction of data to use for testing')
+    parser.add_argument('--num_workers', type=int, default=2,
+                      help='Number of data loading workers')
+    parser.add_argument('--seed', type=int, default=42,
+                      help='Random seed for reproducibility')
+    parser.add_argument('--mixed_precision', action='store_true',
+                      help='Use mixed precision training')
+    parser.add_argument('--use_tensorboard', action='store_true',
+                      help='Use TensorBoard for logging')
+    parser.add_argument('--log_interval', type=int, default=10,
+                      help='Number of batches between logging')
     
     args = parser.parse_args()
     train(args)
