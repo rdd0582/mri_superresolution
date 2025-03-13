@@ -256,6 +256,10 @@ class UNetSuperRes(nn.Module):
             self.upsampler = PixelShuffleUpsampler(out_channels, scale_factor)
         else:
             self.upsampler = None
+            
+        # Additional convolution for concatenation residual mode
+        if residual_mode == 'concat':
+            self.concat_conv = nn.Conv2d(out_channels + in_channels, out_channels, kernel_size=1)
 
     def forward(self, x):
         # Store input for residual connection
@@ -293,8 +297,6 @@ class UNetSuperRes(nn.Module):
             x = x + input_img
         elif self.residual_mode == 'concat':
             # Concatenate input as an alternative to addition
-            x = torch.cat([x, input_img], dim=1)
-            # Add a final 1x1 conv to reduce channels back to out_channels
-            x = nn.Conv2d(self.out_channels + self.in_channels, self.out_channels, kernel_size=1)(x)
+            x = self.concat_conv(torch.cat([x, input_img], dim=1))
             
         return x
