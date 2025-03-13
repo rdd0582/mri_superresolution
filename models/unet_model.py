@@ -131,11 +131,13 @@ class Up(nn.Module):
         # Upsampling method
         if bilinear:
             self.up = nn.Upsample(scale_factor=scale_factor, mode='bilinear', align_corners=True)
-            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2, 
-                                  norm_type=norm_type, use_attention=use_attention)
+            # For bilinear upsampling, we need to adjust the input channels for the conv
+            self.conv = DoubleConv(in_channels, out_channels, norm_type=norm_type, 
+                                  use_attention=use_attention)
         else:
             self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=scale_factor, 
                                          stride=scale_factor)
+            # For transposed conv, we need to handle the concatenated channels
             self.conv = DoubleConv(in_channels, out_channels, norm_type=norm_type, 
                                   use_attention=use_attention)
 
