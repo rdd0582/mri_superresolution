@@ -383,10 +383,11 @@ def train(args):
 
     # Create loss functions
     criterion = CombinedLoss(
-        loss_type=args.loss_type,
-        ssim_weight=args.ssim_weight,
+        alpha=args.ssim_weight,
         window_size=args.window_size,
         sigma=args.sigma,
+        val_range=1.0,
+        device=device,
         use_ms_ssim=args.use_ms_ssim,
         use_edge_loss=args.use_edge_loss,
         edge_weight=args.edge_weight,
