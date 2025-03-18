@@ -28,8 +28,8 @@ project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
 # Import project modules
-from utils.losses import PSNR, SSIM
-from utils.preprocessing import tensor_to_numpy
+from utils.losses import SSIM
+from utils.preprocessing import tensor_to_numpy, denormalize_from_range
 
 def load_model(model_type, checkpoint_path, device, **kwargs):
     """Load the appropriate model with weights from checkpoint."""
@@ -129,7 +129,9 @@ def postprocess_tensor(tensor):
     
     # Convert to numpy and ensure in [0, 1] range
     np_img = tensor_to_numpy(tensor)
-    np_img = np.clip((np_img + 1) / 2.0, 0, 1)  # Denormalize from [-1, 1] to [0, 1]
+    
+    # Denormalize from [-1, 1] to [0, 1] using the consistent helper function
+    np_img = denormalize_from_range(np_img, source_range=(-1, 1), target_range=(0, 1))
     
     # Convert to uint8 for PIL
     np_img = (np_img * 255).astype(np.uint8)
@@ -148,12 +150,8 @@ def calculate_metrics(output_tensor, target_tensor):
         target_tensor = target_tensor.unsqueeze(0)
     
     try:
-        # Calculate PSNR
-        psnr_metric = PSNR(max_val=1.0, data_range='normalized')
-        metrics['psnr'] = psnr_metric(output_tensor, target_tensor).item()
-        
         # Calculate SSIM
-        ssim_metric = SSIM(window_size=11, sigma=1.5, val_range=2.0)
+        ssim_metric = SSIM(window_size=11, sigma=1.5, val_range=2.0, data_range='normalized')
         metrics['ssim'] = ssim_metric(output_tensor, target_tensor).item()
         
         # Calculate MSE and MAE

@@ -22,7 +22,7 @@ if project_root not in sys.path:
 
 # Import project modules
 from utils.dataset import MRISuperResDataset
-from utils.losses import CombinedLoss, PSNR, SSIM
+from utils.losses import CombinedLoss, SSIM
 
 # Configure logging
 logging.basicConfig(
@@ -197,7 +197,7 @@ def train(args):
         device=device
     )
     
-    psnr_metric = PSNR(max_val=1.0, data_range='normalized')
+    # Using consistent parameters for metrics
     ssim_metric = SSIM(window_size=11, sigma=1.5, val_range=2.0)
     
     # Create tensorboard writer if available
@@ -229,7 +229,6 @@ def train(args):
         # Training phase
         model.train()
         train_loss = 0.0
-        train_psnr = 0.0
         train_ssim = 0.0
         
         for batch_idx, (low_res, high_res) in enumerate(train_loader):
@@ -248,7 +247,6 @@ def train(args):
             # Update metrics
             train_loss += loss.item()
             with torch.no_grad():
-                train_psnr += psnr_metric(output, high_res).item()
                 train_ssim += ssim_metric(output, high_res).item()
             
             # Log batch update
@@ -263,13 +261,11 @@ def train(args):
         
         # Calculate average training metrics
         train_loss /= len(train_loader)
-        train_psnr /= len(train_loader)
         train_ssim /= len(train_loader)
         
         # Validation phase
         model.eval()
         val_loss = 0.0
-        val_psnr = 0.0
         val_ssim = 0.0
         
         with torch.no_grad():
@@ -281,7 +277,6 @@ def train(args):
                 loss = criterion(output, high_res)
                 
                 val_loss += loss.item()
-                val_psnr += psnr_metric(output, high_res).item()
                 val_ssim += ssim_metric(output, high_res).item()
                 
                 # Save the last batch for visualization
@@ -289,7 +284,6 @@ def train(args):
         
         # Calculate average validation metrics
         val_loss /= len(val_loader)
-        val_psnr /= len(val_loader)
         val_ssim /= len(val_loader)
         
         # Update learning rate
@@ -304,8 +298,6 @@ def train(args):
             "epoch": epoch,
             "train_loss": train_loss,
             "val_loss": val_loss,
-            "train_psnr": train_psnr,
-            "val_psnr": val_psnr,
             "train_ssim": train_ssim,
             "val_ssim": val_ssim,
             "elapsed": epoch_time
@@ -315,8 +307,6 @@ def train(args):
         if writer:
             writer.add_scalar('Loss/train', train_loss, epoch)
             writer.add_scalar('Loss/val', val_loss, epoch)
-            writer.add_scalar('PSNR/train', train_psnr, epoch)
-            writer.add_scalar('PSNR/val', val_psnr, epoch)
             writer.add_scalar('SSIM/train', train_ssim, epoch)
             writer.add_scalar('SSIM/val', val_ssim, epoch)
         
@@ -340,9 +330,10 @@ def train(args):
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
                 'val_loss': val_loss,
-                'val_psnr': val_psnr,
-                'val_ssim': val_ssim
+                'val_ssim': val_ssim,
+                # Save additional hyperparameters if needed
             }, checkpoint_path)
             
             log_message(f"Saved best model with validation loss: {val_loss:.6f}")
@@ -361,7 +352,6 @@ def train(args):
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'val_loss': val_loss,
-        'val_psnr': val_psnr,
         'val_ssim': val_ssim
     }, final_path)
     

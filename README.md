@@ -4,13 +4,13 @@ This project upscales 1.5 Tesla MRI scans to appear as if they were taken with h
 
 ## Features
 
-- **Dataset Extraction**: Extract full-resolution and downsampled (simulated 1.5T) datasets from NIfTI files
-- **Training**: Train models using paired high-resolution and simulated low-resolution MRI slices with validation, early stopping, and learning rate scheduling
-- **Inference**: Perform super-resolution on new MRI images with quality metrics (PSNR, SSIM) and visual comparison
+- **Dataset Processing**: Extract full-resolution and downsampled (simulated 1.5T) datasets from NIfTI files
+- **Training**: Train models with validation, early stopping, learning rate scheduling, and combined loss functions
+- **Inference**: Perform super-resolution on new MRI images with quality metrics (SSIM) and visual comparison
 - **Models Available**:
-  - **CNNSuperRes**: A simple CNN with residual connections
-  - **EDSRSuperRes**: An enhanced deep super-resolution model with residual blocks and optional upscaling
-  - **UNetSuperRes**: A U-Net architecture with skip connections, particularly effective for medical imaging
+  - **CNNSuperRes**: Lightweight CNN with configurable residual blocks
+  - **EDSRSuperRes**: Enhanced Deep Super-Resolution network with scale flexibility
+  - **UNetSuperRes**: U-Net architecture optimized for medical imaging
 
 ## Prerequisites
 
@@ -40,175 +40,154 @@ The MRI data used in this project is from:
 ```
 mri_superresolution/
 ├── __init__.py
-├── launch.py                # Launcher for curses-based UI
+├── launch.py                # Interactive UI for all operations
 ├── models/
 │   ├── __init__.py
-│   ├── cnn_model.py         # Simple CNN Model
-│   ├── edsr_model.py        # EDSR Model
-│   └── unet_model.py        # U-Net Model
+│   ├── cnn_model.py         # Simple CNN with residual blocks
+│   ├── edsr_model.py        # Enhanced Deep Super-Resolution
+│   └── unet_model.py        # U-Net architecture
 ├── scripts/
 │   ├── __init__.py
-│   ├── downsample_extract.py # Simulate 1.5T data and extract slices
-│   ├── extract_full_res.py   # Extract full-resolution slices
-│   ├── infer.py              # Inference script
-│   └── train.py              # Training script
-└── utils/
-    ├── __init__.py
-    ├── dataset.py            # Dataset management and augmentation
-    ├── losses.py             # Custom loss functions and metrics
-    └── preprocessing.py      # Image preprocessing utilities
+│   ├── downsample_extract.py # Process and simulate 1.5T data
+│   ├── extract_full_res.py   # Extract high-resolution slices
+│   ├── infer.py              # Inference with metrics and visualization
+│   └── train.py              # Training with validation and monitoring
+├── utils/
+│   ├── __init__.py
+│   ├── dataset.py            # Dataset management and augmentation
+│   ├── losses.py             # Custom loss functions and metrics
+│   └── preprocessing.py      # Image preprocessing utilities
+├── checkpoints/              # Saved model weights
+├── training_data/            # Full-resolution image slices
+└── training_data_1.5T/       # Downsampled image slices
 ```
 
 ## Usage
 
-You can either use the command-line interface or the curses-based launcher.
+### Interactive Launcher
 
-### Option 1: Using the Launcher
-
-To start the curses-based launcher:
+The easiest way to use this project is through the interactive launcher:
 
 ```bash
 python launch.py
 ```
 
-The launcher provides the following menu options:
+The launcher provides a menu-driven interface with the following options:
 
-1. **Extract Full-Resolution Dataset**: Extracts high-resolution slices
-2. **Extract Downsampled Dataset**: Simulates 1.5T images and extracts slices
-3. **Train Model**: Trains a model (Simple CNN, EDSR, or U-Net)
-4. **Infer Image**: Runs inference on a low-resolution image
-5. **Exit**: Exits the launcher
+1. **Extract Full-Resolution Dataset**: Process high-resolution NIfTI files
+2. **Extract Downsampled Dataset**: Generate simulated 1.5T images
+3. **Train Model**: Train any of the three model types with customizable parameters
+4. **Infer Image**: Run super-resolution on low-resolution images
+5. **Exit**: Quit the launcher
 
-### Option 2: Using Command-Line Interface
+### Command-Line Interface
 
-You can also run scripts directly using the command line.
+You can also run the scripts directly with command-line arguments.
 
-#### 1. Extract Full-Resolution Dataset
+#### Data Preparation
+
+Extract full-resolution dataset:
 
 ```bash
 python scripts/extract_full_res.py --datasets_dir ./datasets --output_dir ./training_data
 ```
 
-#### 2. Extract Downsampled Dataset
+Create downsampled (simulated 1.5T) dataset:
 
 ```bash
 python scripts/downsample_extract.py --datasets_dir ./datasets --output_dir ./training_data_1.5T
 ```
 
-#### 3. Train Model
+#### Training
 
-To train the Simple CNN model:
+Train the CNN model:
 
 ```bash
-python scripts/train.py --full_res_dir ./training_data --low_res_dir ./training_data_1.5T --model_type simple --validation_split 0.2 --ssim_weight 0.5
+python scripts/train.py --full_res_dir ./training_data --low_res_dir ./training_data_1.5T \
+  --model_type simple --num_blocks 8 --validation_split 0.2 --ssim_weight 0.5 \
+  --batch_size 16 --epochs 50 --patience 10
 ```
 
-To train the EDSR model:
+Train the EDSR model:
 
 ```bash
-python scripts/train.py --full_res_dir ./training_data --low_res_dir ./training_data_1.5T --model_type edsr --scale 2 --validation_split 0.2 --ssim_weight 0.5
+python scripts/train.py --full_res_dir ./training_data --low_res_dir ./training_data_1.5T \
+  --model_type edsr --scale 1 --num_res_blocks 16 --validation_split 0.2 \
+  --ssim_weight 0.5 --batch_size 16 --epochs 50 --patience 10
 ```
 
-To train the U-Net model:
+Train the U-Net model:
 
 ```bash
-python scripts/train.py --full_res_dir ./training_data --low_res_dir ./training_data_1.5T --model_type unet --base_filters 64 --validation_split 0.2 --ssim_weight 0.5
+python scripts/train.py --full_res_dir ./training_data --low_res_dir ./training_data_1.5T \
+  --model_type unet --base_filters 64 --validation_split 0.2 --ssim_weight 0.5 \
+  --batch_size 16 --epochs 50 --patience 10
 ```
 
-#### 4. Infer Image
+#### Inference
 
-To run inference using the Simple CNN model:
+Run inference with the CNN model:
 
 ```bash
-python scripts/infer.py --input_image ./input.png --output_image ./output.png --model_type simple --show_comparison
+python scripts/infer.py --input_image ./input.png --output_image ./output.png \
+  --model_type simple --num_blocks 8 --show_comparison
 ```
 
-To run inference using the EDSR model:
+Run inference with the EDSR model:
 
 ```bash
-python scripts/infer.py --input_image ./input.png --output_image ./output.png --model_type edsr --scale 2 --show_comparison
+python scripts/infer.py --input_image ./input.png --output_image ./output.png \
+  --model_type edsr --scale 1 --num_res_blocks 16 --show_comparison
 ```
 
-To run inference using the U-Net model:
+Run inference with the U-Net model:
 
 ```bash
-python scripts/infer.py --input_image ./input.png --output_image ./output.png --model_type unet --show_comparison
+python scripts/infer.py --input_image ./input.png --output_image ./output.png \
+  --model_type unet --base_filters 64 --show_comparison
 ```
 
 To evaluate against a ground truth image:
 
 ```bash
-python scripts/infer.py --input_image ./input.png --output_image ./output.png --target_image ./target.png --model_type simple --show_comparison
+python scripts/infer.py --input_image ./input.png --output_image ./output.png \
+  --target_image ./target.png --model_type simple --show_comparison
 ```
 
-## Models Overview
+## Model Details
 
-### 1. CNNSuperRes
+### CNNSuperRes
 
-- A basic CNN architecture with residual connections
-- Fast and suitable for real-time applications
-- Lightweight with minimal parameters
+- Configurable number of residual blocks
+- Efficient architecture with fewer parameters
+- Direct image-to-image mapping without upsampling
 
-### 2. EDSRSuperRes
+### EDSRSuperRes
 
-- Advanced architecture with multiple residual blocks
-- Optional upsampling using PixelShuffle
-- High-quality super-resolution suitable for medical imaging
+- Based on Enhanced Deep Super-Resolution Network
+- Configurable upscaling factor and number of residual blocks
+- Optimized for detail preservation in medical images
 
-### 3. UNetSuperRes
+### UNetSuperRes
 
-- U-Net architecture with encoder-decoder structure and skip connections
-- Particularly effective for medical imaging tasks
-- Captures both local and global features through multi-scale processing
+- Encoder-decoder architecture with skip connections
+- Configurable base filter count for capacity adjustment
+- Effective at capturing local and global features
 
-## Loss Function and Metrics
+## Training Features
 
-The project uses:
+- **Combined Loss Function**: Weighted combination of L1 loss and SSIM
+- **Validation Split**: Automatic train/validation dataset separation
+- **Early Stopping**: Prevents overfitting by monitoring validation loss
+- **Learning Rate Scheduling**: Reduces learning rate when progress plateaus
+- **Model Checkpointing**: Saves the best model based on validation metrics
+- **Training Progress**: Real-time visualization of training metrics
 
-- **CombinedLoss**: A weighted combination of:
-  - L1 Loss (Mean Absolute Error) for pixel-wise accuracy
-  - SSIM (Structural Similarity Index) for perceptual quality
-- **Evaluation Metrics**:
-  - PSNR (Peak Signal-to-Noise Ratio)
-  - SSIM (Structural Similarity Index)
+## Inference Features
 
-## Training Improvements
-
-The training process now includes:
-
-- **Validation Split**: A portion of the dataset is reserved for validation
-- **Early Stopping**: Training stops when validation loss stops improving
-- **Learning Rate Scheduling**: Learning rate is reduced when validation loss plateaus
-- **Model Checkpointing**: The best model based on validation loss is saved
-- **Mixed Precision Training**: Uses PyTorch's AMP for faster training
-- **SSIM Loss**: Combines L1 loss with SSIM for better perceptual quality
-
-## Inference Improvements
-
-The inference process now includes:
-
-- **Quality Metrics**: PSNR and SSIM metrics when a target image is provided
-- **Visual Comparison**: Side-by-side comparison of input, output, and target images
-- **Best Model Selection**: Automatically uses the best model checkpoint if available
-
-## Augmentation Techniques
-
-- Horizontal flipping
-- Small random rotations (-5 to 5 degrees)
-- Brightness and contrast adjustments
-
-## Checkpoints
-
-Trained model checkpoints are saved in the `./checkpoints` directory:
-
-- `cnn.pth`: Checkpoint for the Simple CNN model
-- `edsr.pth`: Checkpoint for the EDSR model
-- `unet.pth`: Checkpoint for the U-Net model
-- `best_*.pth`: Best model checkpoints based on validation loss
-
-## Contribution
-
-Contributions are welcome! If you find a bug or want to add a feature, feel free to submit a pull request.
+- **Quality Metrics**: SSIM calculations against target images
+- **Visual Comparison**: Side-by-side comparison of input, output, and target
+- **Automatic Model Loading**: Uses the best saved checkpoint
 
 ## Citation
 

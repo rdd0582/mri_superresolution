@@ -364,20 +364,80 @@ def batch_preprocess(images: List[np.ndarray], **kwargs) -> List[np.ndarray]:
 
 def tensor_to_numpy(tensor: torch.Tensor) -> np.ndarray:
     """
-    Convert a PyTorch tensor to a numpy array.
+    Convert a PyTorch tensor to a NumPy array.
     
     Args:
-        tensor: Input tensor (C,H,W)
+        tensor: Input tensor (C,H,W) or (B,C,H,W)
         
     Returns:
-        Numpy array (H,W,C)
+        NumPy array with same data, potentially reordered channels for visualization
     """
+    if tensor.is_cuda:
+        tensor = tensor.cpu()
+    
+    if tensor.requires_grad:
+        tensor = tensor.detach()
+        
     if tensor.ndim == 3:  # C,H,W
-        return tensor.detach().cpu().numpy().transpose(1, 2, 0)
+        return tensor.numpy().transpose(1, 2, 0)
     elif tensor.ndim == 4:  # B,C,H,W
-        return tensor.detach().cpu().numpy().transpose(0, 2, 3, 1)
+        return tensor.numpy().transpose(0, 2, 3, 1)
     else:
-        return tensor.detach().cpu().numpy()
+        return tensor.numpy()
+
+def normalize_to_range(data, source_range=None, target_range=(-1, 1)):
+    """
+    Normalize data from source range to target range.
+    
+    This function helps ensure consistent normalization across the project.
+    
+    Args:
+        data: Input data (numpy array or torch tensor)
+        source_range: Source data range as (min, max). If None, uses (data.min(), data.max())
+        target_range: Target range as (min, max). Default is (-1, 1) for model input
+        
+    Returns:
+        Normalized data in the target range
+    """
+    if source_range is None:
+        if isinstance(data, torch.Tensor):
+            source_min = data.min().item()
+            source_max = data.max().item()
+        else:
+            source_min = data.min()
+            source_max = data.max()
+        source_range = (source_min, source_max)
+    
+    source_min, source_max = source_range
+    target_min, target_max = target_range
+    
+    # Avoid division by zero
+    if source_min == source_max:
+        return data * 0 + target_min
+    
+    # Scale to [0, 1]
+    normalized = (data - source_min) / (source_max - source_min)
+    
+    # Scale to target range
+    normalized = normalized * (target_max - target_min) + target_min
+    
+    return normalized
+
+def denormalize_from_range(data, source_range=(-1, 1), target_range=(0, 1)):
+    """
+    Denormalize data from source range to target range.
+    
+    This is the inverse operation of normalize_to_range.
+    
+    Args:
+        data: Input data (numpy array or torch tensor)
+        source_range: Source normalized range as (min, max). Default is (-1, 1)
+        target_range: Target range as (min, max). Default is (0, 1) for visualization
+        
+    Returns:
+        Denormalized data in the target range
+    """
+    return normalize_to_range(data, source_range, target_range)
 
 def numpy_to_tensor(array: np.ndarray) -> torch.Tensor:
     """
