@@ -13,9 +13,20 @@ import numpy as np
 import logging
 import matplotlib.colors as colors
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('inference.log')
+    ]
+)
+logger = logging.getLogger(__name__)
+
 # Try to import AMP
 try:
-    from torch.cuda.amp import autocast
+    from torch.amp import autocast, GradScaler
     AMP_AVAILABLE = True
 except ImportError:
     AMP_AVAILABLE = False
@@ -29,17 +40,6 @@ try:
 except ImportError:
     COMPILE_AVAILABLE = False
     logger.warning("torch.compile not available. Using standard model execution.")
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('inference.log')
-    ]
-)
-logger = logging.getLogger(__name__)
 
 # Add the project root directory to the Python path
 project_root = Path(__file__).parent.parent
@@ -85,9 +85,18 @@ def load_model(model_type, checkpoint_path, device, **kwargs):
         
         # Handle different checkpoint formats
         if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
-            model.load_state_dict(checkpoint['model_state_dict'])
+            state_dict = checkpoint['model_state_dict']
+            # Check if the state dict has keys with _orig_mod prefix (from torch.compile)
+            if any(k.startswith('_orig_mod.') for k in state_dict.keys()):
+                # Strip the _orig_mod prefix from all keys
+                state_dict = {k.replace('_orig_mod.', ''): v for k, v in state_dict.items()}
+            model.load_state_dict(state_dict)
             logger.info(f"Loaded model from epoch {checkpoint.get('epoch', 'unknown')}")
         else:
+            # Check if the state dict has keys with _orig_mod prefix (from torch.compile)
+            if any(k.startswith('_orig_mod.') for k in checkpoint.keys()):
+                # Strip the _orig_mod prefix from all keys
+                checkpoint = {k.replace('_orig_mod.', ''): v for k, v in checkpoint.items()}
             model.load_state_dict(checkpoint)
             logger.info(f"Loaded model weights from {checkpoint_path}")
         
@@ -258,7 +267,7 @@ def process_single_image(model, input_path, output_path, target_path=None, devic
     model.eval()
     with torch.no_grad():
         if use_amp and AMP_AVAILABLE and device.type == 'cuda':
-            with autocast():
+            with autocast('cuda'):
                 output_tensor = model(tensor)
         else:
             output_tensor = model(tensor)
@@ -369,7 +378,7 @@ def process_batch(model, input_dir, output_dir, device, target_dir=None, save_vi
         model.eval()
         with torch.no_grad():
             if use_amp and AMP_AVAILABLE and device.type == 'cuda':
-                with autocast():
+                with autocast('cuda'):
                     output_tensor = model(tensor)
             else:
                 output_tensor = model(tensor)
@@ -418,6 +427,10 @@ def process_batch(model, input_dir, output_dir, device, target_dir=None, save_vi
             plt.tight_layout()
             plt.savefig(os.path.join(vis_dir, f"compare_{img_file}"))
             plt.close()
+        
+        # Clean up GPU memory (important for T4 GPUs)
+        if device.type == 'cuda':
+            torch.cuda.empty_cache()
     
     # Calculate and report average metrics
     if metrics_count > 0:
@@ -436,6 +449,12 @@ def main(args):
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() and not args.cpu else "cpu")
     logger.info(f"Using device: {device}")
+    
+    # Print GPU info for Colab T4
+    if device.type == 'cuda':
+        logger.info(f"GPU: {torch.cuda.get_device_name(0)}")
+        logger.info(f"Memory allocated: {torch.cuda.memory_allocated(0) / 1e9:.2f} GB")
+        logger.info(f"Memory cached: {torch.cuda.memory_reserved(0) / 1e9:.2f} GB")
     
     # Check if AMP can be used
     use_amp = args.use_amp and AMP_AVAILABLE and device.type == 'cuda'
@@ -467,8 +486,8 @@ def main(args):
         if use_compile:
             logger.info("Using torch.compile to optimize model execution.")
             try:
-                # For inference, 'reduce-overhead' mode is good for RTX GPUs
-                model = compile(model, mode="reduce-overhead", fullgraph=True)
+                # For T4 GPUs on Colab, 'reduce-overhead' is safer than 'max-autotune'
+                model = compile(model, mode="reduce-overhead", fullgraph=False)
                 logger.info("Model successfully compiled!")
             except Exception as e:
                 logger.error(f"Error compiling model: {e}. Falling back to standard execution.")

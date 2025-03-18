@@ -46,7 +46,7 @@ except ImportError:
 
 # Try to import AMP
 try:
-    from torch.cuda.amp import autocast, GradScaler
+    from torch.amp import autocast, GradScaler
     AMP_AVAILABLE = True
 except ImportError:
     AMP_AVAILABLE = False
@@ -128,13 +128,19 @@ def train(args):
     device = torch.device('cuda' if torch.cuda.is_available() and not args.cpu else 'cpu')
     log_message(f"Using device: {device}")
 
+    # Get GPU info for Colab T4
+    if device.type == 'cuda':
+        log_message(f"GPU: {torch.cuda.get_device_name(0)}")
+        log_message(f"Memory allocated: {torch.cuda.memory_allocated(0) / 1e9:.2f} GB")
+        log_message(f"Memory cached: {torch.cuda.memory_reserved(0) / 1e9:.2f} GB")
+
     # Check if AMP can be used
     use_amp = args.use_amp and AMP_AVAILABLE and device.type == 'cuda'
     if args.use_amp and not use_amp:
         log_message("AMP requested but not available. Falling back to full precision.")
     if use_amp:
         log_message("Using Automatic Mixed Precision (AMP) training.")
-        scaler = GradScaler()
+        scaler = GradScaler('cuda')
     
     # Create model based on model_type
     if args.model_type == "unet":
@@ -173,10 +179,9 @@ def train(args):
     if use_compile:
         log_message("Using torch.compile to optimize model execution.")
         try:
-            # Choose mode based on GPU architecture
-            # 'reduce-overhead' is good for RTX GPUs
-            # Could also use 'max-autotune' for best performance at longer startup cost
-            model = compile(model, mode="reduce-overhead", fullgraph=True)
+            # For T4 GPUs in Colab, 'reduce-overhead' mode is typically best
+            # Avoid 'max-autotune' mode which can cause OOMs on T4s
+            model = compile(model, mode="reduce-overhead", fullgraph=False)
             log_message("Model successfully compiled!")
         except Exception as e:
             log_message(f"Error compiling model: {e}. Falling back to standard execution.")
@@ -213,21 +218,25 @@ def train(args):
         generator=torch.Generator().manual_seed(args.seed)
     )
     
-    # Create data loaders
+    # Create data loaders - Use smaller num_workers for Colab
+    actual_workers = min(args.num_workers, 2) if device.type == 'cuda' else args.num_workers
+    if actual_workers != args.num_workers:
+        log_message(f"Reducing workers from {args.num_workers} to {actual_workers} for Colab compatibility")
+    
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=args.num_workers,
-        pin_memory=True
+        num_workers=actual_workers,
+        pin_memory=(device.type == 'cuda')
     )
     
     val_loader = DataLoader(
         val_dataset,
         batch_size=args.batch_size,
         shuffle=False,
-        num_workers=args.num_workers,
-        pin_memory=True
+        num_workers=actual_workers,
+        pin_memory=(device.type == 'cuda')
     )
     
     # Create loss function and metrics
@@ -281,7 +290,7 @@ def train(args):
             optimizer.zero_grad()
             
             if use_amp:
-                with autocast():
+                with autocast('cuda'):
                     output = model(low_res)
                     loss = criterion(output, high_res)
                 
