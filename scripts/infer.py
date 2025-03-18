@@ -131,7 +131,7 @@ def postprocess_tensor(tensor):
     np_img = tensor_to_numpy(tensor)
     
     # Denormalize from [-1, 1] to [0, 1] using the consistent helper function
-    np_img = denormalize_from_range(np_img, source_range=(-1, 1), target_range=(0, 1))
+    np_img = denormalize_from_range(np_img, low=-1, high=1)
     
     # Convert to uint8 for PIL
     np_img = (np_img * 255).astype(np.uint8)

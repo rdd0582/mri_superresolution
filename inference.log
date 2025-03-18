@@ -3,3 +3,23 @@
 2025-03-18 16:11:18,294 - INFO - Loaded model from epoch 2
 2025-03-18 16:11:18,514 - INFO - Inference completed in 0.2112 seconds
 2025-03-18 16:11:18,533 - INFO - Saved output image to output.png
+2025-03-18 16:15:49,474 - INFO - Using device: cuda
+2025-03-18 16:15:49,474 - INFO - Using best model checkpoint: ./checkpoints\best_model_simple.pth
+2025-03-18 16:15:49,627 - INFO - Loaded model from epoch 2
+2025-03-18 16:15:49,851 - INFO - Inference completed in 0.2129 seconds
+2025-03-18 16:15:49,862 - ERROR - Error during inference: denormalize_from_range() got an unexpected keyword argument 'source_range'
+2025-03-18 16:16:49,782 - INFO - Using device: cuda
+2025-03-18 16:16:49,782 - INFO - Using best model checkpoint: ./checkpoints\best_model_simple.pth
+2025-03-18 16:16:49,924 - INFO - Loaded model from epoch 2
+2025-03-18 16:16:50,144 - INFO - Inference completed in 0.2101 seconds
+2025-03-18 16:16:50,145 - ERROR - Error during inference: denormalize_from_range() got an unexpected keyword argument 'source_range'
+2025-03-18 16:18:37,433 - INFO - Using device: cuda
+2025-03-18 16:18:37,433 - INFO - Using best model checkpoint: ./checkpoints\best_model_simple.pth
+2025-03-18 16:18:37,576 - INFO - Loaded model from epoch 2
+2025-03-18 16:18:37,798 - INFO - Inference completed in 0.2115 seconds
+2025-03-18 16:18:37,809 - INFO - Saved output image to output.png
+2025-03-18 16:20:12,402 - INFO - Using device: cuda
+2025-03-18 16:20:12,402 - INFO - Using best model checkpoint: ./checkpoints\best_model_simple.pth
+2025-03-18 16:20:12,541 - INFO - Loaded model from epoch 9
+2025-03-18 16:20:12,762 - INFO - Inference completed in 0.2111 seconds
+2025-03-18 16:20:12,773 - INFO - Saved output image to output.png
