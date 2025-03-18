@@ -32,15 +32,6 @@ except ImportError:
     AMP_AVAILABLE = False
     logger.warning("Automatic Mixed Precision not available. Using default precision.")
 
-# Check for torch.compile availability (torch 2.0+)
-try:
-    from torch import _dynamo
-    from torch import compile
-    COMPILE_AVAILABLE = True
-except ImportError:
-    COMPILE_AVAILABLE = False
-    logger.warning("torch.compile not available. Using standard model execution.")
-
 # Add the project root directory to the Python path
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
@@ -86,17 +77,9 @@ def load_model(model_type, checkpoint_path, device, **kwargs):
         # Handle different checkpoint formats
         if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
             state_dict = checkpoint['model_state_dict']
-            # Check if the state dict has keys with _orig_mod prefix (from torch.compile)
-            if any(k.startswith('_orig_mod.') for k in state_dict.keys()):
-                # Strip the _orig_mod prefix from all keys
-                state_dict = {k.replace('_orig_mod.', ''): v for k, v in state_dict.items()}
             model.load_state_dict(state_dict)
             logger.info(f"Loaded model from epoch {checkpoint.get('epoch', 'unknown')}")
         else:
-            # Check if the state dict has keys with _orig_mod prefix (from torch.compile)
-            if any(k.startswith('_orig_mod.') for k in checkpoint.keys()):
-                # Strip the _orig_mod prefix from all keys
-                checkpoint = {k.replace('_orig_mod.', ''): v for k, v in checkpoint.items()}
             model.load_state_dict(checkpoint)
             logger.info(f"Loaded model weights from {checkpoint_path}")
         
@@ -454,7 +437,7 @@ def main(args):
     if device.type == 'cuda':
         logger.info(f"GPU: {torch.cuda.get_device_name(0)}")
         logger.info(f"Memory allocated: {torch.cuda.memory_allocated(0) / 1e9:.2f} GB")
-        logger.info(f"Memory cached: {torch.cuda.memory_reserved(0) / 1e9:.2f} GB")
+        logger.info(f"Memory reserved: {torch.cuda.memory_reserved(0) / 1e9:.2f} GB")
     
     # Check if AMP can be used
     use_amp = args.use_amp and AMP_AVAILABLE and device.type == 'cuda'
@@ -479,85 +462,63 @@ def main(args):
             num_res_blocks=args.num_res_blocks
         )
         
-        # Apply torch.compile if requested and available
-        use_compile = args.use_compile and COMPILE_AVAILABLE and device.type == 'cuda'
-        if args.use_compile and not use_compile:
-            logger.warning("Model compilation requested but not available. Using standard execution.")
-        if use_compile:
-            logger.info("Using torch.compile to optimize model execution.")
-            try:
-                # For T4 GPUs on Colab, 'reduce-overhead' is safer than 'max-autotune'
-                model = compile(model, mode="reduce-overhead", fullgraph=False)
-                logger.info("Model successfully compiled!")
-            except Exception as e:
-                logger.error(f"Error compiling model: {e}. Falling back to standard execution.")
-                use_compile = False
-        
-        # Batch mode
+        # Process images
         if args.batch_mode:
-            if os.path.isdir(args.input_image):
-                process_batch(
-                    model,
-                    args.input_image,
-                    args.output_image,
-                    device,
-                    args.target_image if os.path.isdir(args.target_image) else None,
-                    args.save_visualizations,
-                    use_amp
-                )
-            else:
-                logger.warning("Batch mode specified but input is not a directory. Falling back to single image mode.")
-                process_single_image(
-                    model,
-                    args.input_image,
-                    args.output_image,
-                    args.target_image,
-                    device,
-                    args.show_comparison,
-                    args.show_diff,
-                    use_amp
-                )
-        # Single image mode
-        else:
-            process_single_image(
-                model,
-                args.input_image,
-                args.output_image,
-                args.target_image,
-                device,
-                args.show_comparison,
-                args.show_diff,
-                use_amp
+            # Process all images in the input directory
+            process_batch(
+                model=model,
+                input_dir=args.input,
+                output_dir=args.output,
+                device=device,
+                target_dir=args.target,
+                save_visualizations=args.save_visualizations,
+                use_amp=use_amp
             )
+        else:
+            # Process a single image
+            process_single_image(
+                model=model,
+                input_path=args.input,
+                output_path=args.output,
+                target_path=args.target,
+                device=device,
+                show_comparison=args.show_comparison,
+                show_diff=args.show_diff,
+                use_amp=use_amp
+            )
+            
+        logger.info("Inference completed successfully!")
+        return 0
     
     except Exception as e:
         logger.error(f"Error during inference: {e}")
-        raise
+        return 1
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="MRI Super-Resolution Inference")
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description="MRI quality enhancement inference")
     
-    # Input/output arguments
-    parser.add_argument('--input_image', type=str, required=True, 
-                        help="Path to input image or directory")
-    parser.add_argument('--output_image', type=str, default='output.png', 
-                        help="Path for output image or directory")
-    parser.add_argument('--target_image', type=str, default=None, 
-                        help="Optional path to ground truth image or directory")
+    # Paths
+    parser.add_argument('--input', type=str, required=True,
+                      help='Path to input image or directory')
+    parser.add_argument('--output', type=str, required=True,
+                      help='Path to output image or directory')
+    parser.add_argument('--target', type=str, default=None,
+                      help='Path to target image or directory (for comparison)')
+    parser.add_argument('--checkpoint_dir', type=str, default='./checkpoints',
+                      help='Directory containing model checkpoints')
     
-    # Model selection
-    parser.add_argument('--model_type', type=str, choices=['simple', 'edsr', 'unet'], default='unet', 
-                        help="Model architecture to use")
-    parser.add_argument('--checkpoint_dir', type=str, default='./checkpoints', 
-                        help="Directory containing model checkpoints")
+    # Model selection parameter
+    parser.add_argument('--model_type', type=str, choices=['simple', 'edsr', 'unet'], default='unet',
+                      help='Model architecture to use')
     
-    # Model parameters
-    parser.add_argument('--base_filters', type=int, default=64, 
-                        help="Number of base filters (for UNet)")
-    parser.add_argument('--num_features', type=int, default=64,
-                      help='Number of features in CNN or EDSR models')
+    # Model-specific parameters
+    parser.add_argument('--base_filters', type=int, default=64,
+                      help='Number of base filters in the UNet model')
     parser.add_argument('--scale', type=int, default=1,
                       help='Scale factor for EDSR model')
+    parser.add_argument('--num_features', type=int, default=64,
+                      help='Number of features for CNN/EDSR models')
     parser.add_argument('--num_blocks', type=int, default=8,
                       help='Number of residual blocks in CNN model')
     parser.add_argument('--num_res_blocks', type=int, default=16,
@@ -573,13 +534,12 @@ if __name__ == '__main__':
     parser.add_argument('--show_diff', action='store_true', 
                         help="Show difference map in visualization")
     parser.add_argument('--cpu', action='store_true', 
-                        help="Force CPU inference even if CUDA is available")
+                        help="Force using CPU even if CUDA is available")
+    parser.add_argument('--use_amp', action='store_true',
+                        help="Use Automatic Mixed Precision for faster inference on RTX GPUs")
     
-    # Performance options
-    parser.add_argument("--use_amp", action="store_true",
-                       help="Use Automatic Mixed Precision for inference on RTX GPUs")
-    parser.add_argument("--use_compile", action="store_true",
-                      help="Use torch.compile to optimize model execution on RTX GPUs")
-    
-    args = parser.parse_args()
+    return parser.parse_args()
+
+if __name__ == '__main__':
+    args = parse_args()
     main(args)

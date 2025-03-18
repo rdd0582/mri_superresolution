@@ -52,15 +52,6 @@ except ImportError:
     AMP_AVAILABLE = False
     logger.warning("Automatic Mixed Precision not available. Using default precision.")
 
-# Check for torch.compile availability (torch 2.0+)
-try:
-    from torch import _dynamo
-    from torch import compile
-    COMPILE_AVAILABLE = True
-except ImportError:
-    COMPILE_AVAILABLE = False
-    logger.warning("torch.compile not available. Using standard model execution.")
-
 def log_message(message, message_type="info"):
     """Log a message both to the logger and as JSON to stdout for the UI."""
     if isinstance(message, dict):
@@ -171,21 +162,6 @@ def train(args):
         raise ValueError(f"Unknown model type: {args.model_type}")
     
     model = model.to(device)
-    
-    # Apply torch.compile if requested and available
-    use_compile = args.use_compile and COMPILE_AVAILABLE and device.type == 'cuda'
-    if args.use_compile and not use_compile:
-        log_message("Model compilation requested but not available. Using standard execution.")
-    if use_compile:
-        log_message("Using torch.compile to optimize model execution.")
-        try:
-            # For T4 GPUs in Colab, 'reduce-overhead' mode is typically best
-            # Avoid 'max-autotune' mode which can cause OOMs on T4s
-            model = compile(model, mode="reduce-overhead", fullgraph=False)
-            log_message("Model successfully compiled!")
-        except Exception as e:
-            log_message(f"Error compiling model: {e}. Falling back to standard execution.")
-            use_compile = False
     
     # Create optimizer
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
@@ -477,8 +453,6 @@ def parse_args():
                       help='Use TensorBoard for logging')
     parser.add_argument('--use_amp', action='store_true',
                         help='Use Automatic Mixed Precision training for faster performance on RTX GPUs')
-    parser.add_argument('--use_compile', action='store_true',
-                        help='Use torch.compile to optimize model execution on RTX GPUs')
     parser.add_argument('--cpu', action='store_true',
                       help='Force using CPU even if CUDA is available')
     

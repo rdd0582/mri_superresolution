@@ -30,7 +30,6 @@ For using the RTX GPU optimizations:
 - NVIDIA RTX GPU (20xx series or later for best performance)
 - CUDA 11.0+
 - PyTorch 1.7+ for AMP (Automatic Mixed Precision)
-- PyTorch 2.0+ for torch.compile
 - Latest NVIDIA drivers
 
 ## Dataset
@@ -95,16 +94,14 @@ This project includes optimizations specifically for NVIDIA RTX GPUs:
 
 1. **Automatic Mixed Precision (AMP)**: Uses half-precision (FP16) operations where possible to leverage Tensor Cores on RTX GPUs, resulting in 2-3x speedup.
 
-2. **Model Compilation**: Uses PyTorch's compilation feature to further optimize execution through operation fusion and dispatch optimization.
-
 To enable these optimizations:
 
 ```bash
-# Training with RTX optimizations
-python scripts/train.py --model_type unet --use_amp --use_compile
+# Training with AMP optimizations
+python scripts/train.py --model_type unet --use_amp
 
-# Inference with RTX optimizations
-python scripts/infer.py --model_type unet --input_image ./input.png --use_amp --use_compile
+# Inference with AMP optimizations
+python scripts/infer.py --model_type unet --input_image ./input.png --use_amp
 ```
 
 See [RTX Optimization Guide](docs/RTX_OPTIMIZATION.md) for more details.
@@ -158,7 +155,7 @@ Train with RTX GPU optimizations:
 ```bash
 python scripts/train.py --full_res_dir ./training_data --low_res_dir ./training_data_1.5T \
   --model_type unet --base_filters 64 --validation_split 0.2 --ssim_weight 0.5 \
-  --batch_size 16 --epochs 50 --patience 10 --use_amp --use_compile
+  --batch_size 16 --epochs 50 --patience 10 --use_amp
 ```
 
 #### Inference
@@ -188,7 +185,7 @@ Run inference with RTX GPU optimizations:
 
 ```bash
 python scripts/infer.py --input_image ./input.png --output_image ./output.png \
-  --model_type unet --base_filters 64 --show_comparison --use_amp --use_compile
+  --model_type unet --base_filters 64 --show_comparison --use_amp
 ```
 
 To evaluate against a ground truth image:
