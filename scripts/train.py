@@ -7,6 +7,7 @@ import time
 import numpy as np
 import logging
 from pathlib import Path
+from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -42,6 +43,23 @@ try:
 except ImportError:
     TENSORBOARD_AVAILABLE = False
     logger.warning("TensorBoard not available. Install with: pip install tensorboard")
+
+# Try to import AMP
+try:
+    from torch.cuda.amp import autocast, GradScaler
+    AMP_AVAILABLE = True
+except ImportError:
+    AMP_AVAILABLE = False
+    logger.warning("Automatic Mixed Precision not available. Using default precision.")
+
+# Check for torch.compile availability (torch 2.0+)
+try:
+    from torch import _dynamo
+    from torch import compile
+    COMPILE_AVAILABLE = True
+except ImportError:
+    COMPILE_AVAILABLE = False
+    logger.warning("torch.compile not available. Using standard model execution.")
 
 def log_message(message, message_type="info"):
     """Log a message both to the logger and as JSON to stdout for the UI."""
@@ -110,6 +128,14 @@ def train(args):
     device = torch.device('cuda' if torch.cuda.is_available() and not args.cpu else 'cpu')
     log_message(f"Using device: {device}")
 
+    # Check if AMP can be used
+    use_amp = args.use_amp and AMP_AVAILABLE and device.type == 'cuda'
+    if args.use_amp and not use_amp:
+        log_message("AMP requested but not available. Falling back to full precision.")
+    if use_amp:
+        log_message("Using Automatic Mixed Precision (AMP) training.")
+        scaler = GradScaler()
+    
     # Create model based on model_type
     if args.model_type == "unet":
         from models.unet_model import UNetSuperRes
@@ -139,6 +165,22 @@ def train(args):
         raise ValueError(f"Unknown model type: {args.model_type}")
     
     model = model.to(device)
+    
+    # Apply torch.compile if requested and available
+    use_compile = args.use_compile and COMPILE_AVAILABLE and device.type == 'cuda'
+    if args.use_compile and not use_compile:
+        log_message("Model compilation requested but not available. Using standard execution.")
+    if use_compile:
+        log_message("Using torch.compile to optimize model execution.")
+        try:
+            # Choose mode based on GPU architecture
+            # 'reduce-overhead' is good for RTX GPUs
+            # Could also use 'max-autotune' for best performance at longer startup cost
+            model = compile(model, mode="reduce-overhead", fullgraph=True)
+            log_message("Model successfully compiled!")
+        except Exception as e:
+            log_message(f"Error compiling model: {e}. Falling back to standard execution.")
+            use_compile = False
     
     # Create optimizer
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
@@ -235,14 +277,25 @@ def train(args):
             low_res = low_res.to(device)
             high_res = high_res.to(device)
             
-            # Forward pass
+            # Forward pass with or without AMP
             optimizer.zero_grad()
-            output = model(low_res)
-            loss = criterion(output, high_res)
             
-            # Backward pass
-            loss.backward()
-            optimizer.step()
+            if use_amp:
+                with autocast():
+                    output = model(low_res)
+                    loss = criterion(output, high_res)
+                
+                # Backward pass with scaler
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                output = model(low_res)
+                loss = criterion(output, high_res)
+                
+                # Standard backward pass
+                loss.backward()
+                optimizer.step()
             
             # Update metrics
             train_loss += loss.item()
@@ -362,7 +415,8 @@ def train(args):
     
     return final_path
 
-if __name__ == '__main__':
+def parse_args():
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Train MRI quality enhancement model")
     
     # Data paths
@@ -412,6 +466,10 @@ if __name__ == '__main__':
                       help='Enable data augmentation')
     parser.add_argument('--use_tensorboard', action='store_true',
                       help='Use TensorBoard for logging')
+    parser.add_argument('--use_amp', action='store_true',
+                        help='Use Automatic Mixed Precision training for faster performance on RTX GPUs')
+    parser.add_argument('--use_compile', action='store_true',
+                        help='Use torch.compile to optimize model execution on RTX GPUs')
     parser.add_argument('--cpu', action='store_true',
                       help='Force using CPU even if CUDA is available')
     
@@ -421,5 +479,8 @@ if __name__ == '__main__':
     parser.add_argument('--log_dir', type=str, default='./logs',
                       help='Directory to save logs')
     
-    args = parser.parse_args()
+    return parser.parse_args()
+
+if __name__ == '__main__':
+    args = parse_args()
     train(args)

@@ -11,6 +11,24 @@ import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import numpy as np
 import logging
+import matplotlib.colors as colors
+
+# Try to import AMP
+try:
+    from torch.cuda.amp import autocast
+    AMP_AVAILABLE = True
+except ImportError:
+    AMP_AVAILABLE = False
+    logger.warning("Automatic Mixed Precision not available. Using default precision.")
+
+# Check for torch.compile availability (torch 2.0+)
+try:
+    from torch import _dynamo
+    from torch import compile
+    COMPILE_AVAILABLE = True
+except ImportError:
+    COMPILE_AVAILABLE = False
+    logger.warning("torch.compile not available. Using standard model execution.")
 
 # Configure logging
 logging.basicConfig(
@@ -221,140 +239,210 @@ def visualize_results(input_image, output_image, target_image=None, metrics=None
     
     plt.show()
 
-def process_single_image(model, input_path, output_path, target_path=None, device=None, show_comparison=False, show_diff=False):
-    """Process a single image through the model."""
-    if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+def process_single_image(model, input_path, output_path, target_path=None, device="cpu", 
+                        show_comparison=False, show_diff=False, use_amp=False):
+    """
+    Process a single image for super-resolution.
+    """
     # Load and preprocess input image
-    input_image, input_tensor = preprocess_image(input_path)
-    input_tensor = input_tensor.to(device)
+    image, tensor = preprocess_image(input_path)
+    tensor = tensor.to(device)
     
-    # Load target image if provided
-    target_image = None
+    # Process target image if provided
     target_tensor = None
-    if target_path:
-        try:
-            target_image, target_tensor = preprocess_image(target_path)
-            target_tensor = target_tensor.to(device)
-        except Exception as e:
-            logger.warning(f"Error loading target image: {e}")
+    if target_path and os.path.exists(target_path):
+        _, target_tensor = preprocess_image(target_path)
+        target_tensor = target_tensor.to(device)
     
-    # Run inference
+    # Model inference
+    model.eval()
     with torch.no_grad():
-        start_time = time.time()
-        output_tensor = model(input_tensor)
-        inference_time = time.time() - start_time
-        logger.info(f"Inference completed in {inference_time:.4f} seconds")
-    
-    # Convert output tensor to image
-    output_image = postprocess_tensor(output_tensor)
-    
-    # Save output image
-    output_image.save(output_path)
-    logger.info(f"Saved output image to {output_path}")
+        if use_amp and AMP_AVAILABLE and device.type == 'cuda':
+            with autocast():
+                output_tensor = model(tensor)
+        else:
+            output_tensor = model(tensor)
     
     # Calculate metrics if target is available
-    metrics = None
     if target_tensor is not None:
-        metrics = calculate_metrics(output_tensor.cpu(), target_tensor.cpu())
-        metrics['inference_time'] = inference_time
-        
-        # Log metrics
-        logger.info("\nImage Quality Metrics:")
-        for k, v in metrics.items():
-            logger.info(f"{k.upper()}: {v:.4f}")
+        metrics = calculate_metrics(output_tensor, target_tensor)
+        for metric_name, metric_value in metrics.items():
+            logger.info(f"{metric_name.upper()}: {metric_value:.4f}")
     
-    # Visualize results if requested
+    # Convert output tensor to image and save
+    output_image = postprocess_tensor(output_tensor)
+    output_image.save(output_path)
+    logger.info(f"Enhanced image saved to {output_path}")
+    
+    # Display comparison if requested
     if show_comparison:
-        visualize_results(
-            input_image, 
-            output_image, 
-            target_image, 
-            metrics, 
-            show_diff=show_diff
-        )
+        plt.figure(figsize=(12, 6))
+        plt.subplot(1, 3 if target_tensor is not None else 2, 1)
+        plt.title("Input (Low Quality)")
+        plt.imshow(np.array(image), cmap='gray')
+        plt.axis('off')
+        
+        plt.subplot(1, 3 if target_tensor is not None else 2, 2)
+        plt.title("Output (Enhanced)")
+        plt.imshow(np.array(output_image), cmap='gray')
+        plt.axis('off')
+        
+        if target_tensor is not None:
+            target_image = postprocess_tensor(target_tensor)
+            plt.subplot(1, 3, 3)
+            plt.title("Target (High Quality)")
+            plt.imshow(np.array(target_image), cmap='gray')
+            plt.axis('off')
+        
+        plt.tight_layout()
+        plt.show()
+    
+    # Show difference map if requested
+    if show_diff and target_tensor is not None:
+        target_image = postprocess_tensor(target_tensor)
+        
+        # Calculate difference
+        diff = np.abs(np.array(output_image).astype(np.float32) - 
+                     np.array(target_image).astype(np.float32))
+        
+        # Normalize and colorize difference
+        plt.figure(figsize=(12, 4))
+        plt.subplot(1, 3, 1)
+        plt.title("Enhanced Output")
+        plt.imshow(np.array(output_image), cmap='gray')
+        plt.axis('off')
+        
+        plt.subplot(1, 3, 2)
+        plt.title("Target")
+        plt.imshow(np.array(target_image), cmap='gray')
+        plt.axis('off')
+        
+        plt.subplot(1, 3, 3)
+        plt.title("Difference Map")
+        plt.imshow(diff, cmap='hot')
+        plt.colorbar(label='Absolute Difference')
+        plt.axis('off')
+        
+        plt.tight_layout()
+        plt.show()
     
     return output_image, metrics
 
-def process_batch(model, input_dir, output_dir, device=None, target_dir=None, save_viz=False):
-    """Process all images in a directory."""
-    if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
-    # Create output directory
+def process_batch(model, input_dir, output_dir, device, target_dir=None, save_visualizations=False, use_amp=False):
+    """Process a batch of images."""
     os.makedirs(output_dir, exist_ok=True)
     
-    # Get all image files
-    image_files = [f for f in os.listdir(input_dir) 
-                  if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff'))]
-    image_files.sort()
+    # Collect image paths
+    input_files = sorted([f for f in os.listdir(input_dir) 
+                         if f.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff'))])
     
-    if not image_files:
-        logger.warning(f"No image files found in {input_dir}")
-        return
-    
-    logger.info(f"Processing {len(image_files)} images...")
+    # Setup metrics collection
+    metrics_sum = {}
+    metrics_count = 0
     
     # Process each image
-    all_metrics = {}
-    for img_file in image_files:
+    start_time = time.time()
+    for i, img_file in enumerate(input_files):
         input_path = os.path.join(input_dir, img_file)
-        output_path = os.path.join(output_dir, f"sr_{img_file}")
+        output_path = os.path.join(output_dir, img_file)
         
-        # Check for target image
         target_path = None
-        if target_dir and os.path.exists(os.path.join(target_dir, img_file)):
-            target_path = os.path.join(target_dir, img_file)
+        if target_dir and os.path.exists(target_dir):
+            potential_target = os.path.join(target_dir, img_file)
+            if os.path.exists(potential_target):
+                target_path = potential_target
         
         # Process image
-        try:
-            _, metrics = process_single_image(
-                model, 
-                input_path, 
-                output_path, 
-                target_path, 
-                device, 
-                show_comparison=False
-            )
-            
-            # Save metrics
-            if metrics:
-                all_metrics[img_file] = metrics
-            
-            # Create visualization if requested
-            if save_viz and target_path:
-                viz_path = os.path.join(output_dir, f"viz_{img_file}")
-                input_image, _ = preprocess_image(input_path)
-                output_image = Image.open(output_path)
-                target_image, _ = preprocess_image(target_path)
-                
-                visualize_results(
-                    input_image,
-                    output_image,
-                    target_image,
-                    metrics,
-                    show_diff=True,
-                    save_path=viz_path
-                )
+        logger.info(f"Processing {i+1}/{len(input_files)}: {img_file}")
         
-        except Exception as e:
-            logger.error(f"Error processing {img_file}: {e}")
+        # Load and preprocess input image
+        _, tensor = preprocess_image(input_path)
+        tensor = tensor.to(device)
+        
+        # Process target image if provided
+        target_tensor = None
+        if target_path:
+            _, target_tensor = preprocess_image(target_path)
+            target_tensor = target_tensor.to(device)
+        
+        # Model inference
+        model.eval()
+        with torch.no_grad():
+            if use_amp and AMP_AVAILABLE and device.type == 'cuda':
+                with autocast():
+                    output_tensor = model(tensor)
+            else:
+                output_tensor = model(tensor)
+        
+        # Calculate metrics if target is available
+        if target_tensor is not None:
+            metrics = calculate_metrics(output_tensor, target_tensor)
+            for metric_name, metric_value in metrics.items():
+                if metric_name not in metrics_sum:
+                    metrics_sum[metric_name] = 0.0
+                metrics_sum[metric_name] += metric_value
+            metrics_count += 1
+        
+        # Convert output tensor to image and save
+        output_image = postprocess_tensor(output_tensor)
+        output_image.save(output_path)
+        
+        # Save comparisons if requested
+        if save_visualizations and target_tensor is not None:
+            vis_dir = os.path.join(output_dir, "comparisons")
+            os.makedirs(vis_dir, exist_ok=True)
+            
+            # Create comparison visualization
+            plt.figure(figsize=(12, 4))
+            
+            # Input
+            plt.subplot(1, 3, 1)
+            plt.title("Input (Low Quality)")
+            input_img = Image.open(input_path).convert('L')
+            plt.imshow(np.array(input_img), cmap='gray')
+            plt.axis('off')
+            
+            # Output
+            plt.subplot(1, 3, 2)
+            plt.title("Output (Enhanced)")
+            plt.imshow(np.array(output_image), cmap='gray')
+            plt.axis('off')
+            
+            # Target
+            plt.subplot(1, 3, 3)
+            plt.title("Target (High Quality)")
+            target_img = Image.open(target_path).convert('L')
+            plt.imshow(np.array(target_img), cmap='gray')
+            plt.axis('off')
+            
+            plt.tight_layout()
+            plt.savefig(os.path.join(vis_dir, f"compare_{img_file}"))
+            plt.close()
     
-    # Save all metrics to JSON
-    if all_metrics:
-        metrics_path = os.path.join(output_dir, "metrics.json")
-        with open(metrics_path, 'w') as f:
-            json.dump(all_metrics, f, indent=2)
-        logger.info(f"Saved metrics to {metrics_path}")
+    # Calculate and report average metrics
+    if metrics_count > 0:
+        logger.info("===== Average Metrics =====")
+        for metric_name, metric_sum in metrics_sum.items():
+            avg_value = metric_sum / metrics_count
+            logger.info(f"Average {metric_name.upper()}: {avg_value:.4f}")
     
-    logger.info(f"Batch processing complete. Results saved to {output_dir}")
+    # Report processing time
+    elapsed = time.time() - start_time
+    logger.info(f"Processed {len(input_files)} images in {elapsed:.2f} seconds "
+               f"({len(input_files)/elapsed:.2f} images/sec)")
 
 def main(args):
     """Main inference function."""
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() and not args.cpu else "cpu")
     logger.info(f"Using device: {device}")
+    
+    # Check if AMP can be used
+    use_amp = args.use_amp and AMP_AVAILABLE and device.type == 'cuda'
+    if args.use_amp and not use_amp:
+        logger.warning("AMP requested but not available. Falling back to full precision.")
+    if use_amp:
+        logger.info("Using Automatic Mixed Precision (AMP) for inference.")
     
     try:
         # Find checkpoint
@@ -372,6 +460,20 @@ def main(args):
             num_res_blocks=args.num_res_blocks
         )
         
+        # Apply torch.compile if requested and available
+        use_compile = args.use_compile and COMPILE_AVAILABLE and device.type == 'cuda'
+        if args.use_compile and not use_compile:
+            logger.warning("Model compilation requested but not available. Using standard execution.")
+        if use_compile:
+            logger.info("Using torch.compile to optimize model execution.")
+            try:
+                # For inference, 'reduce-overhead' mode is good for RTX GPUs
+                model = compile(model, mode="reduce-overhead", fullgraph=True)
+                logger.info("Model successfully compiled!")
+            except Exception as e:
+                logger.error(f"Error compiling model: {e}. Falling back to standard execution.")
+                use_compile = False
+        
         # Batch mode
         if args.batch_mode:
             if os.path.isdir(args.input_image):
@@ -381,7 +483,8 @@ def main(args):
                     args.output_image,
                     device,
                     args.target_image if os.path.isdir(args.target_image) else None,
-                    args.save_visualizations
+                    args.save_visualizations,
+                    use_amp
                 )
             else:
                 logger.warning("Batch mode specified but input is not a directory. Falling back to single image mode.")
@@ -392,7 +495,8 @@ def main(args):
                     args.target_image,
                     device,
                     args.show_comparison,
-                    args.show_diff
+                    args.show_diff,
+                    use_amp
                 )
         # Single image mode
         else:
@@ -403,7 +507,8 @@ def main(args):
                 args.target_image,
                 device,
                 args.show_comparison,
-                args.show_diff
+                args.show_diff,
+                use_amp
             )
     
     except Exception as e:
@@ -450,6 +555,12 @@ if __name__ == '__main__':
                         help="Show difference map in visualization")
     parser.add_argument('--cpu', action='store_true', 
                         help="Force CPU inference even if CUDA is available")
+    
+    # Performance options
+    parser.add_argument("--use_amp", action="store_true",
+                       help="Use Automatic Mixed Precision for inference on RTX GPUs")
+    parser.add_argument("--use_compile", action="store_true",
+                      help="Use torch.compile to optimize model execution on RTX GPUs")
     
     args = parser.parse_args()
     main(args)
