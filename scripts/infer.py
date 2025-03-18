@@ -151,7 +151,7 @@ def calculate_metrics(output_tensor, target_tensor):
     
     try:
         # Calculate SSIM
-        ssim_metric = SSIM(window_size=11, sigma=1.5, val_range=2.0, data_range='normalized')
+        ssim_metric = SSIM(window_size=11, sigma=1.5, val_range=2.0)
         metrics['ssim'] = ssim_metric(output_tensor, target_tensor).item()
         
         # Calculate MSE and MAE

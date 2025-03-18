@@ -16,7 +16,6 @@ class MRISuperResDataset(Dataset):
     - Improved augmentation pipeline
     - Support for different input/output sizes
     - Consistent normalization
-    - Subject-aware splitting
     - Metadata tracking
     """
     def __init__(self, full_res_dir, low_res_dir, transform=None, augmentation=True,
@@ -95,14 +94,14 @@ class MRISuperResDataset(Dataset):
         self.cache = {}
     
     def __len__(self):
-        return len(self.valid_pairs)
+        return len(self.full_res_files)
     
     def __getitem__(self, idx):
         # Check if item is in cache
         if idx in self.cache:
             return self.cache[idx]
         
-        filename = self.valid_pairs[idx]
+        filename = self.full_res_files[idx]
         full_res_path = os.path.join(self.full_res_dir, filename)
         low_res_path = os.path.join(self.low_res_dir, filename)
         
@@ -194,110 +193,3 @@ class MRISuperResDataset(Dataset):
         Get list of unique subject IDs in the dataset.
         """
         return list(set(self.subjects))
-
-def create_subject_aware_split(dataset, val_ratio=0.2, test_ratio=0.1, seed=42):
-    """
-    Create train/validation/test splits that keep all slices from the same subject together.
-    
-    Args:
-        dataset: MRISuperResDataset instance
-        val_ratio: Ratio of validation data
-        test_ratio: Ratio of test data
-        seed: Random seed for reproducibility
-        
-    Returns:
-        train_dataset, val_dataset, test_dataset
-    """
-    random.seed(seed)
-    
-    # Get unique subjects
-    subjects = dataset.get_unique_subjects()
-    random.shuffle(subjects)
-    
-    # Calculate split points
-    n_subjects = len(subjects)
-    n_val = max(1, int(n_subjects * val_ratio))
-    n_test = max(1, int(n_subjects * test_ratio))
-    n_train = n_subjects - n_val - n_test
-    
-    # Split subjects
-    train_subjects = subjects[:n_train]
-    val_subjects = subjects[n_train:n_train+n_val]
-    test_subjects = subjects[n_train+n_val:]
-    
-    # Get indices for each split
-    train_indices = []
-    val_indices = []
-    test_indices = []
-    
-    for i, subject in enumerate(dataset.subjects):
-        if subject in train_subjects:
-            train_indices.append(i)
-        elif subject in val_subjects:
-            val_indices.append(i)
-        elif subject in test_subjects:
-            test_indices.append(i)
-    
-    # Create subset datasets
-    train_dataset = Subset(dataset, train_indices)
-    val_dataset = Subset(dataset, val_indices)
-    test_dataset = Subset(dataset, test_indices)
-    
-    print(f"Split dataset into {len(train_dataset)} training, {len(val_dataset)} validation, "
-          f"and {len(test_dataset)} test samples.")
-    print(f"Using {len(train_subjects)} subjects for training, {len(val_subjects)} for validation, "
-          f"and {len(test_subjects)} for testing.")
-    
-    return train_dataset, val_dataset, test_dataset
-
-class PatchDataset(Dataset):
-    """
-    Dataset that extracts patches from MRI images for training.
-    This can be useful for training on smaller patches rather than full slices.
-    """
-    def __init__(self, base_dataset, patch_size=64, stride=32, transform=None):
-        """
-        Args:
-            base_dataset: Base dataset to extract patches from
-            patch_size: Size of patches to extract
-            stride: Stride between patches
-            transform: Additional transforms to apply to patches
-        """
-        self.base_dataset = base_dataset
-        self.patch_size = patch_size
-        self.stride = stride
-        self.transform = transform
-        
-        # Pre-compute patch indices
-        self.patches = []
-        for idx in range(len(base_dataset)):
-            low_res, full_res = base_dataset[idx]
-            h, w = low_res.shape[1], low_res.shape[2]
-            
-            # Calculate number of patches
-            n_h = max(1, (h - patch_size) // stride + 1)
-            n_w = max(1, (w - patch_size) // stride + 1)
-            
-            for i in range(n_h):
-                for j in range(n_w):
-                    y = min(i * stride, h - patch_size)
-                    x = min(j * stride, w - patch_size)
-                    self.patches.append((idx, y, x))
-    
-    def __len__(self):
-        return len(self.patches)
-    
-    def __getitem__(self, idx):
-        base_idx, y, x = self.patches[idx]
-        low_res, full_res = self.base_dataset[base_idx]
-        
-        # Extract patch
-        low_patch = low_res[:, y:y+self.patch_size, x:x+self.patch_size]
-        full_patch = full_res[:, y:y+self.patch_size, x:x+self.patch_size]
-        
-        # Apply additional transform if provided
-        if self.transform:
-            low_patch = self.transform(low_patch)
-            full_patch = self.transform(full_patch)
-        
-        return low_patch, full_patch

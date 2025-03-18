@@ -10,7 +10,7 @@ if project_root not in sys.path:
 import nibabel as nib
 import numpy as np
 import cv2  # Still needed if any cv2-specific operations are required
-from utils.preprocessing import preprocess_slice  # Import common preprocessing functions
+from utils.preprocessing import preprocess_slice, InterpolationMethod  # Import common preprocessing functions
 
 import argparse
 
@@ -39,8 +39,18 @@ def extract_slices_3d(data, subject, output_dir, timepoint=None,
 
     for idx in slice_indices:
         slice_data = data[:, :, idx]
-        processed_slice = preprocess_slice(slice_data, target_size=target_size)
+        # Skip slices with too much background
+        if white_ratio > max_white_ratio:
+            continue
         
+        # Process slice
+        processed_slice = preprocess_slice(
+            slice_data, 
+            target_size=target_size,
+            interpolation=InterpolationMethod.CUBIC
+        )
+        
+        # Generate filename
         filename = generate_filename(subject, idx, timepoint)
         output_path = os.path.join(output_dir, filename)
         cv2.imwrite(output_path, processed_slice)

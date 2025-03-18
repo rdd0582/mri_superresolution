@@ -1,0 +1,5 @@
+2025-03-18 16:11:18,142 - INFO - Using device: cuda
+2025-03-18 16:11:18,143 - INFO - Using best model checkpoint: ./checkpoints\best_model_simple.pth
+2025-03-18 16:11:18,294 - INFO - Loaded model from epoch 2
+2025-03-18 16:11:18,514 - INFO - Inference completed in 0.2112 seconds
+2025-03-18 16:11:18,533 - INFO - Saved output image to output.png

@@ -223,235 +223,100 @@ def apply_windowing(image: np.ndarray,
     
     return windowed
 
-def preprocess_slice(slice_data: np.ndarray,
-                     target_size: Optional[Tuple[int, int]] = None,
-                     resize_method: ResizeMethod = ResizeMethod.LETTERBOX,
-                     normalize: bool = True,
-                     equalize: bool = False,
-                     apply_window: bool = False,
-                     window_params: Optional[Dict] = None,
-                     to_uint8: bool = True,
-                     interpolation: InterpolationMethod = InterpolationMethod.AREA) -> np.ndarray:
+def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMethod.CUBIC,
+                     equalize=False, window_center=None, window_width=None, 
+                     min_percentile=0.5, max_percentile=99.5, resize_method=ResizeMethod.LETTERBOX):
     """
-    Comprehensive preprocessing pipeline for MRI slices.
+    Process a single MRI slice with options for normalization, windowing, and resizing.
     
     Args:
-        slice_data: Input slice data
-        target_size: Target size as (width, height)
-        resize_method: Method to use for resizing
-        normalize: Whether to apply robust normalization
-        equalize: Whether to apply histogram equalization
-        apply_window: Whether to apply intensity windowing
-        window_params: Parameters for windowing (center, width)
-        to_uint8: Whether to convert to uint8
+        slice_data: 2D numpy array with the MRI slice data
+        target_size: Target size as (width, height) or None to skip resizing
         interpolation: Interpolation method for resizing
+        equalize: Whether to apply histogram equalization
+        window_center: Center of intensity window (None for auto)
+        window_width: Width of intensity window (None for auto)
+        min_percentile: Minimum percentile for auto-windowing
+        max_percentile: Maximum percentile for auto-windowing
+        resize_method: Method for resizing (letterbox, crop, stretch, pad)
         
     Returns:
-        Preprocessed slice
+        Processed slice as float32 array with values in [0, 1]
     """
     # Make a copy to avoid modifying the original
-    processed = slice_data.copy()
+    processed = slice_data.astype(np.float32)
     
-    # Apply normalization if requested
-    if normalize:
-        processed = robust_normalize(processed)
-    
-    # Apply windowing if requested
-    if apply_window and window_params is not None:
-        center = window_params.get('center', 0.5)
-        width = window_params.get('width', 1.0)
+    # Apply windowing if requested (auto or manual)
+    if window_center is not None and window_width is not None:
+        center, width = window_center, window_width
         processed = apply_windowing(processed, center, width)
-    
-    # Convert to uint8 if requested
-    if to_uint8:
-        processed = np.clip(processed * 255, 0, 255).astype(np.uint8)
+    else:
+        # Auto-windowing using percentiles
+        min_val = np.percentile(processed, min_percentile)
+        max_val = np.percentile(processed, max_percentile)
+        processed = np.clip(processed, min_val, max_val)
+
+    # Normalize to [0, 1]
+    min_val, max_val = processed.min(), processed.max()
+    if max_val > min_val:
+        processed = (processed - min_val) / (max_val - min_val)
     
     # Apply histogram equalization if requested
     if equalize:
-        if processed.dtype != np.uint8:
-            processed = np.clip(processed * 255, 0, 255).astype(np.uint8)
         processed = histogram_equalization(processed, adaptive=True)
     
-    # Handle resizing
-    if target_size is not None:
+    # Resize if target size is provided
+    if target_size:
         if resize_method == ResizeMethod.LETTERBOX:
             processed = letterbox_resize(processed, target_size, interpolation)
         elif resize_method == ResizeMethod.CROP:
             processed = center_crop(processed, target_size)
-        elif resize_method == ResizeMethod.STRETCH:
-            processed = cv2.resize(processed, target_size, interpolation=interpolation.value)
         elif resize_method == ResizeMethod.PAD:
             processed = pad_to_size(processed, target_size)
-    elif processed.shape[0] != processed.shape[1]:
-        # If no target size provided but image is not square, make it square
-        max_dim = max(processed.shape)
-        if resize_method == ResizeMethod.LETTERBOX:
+        elif resize_method == ResizeMethod.STRETCH:
+            # Simple resize that may change aspect ratio
+            processed = cv2.resize(processed, target_size, 
+                                 interpolation=interpolation.value)
+        else:
+            # Use letterbox as default fallback
+            max_dim = max(target_size)
             processed = letterbox_resize(processed, (max_dim, max_dim), interpolation)
-        elif resize_method == ResizeMethod.PAD:
             processed = pad_to_size(processed, (max_dim, max_dim))
     
     return processed
 
-def simulate_low_resolution(image: np.ndarray, 
-                            scale_factor: float = 0.5,
-                            noise_level: float = 0.01,
-                            blur_sigma: float = 0.5,
-                            add_artifacts: bool = False) -> np.ndarray:
-    """
-    Simulate a low-resolution image from a high-resolution one.
-    
-    Args:
-        image: High-resolution input image
-        scale_factor: Scale factor for downsampling
-        noise_level: Standard deviation of noise to add
-        blur_sigma: Sigma for Gaussian blur
-        add_artifacts: Whether to add simulated artifacts
-        
-    Returns:
-        Simulated low-resolution image
-    """
-    # Apply Gaussian blur
-    blurred = ndimage.gaussian_filter(image.astype(np.float32), sigma=blur_sigma)
-    
-    # Downsample
-    h, w = image.shape
-    new_h, new_w = int(h * scale_factor), int(w * scale_factor)
-    downsampled = cv2.resize(blurred, (new_w, new_h), interpolation=cv2.INTER_AREA)
-    
-    # Add Rician noise (common in MRI)
-    if noise_level > 0:
-        noise1 = np.random.normal(0, noise_level, downsampled.shape)
-        noise2 = np.random.normal(0, noise_level, downsampled.shape)
-        downsampled = np.sqrt((downsampled + noise1)**2 + noise2**2)
-    
-    # Add simulated artifacts if requested
-    if add_artifacts:
-        # Simulate motion artifacts (horizontal lines)
-        if np.random.random() < 0.3:
-            num_lines = np.random.randint(1, 5)
-            for _ in range(num_lines):
-                line_pos = np.random.randint(0, new_h)
-                line_width = np.random.randint(1, 3)
-                line_intensity = np.random.uniform(0.8, 1.2)
-                downsampled[line_pos:line_pos+line_width, :] *= line_intensity
-        
-        # Simulate intensity non-uniformity
-        if np.random.random() < 0.3:
-            x, y = np.meshgrid(np.linspace(-1, 1, new_w), np.linspace(-1, 1, new_h))
-            bias_field = 1 + 0.1 * np.random.random() * (x**2 + y**2)
-            downsampled *= bias_field
-    
-    # Upsample back to original size
-    upsampled = cv2.resize(downsampled, (w, h), interpolation=cv2.INTER_LINEAR)
-    
-    # Ensure values are in valid range
-    upsampled = np.clip(upsampled, 0, 1) if image.dtype == np.float32 else np.clip(upsampled, 0, 255)
-    
-    return upsampled.astype(image.dtype)
-
-def batch_preprocess(images: List[np.ndarray], **kwargs) -> List[np.ndarray]:
-    """
-    Apply preprocessing to a batch of images with the same parameters.
-    
-    Args:
-        images: List of input images
-        **kwargs: Preprocessing parameters passed to preprocess_slice
-        
-    Returns:
-        List of preprocessed images
-    """
-    return [preprocess_slice(img, **kwargs) for img in images]
-
-def tensor_to_numpy(tensor: torch.Tensor) -> np.ndarray:
-    """
-    Convert a PyTorch tensor to a NumPy array.
-    
-    Args:
-        tensor: Input tensor (C,H,W) or (B,C,H,W)
-        
-    Returns:
-        NumPy array with same data, potentially reordered channels for visualization
-    """
-    if tensor.is_cuda:
+def tensor_to_numpy(tensor):
+    """Convert a PyTorch tensor to a numpy array, handling device and shape."""
+    # Move to CPU if on another device
+    if tensor.device.type != 'cpu':
         tensor = tensor.cpu()
     
-    if tensor.requires_grad:
-        tensor = tensor.detach()
-        
-    if tensor.ndim == 3:  # C,H,W
-        return tensor.numpy().transpose(1, 2, 0)
-    elif tensor.ndim == 4:  # B,C,H,W
-        return tensor.numpy().transpose(0, 2, 3, 1)
+    # Convert to numpy and handle channel dimension
+    if tensor.ndim == 4:  # batch, channel, height, width
+        img = tensor.squeeze(0).squeeze(0).numpy()
+    elif tensor.ndim == 3:  # channel, height, width
+        img = tensor.squeeze(0).numpy() 
     else:
-        return tensor.numpy()
-
-def normalize_to_range(data, source_range=None, target_range=(-1, 1)):
-    """
-    Normalize data from source range to target range.
-    
-    This function helps ensure consistent normalization across the project.
-    
-    Args:
-        data: Input data (numpy array or torch tensor)
-        source_range: Source data range as (min, max). If None, uses (data.min(), data.max())
-        target_range: Target range as (min, max). Default is (-1, 1) for model input
+        img = tensor.numpy()
         
-    Returns:
-        Normalized data in the target range
-    """
-    if source_range is None:
-        if isinstance(data, torch.Tensor):
-            source_min = data.min().item()
-            source_max = data.max().item()
-        else:
-            source_min = data.min()
-            source_max = data.max()
-        source_range = (source_min, source_max)
-    
-    source_min, source_max = source_range
-    target_min, target_max = target_range
-    
-    # Avoid division by zero
-    if source_min == source_max:
-        return data * 0 + target_min
-    
-    # Scale to [0, 1]
-    normalized = (data - source_min) / (source_max - source_min)
-    
-    # Scale to target range
-    normalized = normalized * (target_max - target_min) + target_min
-    
-    return normalized
+    return img
 
-def denormalize_from_range(data, source_range=(-1, 1), target_range=(0, 1)):
-    """
-    Denormalize data from source range to target range.
-    
-    This is the inverse operation of normalize_to_range.
-    
-    Args:
-        data: Input data (numpy array or torch tensor)
-        source_range: Source normalized range as (min, max). Default is (-1, 1)
-        target_range: Target range as (min, max). Default is (0, 1) for visualization
-        
-    Returns:
-        Denormalized data in the target range
-    """
-    return normalize_to_range(data, source_range, target_range)
+def denormalize_from_range(tensor, low=-1.0, high=1.0):
+    """Denormalize tensor from [low, high] to [0, 1]."""
+    # Convert to float32 range [0, 1]
+    return (tensor - low) / (high - low)
 
-def numpy_to_tensor(array: np.ndarray) -> torch.Tensor:
-    """
-    Convert a numpy array to a PyTorch tensor.
+def numpy_to_tensor(array, device='cpu'):
+    """Convert a numpy array to a PyTorch tensor with proper channel dimensions."""
+    # Ensure array is float32
+    if array.dtype != np.float32:
+        array = array.astype(np.float32)
     
-    Args:
-        array: Input array (H,W,C) or (H,W)
+    # Add channel dimension if needed
+    if array.ndim == 2:
+        array = array[np.newaxis, ...]
         
-    Returns:
-        PyTorch tensor (C,H,W)
-    """
-    if array.ndim == 3:  # H,W,C
-        return torch.from_numpy(array.transpose(2, 0, 1))
-    elif array.ndim == 4:  # B,H,W,C
-        return torch.from_numpy(array.transpose(0, 3, 1, 2))
-    else:
-        return torch.from_numpy(array)
+    # Convert to tensor and move to device
+    tensor = torch.from_numpy(array).to(device)
+    
+    return tensor
