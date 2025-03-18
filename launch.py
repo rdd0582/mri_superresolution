@@ -187,10 +187,14 @@ def handle_selection(stdscr, selection):
         
         if model_type.lower() == "edsr":
             scale = get_user_input(stdscr, "Scale factor (EDSR)", "1")
-            params += ["--scale", scale]
+            num_res_blocks = get_user_input(stdscr, "Number of residual blocks (EDSR)", "16")
+            params += ["--scale", scale, "--num_res_blocks", num_res_blocks]
         elif model_type.lower() == "unet":
             base_filters = get_user_input(stdscr, "Base filters for U-Net", "64")
             params += ["--base_filters", base_filters]
+        elif model_type.lower() == "simple":
+            num_blocks = get_user_input(stdscr, "Number of residual blocks (CNN)", "8")
+            params += ["--num_blocks", num_blocks]
         
         # For training, we expect structured logging (JSON messages).
         launch_script(stdscr, "scripts/train.py", params, structured=True)
@@ -218,11 +222,15 @@ def handle_selection(stdscr, selection):
             
         if model_type.lower() == "edsr":
             scale = get_user_input(stdscr, "Scale factor (EDSR)", "1")
-            params += ["--scale", scale]
+            num_res_blocks = get_user_input(stdscr, "Number of residual blocks (EDSR)", "16")
+            params += ["--scale", scale, "--num_res_blocks", num_res_blocks]
         elif model_type.lower() == "unet":
             base_filters = get_user_input(stdscr, "Base filters for U-Net", "64")
             params += ["--base_filters", base_filters]
-            
+        elif model_type.lower() == "simple":
+            num_blocks = get_user_input(stdscr, "Number of residual blocks (CNN)", "8")
+            params += ["--num_blocks", num_blocks]
+        
         launch_script(stdscr, "scripts/infer.py", params, structured=False)
     elif selection == "Exit":
         raise SystemExit

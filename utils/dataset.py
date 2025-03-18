@@ -8,6 +8,7 @@ import torchvision.transforms.functional as TF
 import torchvision.transforms as transforms
 import torch
 import re
+import logging
 
 class MRISuperResDataset(Dataset):
     """
@@ -110,10 +111,11 @@ class MRISuperResDataset(Dataset):
             full_image = Image.open(full_res_path).convert("L")
             low_image = Image.open(low_res_path).convert("L")
         except Exception as e:
-            print(f"Error loading images for {filename}: {e}")
-            # Return a placeholder if image loading fails
-            placeholder = torch.zeros((1, 256, 256))
-            return placeholder, placeholder
+            error_msg = f"Error loading images for {filename} at paths: {full_res_path} and {low_res_path}. Error: {e}"
+            print(error_msg)
+            logging.error(error_msg)
+            # Raise exception instead of returning placeholder to avoid silent failures
+            raise RuntimeError(error_msg)
         
         # Apply augmentation if enabled
         if self.augmentation:

@@ -48,14 +48,16 @@ def load_model(model_type, checkpoint_path, device, **kwargs):
                 in_channels=1,
                 out_channels=1,
                 scale=kwargs.get('scale', 1),
-                num_features=kwargs.get('num_features', 64)
+                num_features=kwargs.get('num_features', 64),
+                num_res_blocks=kwargs.get('num_res_blocks', 16)
             ).to(device)
         elif model_type == "simple":
             from models.cnn_model import CNNSuperRes
             model = CNNSuperRes(
                 in_channels=1,
                 out_channels=1,
-                num_features=kwargs.get('num_features', 64)
+                num_features=kwargs.get('num_features', 64),
+                num_blocks=kwargs.get('num_blocks', 8)
             ).to(device)
         else:
             raise ValueError(f"Unknown model type: {model_type}")
@@ -367,7 +369,9 @@ def main(args):
             device,
             base_filters=args.base_filters,
             num_features=args.num_features,
-            scale=args.scale
+            scale=args.scale,
+            num_blocks=args.num_blocks,
+            num_res_blocks=args.num_res_blocks
         )
         
         # Batch mode
@@ -428,10 +432,14 @@ if __name__ == '__main__':
     # Model parameters
     parser.add_argument('--base_filters', type=int, default=64, 
                         help="Number of base filters (for UNet)")
-    parser.add_argument('--num_features', type=int, default=64, 
-                        help="Number of features (for CNN/EDSR)")
-    parser.add_argument('--scale', type=int, default=1, 
-                        help="Upscaling factor (usually 1 for same-resolution enhancement)")
+    parser.add_argument('--num_features', type=int, default=64,
+                      help='Number of features in CNN or EDSR models')
+    parser.add_argument('--scale', type=int, default=1,
+                      help='Scale factor for EDSR model')
+    parser.add_argument('--num_blocks', type=int, default=8,
+                      help='Number of residual blocks in CNN model')
+    parser.add_argument('--num_res_blocks', type=int, default=16,
+                      help='Number of residual blocks in EDSR model')
     
     # Inference options
     parser.add_argument('--batch_mode', action='store_true', 

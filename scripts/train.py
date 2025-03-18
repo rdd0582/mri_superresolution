@@ -23,7 +23,6 @@ if project_root not in sys.path:
 # Import project modules
 from utils.dataset import MRISuperResDataset
 from utils.losses import CombinedLoss, PSNR, SSIM
-from models.unet_model import UNetSuperRes
 
 # Configure logging
 logging.basicConfig(
@@ -111,12 +110,34 @@ def train(args):
     device = torch.device('cuda' if torch.cuda.is_available() and not args.cpu else 'cpu')
     log_message(f"Using device: {device}")
 
-    # Create model
-    model = UNetSuperRes(
-        in_channels=1,
-        out_channels=1,
-        base_filters=args.base_filters
-    )
+    # Create model based on model_type
+    if args.model_type == "unet":
+        from models.unet_model import UNetSuperRes
+        model = UNetSuperRes(
+            in_channels=1,
+            out_channels=1,
+            base_filters=args.base_filters
+        )
+    elif args.model_type == "edsr":
+        from models.edsr_model import EDSRSuperRes
+        model = EDSRSuperRes(
+            in_channels=1,
+            out_channels=1,
+            scale=args.scale,
+            num_features=args.num_features,
+            num_res_blocks=args.num_res_blocks
+        )
+    elif args.model_type == "simple":
+        from models.cnn_model import CNNSuperRes
+        model = CNNSuperRes(
+            in_channels=1,
+            out_channels=1,
+            num_features=args.num_features,
+            num_blocks=args.num_blocks
+        )
+    else:
+        raise ValueError(f"Unknown model type: {args.model_type}")
+    
     model = model.to(device)
     
     # Create optimizer
@@ -185,8 +206,7 @@ def train(args):
     # Log training parameters
     log_message({
         "type": "params",
-        "model_type": "unet",
-        "base_filters": args.base_filters,
+        "model_type": args.model_type,
         "batch_size": args.batch_size,
         "epochs": args.epochs,
         "learning_rate": args.learning_rate,
@@ -315,7 +335,7 @@ def train(args):
             patience_counter = 0
             
             # Save model checkpoint
-            checkpoint_path = os.path.join(args.checkpoint_dir, f'best_model_unet.pth')
+            checkpoint_path = os.path.join(args.checkpoint_dir, f'best_model_{args.model_type}.pth')
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -335,7 +355,7 @@ def train(args):
             break
     
     # Save final model
-    final_path = os.path.join(args.checkpoint_dir, f'final_model_unet.pth')
+    final_path = os.path.join(args.checkpoint_dir, f'final_model_{args.model_type}.pth')
     torch.save({
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
@@ -361,9 +381,21 @@ if __name__ == '__main__':
     parser.add_argument('--low_res_dir', type=str, required=True,
                       help='Directory containing low-quality MRI slices')
     
-    # Model parameters
+    # Model selection parameter
+    parser.add_argument('--model_type', type=str, choices=['simple', 'edsr', 'unet'], default='unet',
+                      help='Model architecture to use')
+    
+    # Model-specific parameters
     parser.add_argument('--base_filters', type=int, default=32,
                       help='Number of base filters in the UNet model')
+    parser.add_argument('--scale', type=int, default=1,
+                      help='Scale factor for EDSR model')
+    parser.add_argument('--num_features', type=int, default=64,
+                      help='Number of features for CNN/EDSR models')
+    parser.add_argument('--num_blocks', type=int, default=8,
+                      help='Number of residual blocks in CNN model')
+    parser.add_argument('--num_res_blocks', type=int, default=16,
+                      help='Number of residual blocks in EDSR model')
     
     # Training parameters
     parser.add_argument('--batch_size', type=int, default=8,
