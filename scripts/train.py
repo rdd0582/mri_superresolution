@@ -8,6 +8,8 @@ import numpy as np
 import logging
 from pathlib import Path
 from datetime import datetime
+import random
+import multiprocessing
 
 import torch
 import torch.nn as nn
@@ -104,6 +106,15 @@ def save_example_images(low_res, high_res, output, epoch, save_dir):
     plt.savefig(os.path.join(save_dir, f'comparison_epoch_{epoch}.png'), dpi=150)
     plt.close()
 
+def get_recommended_workers():
+    """Get recommended number of workers based on system CPU count"""
+    try:
+        # Use CPU count as the recommendation with a reasonable upper limit
+        return min(multiprocessing.cpu_count(), 16)
+    except:
+        # If we can't determine CPU count, use a conservative default
+        return 4
+
 def train(args):
     """Train the MRI quality enhancement model"""
     # Set random seed for reproducibility
@@ -119,11 +130,10 @@ def train(args):
     device = torch.device('cuda' if torch.cuda.is_available() and not args.cpu else 'cpu')
     log_message(f"Using device: {device}")
 
-    # Get GPU info for Colab T4
     if device.type == 'cuda':
         log_message(f"GPU: {torch.cuda.get_device_name(0)}")
         log_message(f"Memory allocated: {torch.cuda.memory_allocated(0) / 1e9:.2f} GB")
-        log_message(f"Memory cached: {torch.cuda.memory_reserved(0) / 1e9:.2f} GB")
+        log_message(f"Memory reserved: {torch.cuda.memory_reserved(0) / 1e9:.2f} GB")
 
     # Check if AMP can be used
     use_amp = args.use_amp and AMP_AVAILABLE and device.type == 'cuda'
@@ -131,7 +141,7 @@ def train(args):
         log_message("AMP requested but not available. Falling back to full precision.")
     if use_amp:
         log_message("Using Automatic Mixed Precision (AMP) training.")
-        scaler = GradScaler('cuda')
+        scaler = GradScaler()
     
     # Create model based on model_type
     if args.model_type == "unet":
@@ -194,25 +204,24 @@ def train(args):
         generator=torch.Generator().manual_seed(args.seed)
     )
     
-    # Create data loaders - Use smaller num_workers for Colab
-    actual_workers = min(args.num_workers, 2) if device.type == 'cuda' else args.num_workers
-    if actual_workers != args.num_workers:
-        log_message(f"Reducing workers from {args.num_workers} to {actual_workers} for Colab compatibility")
-    
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=actual_workers,
-        pin_memory=(device.type == 'cuda')
+        num_workers=args.num_workers,
+        pin_memory=(device.type == 'cuda'),
+        persistent_workers=(args.num_workers > 0),
+        prefetch_factor=2 if args.num_workers > 0 else None
     )
     
     val_loader = DataLoader(
         val_dataset,
         batch_size=args.batch_size,
         shuffle=False,
-        num_workers=actual_workers,
-        pin_memory=(device.type == 'cuda')
+        num_workers=args.num_workers,
+        pin_memory=(device.type == 'cuda'),
+        persistent_workers=(args.num_workers > 0),
+        prefetch_factor=2 if args.num_workers > 0 else None
     )
     
     # Create loss function and metrics
@@ -250,6 +259,18 @@ def train(args):
     best_val_loss = float('inf')
     patience_counter = 0
     
+    # Determine validation frequency based on dataset size
+    # Validate less frequently for larger datasets
+    if len(train_loader) > 100:
+        # For large datasets, validate less frequently
+        val_frequency = 5  # Validate every 5 epochs
+    else:
+        # For smaller datasets, validate every epoch
+        val_frequency = 1
+    
+    # Visualization frequency (only save images every X epochs)
+    vis_frequency = max(1, args.epochs // 20)  # Approx 20 visualizations over the full training
+    
     for epoch in range(args.epochs):
         epoch_start_time = time.time()
         
@@ -258,12 +279,19 @@ def train(args):
         train_loss = 0.0
         train_ssim = 0.0
         
-        for batch_idx, (low_res, high_res) in enumerate(train_loader):
-            low_res = low_res.to(device)
-            high_res = high_res.to(device)
+        # Use tqdm if available for progress bar
+        try:
+            from tqdm import tqdm
+            train_iterator = tqdm(train_loader, desc=f"Epoch {epoch+1}/{args.epochs}")
+        except ImportError:
+            train_iterator = train_loader
+        
+        for batch_idx, (low_res, high_res) in enumerate(train_iterator):
+            low_res = low_res.to(device, non_blocking=True)
+            high_res = high_res.to(device, non_blocking=True)
             
             # Forward pass with or without AMP
-            optimizer.zero_grad()
+            optimizer.zero_grad(set_to_none=True)
             
             if use_amp:
                 with autocast('cuda'):
@@ -287,8 +315,8 @@ def train(args):
             with torch.no_grad():
                 train_ssim += ssim_metric(output, high_res).item()
             
-            # Log batch update
-            if batch_idx % 10 == 0:
+            # Log batch update less frequently for larger datasets
+            if batch_idx % max(10, len(train_loader) // 10) == 0:
                 log_message({
                     "type": "batch_update",
                     "epoch": epoch,
@@ -301,31 +329,63 @@ def train(args):
         train_loss /= len(train_loader)
         train_ssim /= len(train_loader)
         
-        # Validation phase
-        model.eval()
-        val_loss = 0.0
-        val_ssim = 0.0
-        
-        with torch.no_grad():
-            for low_res, high_res in val_loader:
-                low_res = low_res.to(device)
-                high_res = high_res.to(device)
+        # Validation phase - only run every val_frequency epochs
+        if epoch % val_frequency == 0:
+            model.eval()
+            val_loss = 0.0
+            val_ssim = 0.0
+            
+            with torch.no_grad():
+                for low_res, high_res in val_loader:
+                    low_res = low_res.to(device, non_blocking=True)
+                    high_res = high_res.to(device, non_blocking=True)
+                    
+                    if use_amp:
+                        with autocast('cuda'):
+                            output = model(low_res)
+                            loss = criterion(output, high_res)
+                    else:
+                        output = model(low_res)
+                        loss = criterion(output, high_res)
+                    
+                    val_loss += loss.item()
+                    val_ssim += ssim_metric(output, high_res).item()
+                    
+                    # Save the last batch for visualization
+                    vis_low_res, vis_high_res, vis_output = low_res, high_res, output
+            
+            # Calculate average validation metrics
+            val_loss /= len(val_loader)
+            val_ssim /= len(val_loader)
+            
+            # Update learning rate
+            scheduler.step(val_loss)
+            
+            # Check for best model
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                patience_counter = 0
                 
-                output = model(low_res)
-                loss = criterion(output, high_res)
+                # Save model checkpoint
+                checkpoint_path = os.path.join(args.checkpoint_dir, f'best_model_{args.model_type}.pth')
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler_state_dict': scheduler.state_dict(),
+                    'val_loss': val_loss,
+                    'val_ssim': val_ssim,
+                }, checkpoint_path)
                 
-                val_loss += loss.item()
-                val_ssim += ssim_metric(output, high_res).item()
-                
-                # Save the last batch for visualization
-                vis_low_res, vis_high_res, vis_output = low_res, high_res, output
-        
-        # Calculate average validation metrics
-        val_loss /= len(val_loader)
-        val_ssim /= len(val_loader)
-        
-        # Update learning rate
-        scheduler.step(val_loss)
+                log_message(f"Saved best model with validation loss: {val_loss:.6f}")
+            else:
+                patience_counter += 1
+        else:
+            # If we skip validation, just increment patience counter
+            patience_counter += 1
+            # For logging purposes
+            val_loss = "N/A"
+            val_ssim = "N/A"
         
         # Calculate epoch time
         epoch_time = time.time() - epoch_start_time
@@ -344,40 +404,21 @@ def train(args):
         # Log to tensorboard if available
         if writer:
             writer.add_scalar('Loss/train', train_loss, epoch)
-            writer.add_scalar('Loss/val', val_loss, epoch)
+            if val_loss != "N/A":
+                writer.add_scalar('Loss/val', val_loss, epoch)
+                writer.add_scalar('SSIM/val', val_ssim, epoch)
             writer.add_scalar('SSIM/train', train_ssim, epoch)
-            writer.add_scalar('SSIM/val', val_ssim, epoch)
         
-        # Save visualization
-        save_example_images(
-            vis_low_res, 
-            vis_high_res, 
-            vis_output, 
-            epoch, 
-            os.path.join(args.checkpoint_dir, 'samples')
-        )
+        # Save visualization less frequently to reduce overhead
+        if epoch % vis_frequency == 0 and val_loss != "N/A":
+            save_example_images(
+                vis_low_res, 
+                vis_high_res, 
+                vis_output, 
+                epoch, 
+                os.path.join(args.checkpoint_dir, 'samples')
+            )
         
-        # Save best model
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            patience_counter = 0
-            
-            # Save model checkpoint
-            checkpoint_path = os.path.join(args.checkpoint_dir, f'best_model_{args.model_type}.pth')
-            torch.save({
-                'epoch': epoch,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'scheduler_state_dict': scheduler.state_dict(),
-                'val_loss': val_loss,
-                'val_ssim': val_ssim,
-                # Save additional hyperparameters if needed
-            }, checkpoint_path)
-            
-            log_message(f"Saved best model with validation loss: {val_loss:.6f}")
-        else:
-            patience_counter += 1
-            
         # Early stopping
         if patience_counter >= args.patience:
             log_message(f"Early stopping triggered after {epoch + 1} epochs")
@@ -389,8 +430,8 @@ def train(args):
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
-        'val_loss': val_loss,
-        'val_ssim': val_ssim
+        'val_loss': val_loss if val_loss != "N/A" else best_val_loss,
+        'val_ssim': val_ssim if val_ssim != "N/A" else 0.0
     }, final_path)
     
     log_message(f"Training completed. Final model saved to {final_path}")
@@ -441,10 +482,10 @@ def parse_args():
                       help='Fraction of data to use for validation')
     parser.add_argument('--patience', type=int, default=10,
                       help='Early stopping patience')
-    parser.add_argument('--num_workers', type=int, default=4,
+    parser.add_argument('--num_workers', type=int, default=get_recommended_workers(),
                       help='Number of data loading workers')
-    parser.add_argument('--seed', type=int, default=42,
-                      help='Random seed for reproducibility')
+    parser.add_argument('--seed', type=int, default=random.randint(1, 10000),
+                      help='Random seed for reproducibility (default: random)')
     
     # Options
     parser.add_argument('--augmentation', action='store_true',

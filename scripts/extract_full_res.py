@@ -10,7 +10,7 @@ if project_root not in sys.path:
 import nibabel as nib
 import numpy as np
 import cv2  # Still needed if any cv2-specific operations are required
-from utils.preprocessing import preprocess_slice, InterpolationMethod  # Import common preprocessing functions
+from utils.preprocessing import preprocess_slice, InterpolationMethod, ResizeMethod  # Import common preprocessing functions
 
 import argparse
 
@@ -26,7 +26,7 @@ def generate_filename(subject, slice_idx, timepoint=None):
         return f"{subject}_s{slice_idx:03d}.png"
 
 def extract_slices_3d(data, subject, output_dir, timepoint=None,
-                      n_slices=10, lower_percent=0.2, upper_percent=0.8, target_size=None):
+                      n_slices=10, lower_percent=0.2, upper_percent=0.8, target_size=(320, 240)):
     """
     Extract n_slices equally spaced from the central portion of a 3D volume,
     preprocess (robust normalization, letterbox resize preserving full resolution),
@@ -39,16 +39,17 @@ def extract_slices_3d(data, subject, output_dir, timepoint=None,
 
     for idx in slice_indices:
         slice_data = data[:, :, idx]
-        # Skip slices with too much background
-        if white_ratio > max_white_ratio:
-            continue
         
         # Process slice
         processed_slice = preprocess_slice(
             slice_data, 
             target_size=target_size,
-            interpolation=InterpolationMethod.CUBIC
+            interpolation=InterpolationMethod.CUBIC,
+            resize_method=ResizeMethod.LETTERBOX
         )
+        
+        # Convert from float [0,1] to uint8 [0,255] for saving
+        processed_slice = (processed_slice * 255).astype(np.uint8)
         
         # Generate filename
         filename = generate_filename(subject, idx, timepoint)
@@ -57,7 +58,7 @@ def extract_slices_3d(data, subject, output_dir, timepoint=None,
         print(f"Saved: {output_path}")
 
 def extract_slices(nifti_file, output_dir, n_slices=10,
-                   lower_percent=0.2, upper_percent=0.8, target_size=None):
+                   lower_percent=0.2, upper_percent=0.8, target_size=(320, 240)):
     """
     Load a NIfTI file and extract slices from a full‐resolution scan.
     Supports both 3D and 4D data.
@@ -96,6 +97,9 @@ if __name__ == '__main__':
                         help='Lower percentile for slice selection')
     parser.add_argument('--upper_percent', type=float, default=0.8, 
                         help='Upper percentile for slice selection')
+    # Set target_size default to 320x240 for consistent image dimensions
+    parser.add_argument('--target_size', type=int, nargs=2, default=[320, 240], 
+                        help='Target size for resizing slices (width height), default is 320x240')
 
     args = parser.parse_args()
 
@@ -121,6 +125,7 @@ if __name__ == '__main__':
                             extract_slices(nifti_path, output_dir,
                                            n_slices=args.n_slices,
                                            lower_percent=args.lower_percent,
-                                           upper_percent=args.upper_percent)
+                                           upper_percent=args.upper_percent,
+                                           target_size=tuple(args.target_size))
                         except Exception as e:
                             print(f"Error processing {nifti_path}: {e}")

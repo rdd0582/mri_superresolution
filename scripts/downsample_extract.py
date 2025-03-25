@@ -12,7 +12,7 @@ import nibabel as nib
 import numpy as np
 import cv2  # For image resizing and saving
 from scipy.ndimage import gaussian_filter
-from utils.preprocessing import preprocess_slice, InterpolationMethod  # Reuse the preprocessing function
+from utils.preprocessing import preprocess_slice, InterpolationMethod, ResizeMethod  # Reuse the preprocessing function
 
 def simulate_15T_data(data, noise_std=5, blur_sigma=0.5):
     """
@@ -43,7 +43,7 @@ def generate_filename(subject, slice_idx, timepoint=None):
         return f"{subject}_s{slice_idx:03d}.png"
 
 def extract_slices_3d(data, subject, output_dir, timepoint=None,
-                      n_slices=10, lower_percent=0.2, upper_percent=0.8, target_size=None):
+                      n_slices=10, lower_percent=0.2, upper_percent=0.8, target_size=(320, 240)):
     """
     Extract n_slices equally spaced from the central portion of a 3D volume,
     preprocess (robust normalization, letterbox resize preserving full resolution),
@@ -59,15 +59,20 @@ def extract_slices_3d(data, subject, output_dir, timepoint=None,
         processed_slice = preprocess_slice(
             slice_data, 
             target_size=target_size,
-            interpolation=InterpolationMethod.CUBIC
+            interpolation=InterpolationMethod.CUBIC,
+            resize_method=ResizeMethod.LETTERBOX
         )
+        
+        # Convert from float [0,1] to uint8 [0,255] for saving
+        processed_slice = (processed_slice * 255).astype(np.uint8)
+        
         filename = generate_filename(subject, idx, timepoint)
         output_path = os.path.join(output_dir, filename)
         cv2.imwrite(output_path, processed_slice)
         print(f"Saved: {output_path}")
 
 def extract_slices(nifti_file, output_dir, n_slices=10,
-                   lower_percent=0.2, upper_percent=0.8, target_size=None,
+                   lower_percent=0.2, upper_percent=0.8, target_size=(320, 240),
                    noise_std=5, blur_sigma=0.5):
     """
     Load a NIfTI file, simulate a 1.5T appearance, and extract slices.
@@ -109,9 +114,9 @@ if __name__ == '__main__':
                         help='Lower percentile for slice selection')
     parser.add_argument('--upper_percent', type=float, default=0.8, 
                         help='Upper percentile for slice selection')
-    # Set target_size default to None for full-resolution extraction.
-    parser.add_argument('--target_size', type=int, nargs=2, default=None, 
-                        help='Target size for resizing slices (width height), set to None for full resolution')
+    # Set target_size default to 320x240 for consistent image dimensions
+    parser.add_argument('--target_size', type=int, nargs=2, default=[320, 240], 
+                        help='Target size for resizing slices (width height), default is 320x240')
     # Further reduced defaults for noise and blur
     parser.add_argument('--noise_std', type=float, default=5, 
                         help='Standard deviation for noise')
@@ -139,7 +144,7 @@ if __name__ == '__main__':
                         try:
                             extract_slices(nifti_path, output_dir,
                                            n_slices=args.n_slices,
-                                           target_size=args.target_size,
+                                           target_size=tuple(args.target_size),
                                            lower_percent=args.lower_percent,
                                            upper_percent=args.upper_percent,
                                            noise_std=args.noise_std,

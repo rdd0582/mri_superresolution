@@ -411,7 +411,7 @@ def process_batch(model, input_dir, output_dir, device, target_dir=None, save_vi
             plt.savefig(os.path.join(vis_dir, f"compare_{img_file}"))
             plt.close()
         
-        # Clean up GPU memory (important for T4 GPUs)
+        # Clean up GPU memory
         if device.type == 'cuda':
             torch.cuda.empty_cache()
     
@@ -433,7 +433,6 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() and not args.cpu else "cpu")
     logger.info(f"Using device: {device}")
     
-    # Print GPU info for Colab T4
     if device.type == 'cuda':
         logger.info(f"GPU: {torch.cuda.get_device_name(0)}")
         logger.info(f"Memory allocated: {torch.cuda.memory_allocated(0) / 1e9:.2f} GB")

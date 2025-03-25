@@ -1,10 +1,16 @@
 --extra-index-url https://download.pytorch.org/whl/cu124
-torch
-torchvision
+torch>=1.9.0
+torchvision>=0.10.0
 torchaudio
 
 nibabel
-numpy
-matplotlib
-Pillow
+numpy>=1.21.0
+matplotlib>=3.4.3
+Pillow>=8.3.1
 windows-curses; sys_platform == "win32"
+colorama>=0.4.4
+tensorboard>=2.7.0
+scikit-image>=0.18.2
+tqdm>=4.62.3
+pandas>=1.3.3
+scipy>=1.7.1
