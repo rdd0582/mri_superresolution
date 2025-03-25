@@ -153,6 +153,7 @@ class MRIUI:
             "use_amp": check_amp_availability(),  # Set based on availability
             "cpu": False,  # Force CPU even if CUDA is available
             "checkpoint_dir": "./checkpoints",
+            "checkpoint_file": "", # Selected specific checkpoint file
             "log_dir": "./logs",
             
             # Inference params
@@ -166,6 +167,7 @@ class MRIUI:
         }
         self.status_message = ""
         self.error_message = ""
+        self.available_checkpoints = []
 
     def init_curses(self):
         """Initialize curses settings"""
@@ -467,7 +469,8 @@ class MRIUI:
             "output_image",
             "target_image",
             "model_type",
-            "checkpoint_dir"
+            "checkpoint_dir",
+            "Select Checkpoint"  # Added new option to select a specific checkpoint
         ]
         
         # Model-specific options that should only be shown when the respective model is selected
@@ -510,7 +513,7 @@ class MRIUI:
             attr = curses.color_pair(5) | Colors.HIGHLIGHT if i == self.current_option else curses.color_pair(1)
             self.stdscr.attron(attr)
             
-            if option not in ["Run Inference", "Back to Main Menu"]:
+            if option not in ["Run Inference", "Back to Main Menu", "Select Checkpoint"]:
                 # Format parameter name and value with * for required parameters
                 param_name = option
                 if option in required_params:
@@ -526,8 +529,22 @@ class MRIUI:
                 self.stdscr.addstr(start_y + i, 4 + len(param_name) + 2, param_value)
                 self.stdscr.attroff(curses.color_pair(6))
             else:
-                self.stdscr.addstr(start_y + i, 4, option)
-                self.stdscr.attroff(attr)
+                # If it's the Select Checkpoint option, show the currently selected checkpoint
+                if option == "Select Checkpoint":
+                    param_name = option.ljust(21)
+                    self.stdscr.addstr(start_y + i, 4, param_name)
+                    self.stdscr.attroff(attr)
+                    
+                    # Display the selected checkpoint or a message to select one
+                    self.stdscr.attron(curses.color_pair(6))
+                    if self.params["checkpoint_file"]:
+                        self.stdscr.addstr(start_y + i, 4 + len(param_name) + 2, self.params["checkpoint_file"])
+                    else:
+                        self.stdscr.addstr(start_y + i, 4 + len(param_name) + 2, "None selected")
+                    self.stdscr.attroff(curses.color_pair(6))
+                else:
+                    self.stdscr.addstr(start_y + i, 4, option)
+                    self.stdscr.attroff(attr)
     
     def handle_input(self):
         """Handle user input"""
@@ -693,13 +710,20 @@ class MRIUI:
             elif selected_option == "Back to Main Menu":
                 self.current_menu = "main"
                 self.current_option = 0
+                
+            elif selected_option == "Select Checkpoint":
+                self.select_checkpoint()
             
             else:
                 # Enter editing mode for the parameter
                 self.input_mode = True
                 self.input_field = selected_option
                 self.input_value = str(self.params[selected_option])
-                self.input_prompt = f"Enter value for {selected_option}:"
+                
+                if selected_option in boolean_flags:
+                    self.input_prompt = f"Toggle {selected_option} (type 'toggle' or yes/no):"
+                else:
+                    self.input_prompt = f"Enter value for {selected_option}:"
         
         return True
     
@@ -899,6 +923,11 @@ class MRIUI:
                 "--checkpoint_dir", self.params["checkpoint_dir"]
             ]
             
+            # Add specific checkpoint file if selected
+            if self.params["checkpoint_file"]:
+                checkpoint_path = os.path.join(self.params["checkpoint_dir"], self.params["checkpoint_file"])
+                cmd.extend(["--checkpoint_path", checkpoint_path])
+            
             # Add model-specific parameters based on the selected model
             if self.params["model_type"] == "unet":
                 cmd.extend([
@@ -964,6 +993,107 @@ class MRIUI:
             # Resume curses mode if exception occurs
             self.stdscr = curses.initscr()
             self.init_curses()
+    
+    def get_available_checkpoints(self):
+        """Get available checkpoints for the selected model type"""
+        checkpoint_dir = self.params["checkpoint_dir"]
+        model_type = self.params["model_type"]
+        
+        self.available_checkpoints = []
+        
+        try:
+            if os.path.exists(checkpoint_dir):
+                # Look for checkpoints matching the model type
+                for file in sorted(os.listdir(checkpoint_dir)):
+                    if file.endswith('.pth') and model_type in file:
+                        self.available_checkpoints.append(file)
+                
+                if not self.available_checkpoints:
+                    # If no specific model type checkpoints found, get all .pth files
+                    self.available_checkpoints = [file for file in sorted(os.listdir(checkpoint_dir)) 
+                                                if file.endswith('.pth')]
+            
+            return self.available_checkpoints
+        except Exception as e:
+            logger.error(f"Error getting checkpoints: {e}")
+            self.error_message = f"Error getting checkpoints: {str(e)}"
+            return []
+
+    def select_checkpoint(self):
+        """Display a menu to select a checkpoint file"""
+        # Get available checkpoints
+        checkpoints = self.get_available_checkpoints()
+        
+        if not checkpoints:
+            self.error_message = f"No checkpoints found in {self.params['checkpoint_dir']}"
+            return
+        
+        # Create a temporary screen for checkpoint selection
+        checkpoint_stdscr = curses.newwin(0, 0)
+        checkpoint_stdscr.keypad(True)
+        
+        current_selection = 0
+        
+        while True:
+            checkpoint_stdscr.clear()
+            height, width = checkpoint_stdscr.getmaxyx()
+            
+            # Title
+            checkpoint_stdscr.attron(curses.color_pair(2) | curses.A_BOLD)
+            title = f"Select Checkpoint for {self.params['model_type']} Model"
+            checkpoint_stdscr.addstr(1, (width - len(title)) // 2, title)
+            checkpoint_stdscr.attroff(curses.color_pair(2) | curses.A_BOLD)
+            
+            # Instructions
+            checkpoint_stdscr.attron(curses.color_pair(1))
+            checkpoint_stdscr.addstr(3, 2, "↑/↓: Navigate | Enter: Select | Esc: Cancel")
+            checkpoint_stdscr.attroff(curses.color_pair(1))
+            
+            # Draw horizontal line
+            checkpoint_stdscr.attron(curses.color_pair(1))
+            checkpoint_stdscr.addstr(4, 0, "=" * (width - 1))
+            checkpoint_stdscr.attroff(curses.color_pair(1))
+            
+            # Display up to 15 checkpoints at a time with scrolling if needed
+            max_display = min(15, height - 10)
+            start_idx = max(0, current_selection - max_display // 2)
+            end_idx = min(len(checkpoints), start_idx + max_display)
+            
+            # Adjust start_idx if we have fewer items at the end
+            if end_idx - start_idx < max_display and start_idx > 0:
+                start_idx = max(0, end_idx - max_display)
+            
+            # Show scroll indicator
+            if start_idx > 0:
+                checkpoint_stdscr.addstr(5, width // 2, "↑ More checkpoints above")
+            
+            # Display checkpoints
+            for i in range(start_idx, end_idx):
+                attr = curses.color_pair(5) | Colors.HIGHLIGHT if i == current_selection else curses.color_pair(1)
+                checkpoint_stdscr.attron(attr)
+                checkpoint_stdscr.addstr(6 + i - start_idx, 4, checkpoints[i])
+                checkpoint_stdscr.attroff(attr)
+            
+            # Show scroll indicator
+            if end_idx < len(checkpoints):
+                checkpoint_stdscr.addstr(6 + end_idx - start_idx, width // 2, "↓ More checkpoints below")
+            
+            checkpoint_stdscr.refresh()
+            
+            # Handle input
+            key = checkpoint_stdscr.getch()
+            
+            if key == curses.KEY_UP:
+                current_selection = max(0, current_selection - 1)
+            elif key == curses.KEY_DOWN:
+                current_selection = min(len(checkpoints) - 1, current_selection + 1)
+            elif key == 10:  # Enter key
+                # Select the checkpoint
+                self.params["checkpoint_file"] = checkpoints[current_selection]
+                return
+            elif key == 27:  # Escape key
+                # Cancel
+                return
     
     def run(self):
         """Main UI loop"""

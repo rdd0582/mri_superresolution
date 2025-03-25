@@ -445,8 +445,13 @@ def main(args):
         logger.info("Using Automatic Mixed Precision (AMP) for inference.")
     
     try:
-        # Find checkpoint
-        checkpoint_path = find_best_checkpoint(args.checkpoint_dir, args.model_type)
+        # Find checkpoint or use the one specified
+        if args.checkpoint_path and os.path.exists(args.checkpoint_path):
+            checkpoint_path = args.checkpoint_path
+            logger.info(f"Using specified checkpoint: {checkpoint_path}")
+        else:
+            checkpoint_path = find_best_checkpoint(args.checkpoint_dir, args.model_type)
+            logger.info(f"Automatically selected checkpoint: {checkpoint_path}")
         
         # Load model
         model = load_model(
@@ -505,6 +510,8 @@ def parse_args():
                       help='Path to target image or directory (for comparison)')
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoints',
                       help='Directory containing model checkpoints')
+    parser.add_argument('--checkpoint_path', type=str, default=None,
+                      help='Specific checkpoint file path to use (overrides automatic checkpoint finding)')
     
     # Model selection parameter
     parser.add_argument('--model_type', type=str, choices=['simple', 'edsr', 'unet'], default='unet',

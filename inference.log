@@ -634,3 +634,78 @@
 2025-03-25 16:13:58,765 - INFO - RMSE: 0.0314
 2025-03-25 16:13:58,766 - INFO - MAE: 0.0193
 2025-03-25 16:13:58,770 - INFO - Enhanced image saved to output.png
+2025-03-25 16:26:56,287 - INFO - Using device: cuda
+2025-03-25 16:26:56,293 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 16:26:56,294 - INFO - Memory allocated: 0.00 GB
+2025-03-25 16:26:56,295 - INFO - Memory reserved: 0.00 GB
+2025-03-25 16:26:56,295 - INFO - Using Automatic Mixed Precision (AMP) for inference.
+2025-03-25 16:26:56,295 - INFO - Using best model checkpoint: ./checkpoints\best_model_unet.pth
+2025-03-25 16:26:56,500 - INFO - Loaded model from epoch 53
+2025-03-25 16:26:56,760 - INFO - SSIM: 0.9666
+2025-03-25 16:26:56,761 - INFO - RMSE: 0.0250
+2025-03-25 16:26:56,761 - INFO - MAE: 0.0167
+2025-03-25 16:26:56,767 - INFO - Enhanced image saved to output.png
+2025-03-25 16:28:29,837 - INFO - Inference completed successfully!
+2025-03-25 16:28:48,134 - INFO - Using device: cuda
+2025-03-25 16:28:48,144 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 16:28:48,144 - INFO - Memory allocated: 0.00 GB
+2025-03-25 16:28:48,145 - INFO - Memory reserved: 0.00 GB
+2025-03-25 16:28:48,146 - INFO - Using Automatic Mixed Precision (AMP) for inference.
+2025-03-25 16:28:48,147 - INFO - Using best model checkpoint: ./checkpoints\best_model_unet.pth
+2025-03-25 16:28:48,425 - INFO - Loaded model from epoch 53
+2025-03-25 16:28:48,783 - ERROR - Error calculating metrics: The size of tensor a (644) must match the size of tensor b (320) at non-singleton dimension 3
+2025-03-25 16:28:48,846 - INFO - Enhanced image saved to output.png
+2025-03-25 16:29:00,030 - ERROR - Error during inference: operands could not be broadcast together with shapes (682,644) (320,320) 
+2025-03-25 16:30:37,203 - INFO - Using device: cuda
+2025-03-25 16:30:37,211 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 16:30:37,212 - INFO - Memory allocated: 0.00 GB
+2025-03-25 16:30:37,213 - INFO - Memory reserved: 0.00 GB
+2025-03-25 16:30:37,213 - INFO - Using Automatic Mixed Precision (AMP) for inference.
+2025-03-25 16:30:37,214 - INFO - Using best model checkpoint: ./checkpoints\best_model_unet.pth
+2025-03-25 16:30:37,477 - INFO - Loaded model from epoch 53
+2025-03-25 16:30:37,807 - ERROR - Error calculating metrics: The size of tensor a (240) must match the size of tensor b (320) at non-singleton dimension 2
+2025-03-25 16:30:37,816 - INFO - Enhanced image saved to output.png
+2025-03-25 16:30:47,355 - ERROR - Error during inference: operands could not be broadcast together with shapes (240,320) (320,320) 
+2025-03-25 16:33:59,674 - INFO - Using device: cuda
+2025-03-25 16:33:59,684 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 16:33:59,685 - INFO - Memory allocated: 0.00 GB
+2025-03-25 16:33:59,686 - INFO - Memory reserved: 0.00 GB
+2025-03-25 16:33:59,687 - INFO - Using Automatic Mixed Precision (AMP) for inference.
+2025-03-25 16:33:59,687 - INFO - Using best model checkpoint: ./checkpoints\best_model_unet.pth
+2025-03-25 16:33:59,967 - INFO - Loaded model from epoch 53
+2025-03-25 16:34:00,297 - ERROR - Error calculating metrics: The size of tensor a (240) must match the size of tensor b (320) at non-singleton dimension 2
+2025-03-25 16:34:00,306 - INFO - Enhanced image saved to output.png
+2025-03-25 16:35:16,634 - ERROR - Error during inference: operands could not be broadcast together with shapes (240,320) (320,320) 
+2025-03-25 16:41:55,235 - INFO - Using device: cuda
+2025-03-25 16:41:55,241 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 16:41:55,242 - INFO - Memory allocated: 0.00 GB
+2025-03-25 16:41:55,242 - INFO - Memory reserved: 0.00 GB
+2025-03-25 16:41:55,243 - INFO - Using Automatic Mixed Precision (AMP) for inference.
+2025-03-25 16:41:55,243 - INFO - Using specified checkpoint: ./checkpoints\final_model_unet.pth
+2025-03-25 16:41:55,453 - INFO - Loaded model from epoch 63
+2025-03-25 16:41:55,677 - INFO - Enhanced image saved to output.png
+2025-03-25 16:42:31,914 - ERROR - Error during inference: local variable 'metrics' referenced before assignment
+2025-03-25 16:42:47,311 - INFO - Using device: cuda
+2025-03-25 16:42:47,317 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 16:42:47,318 - INFO - Memory allocated: 0.00 GB
+2025-03-25 16:42:47,319 - INFO - Memory reserved: 0.00 GB
+2025-03-25 16:42:47,319 - INFO - Using Automatic Mixed Precision (AMP) for inference.
+2025-03-25 16:42:47,319 - INFO - Using specified checkpoint: ./checkpoints\final_model_unet.pth
+2025-03-25 16:42:47,520 - INFO - Loaded model from epoch 63
+2025-03-25 16:42:47,777 - INFO - SSIM: 0.9686
+2025-03-25 16:42:47,778 - INFO - RMSE: 0.0230
+2025-03-25 16:42:47,778 - INFO - MAE: 0.0130
+2025-03-25 16:42:47,784 - INFO - Enhanced image saved to output.png
+2025-03-25 16:44:43,616 - INFO - Inference completed successfully!
+2025-03-25 16:44:54,491 - INFO - Using device: cuda
+2025-03-25 16:44:54,498 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 16:44:54,498 - INFO - Memory allocated: 0.00 GB
+2025-03-25 16:44:54,499 - INFO - Memory reserved: 0.00 GB
+2025-03-25 16:44:54,500 - INFO - Using Automatic Mixed Precision (AMP) for inference.
+2025-03-25 16:44:54,500 - INFO - Using specified checkpoint: ./checkpoints\best_model_unet.pth
+2025-03-25 16:44:54,722 - INFO - Loaded model from epoch 53
+2025-03-25 16:44:55,016 - INFO - SSIM: 0.9666
+2025-03-25 16:44:55,017 - INFO - RMSE: 0.0250
+2025-03-25 16:44:55,017 - INFO - MAE: 0.0167
+2025-03-25 16:44:55,023 - INFO - Enhanced image saved to output.png
+2025-03-25 16:45:22,550 - INFO - Inference completed successfully!
