@@ -80,6 +80,21 @@ class Colors:
     SELECTED = curses.A_UNDERLINE | curses.A_BOLD
     ERROR = curses.A_BOLD
 
+def check_amp_availability():
+    """Check if AMP (Automatic Mixed Precision) can be used"""
+    try:
+        import torch
+        # Check if CUDA is available and if the GPU supports AMP
+        if torch.cuda.is_available():
+            # Get the current device
+            device = torch.cuda.current_device()
+            # Check if the GPU supports AMP (compute capability >= 7.0)
+            if torch.cuda.get_device_capability(device)[0] >= 7:
+                return True
+        return False
+    except ImportError:
+        return False
+
 # UI Class
 class MRIUI:
     def __init__(self, stdscr):
@@ -125,7 +140,7 @@ class MRIUI:
             "seed": random.randint(1, 10000),
             "augmentation": False,
             "use_tensorboard": False,
-            "use_amp": False,
+            "use_amp": check_amp_availability(),  # Set based on availability
             "cpu": False,  # Force CPU even if CUDA is available
             "checkpoint_dir": "./checkpoints",
             "log_dir": "./logs",
