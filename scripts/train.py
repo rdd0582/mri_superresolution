@@ -68,9 +68,7 @@ def save_example_images(low_res, high_res, output, epoch, save_dir):
     """Save sample images to visualize model performance"""
     os.makedirs(save_dir, exist_ok=True)
     
-    # Convert from [-1, 1] to [0, 1] range
-    def unnormalize(tensor):
-        return (tensor + 1) / 2.0
+    # Images are already in [0, 1] range, no need to unnormalize
     
     # Create a grid of sample images
     samples = min(4, low_res.size(0))
@@ -79,9 +77,9 @@ def save_example_images(low_res, high_res, output, epoch, save_dir):
     
     for i in range(samples):
         # Get sample images
-        low = unnormalize(low_res[i]).cpu().squeeze(0).numpy()
-        high = unnormalize(high_res[i]).cpu().squeeze(0).numpy()
-        pred = unnormalize(output[i]).cpu().squeeze(0).numpy()
+        low = low_res[i].cpu().squeeze(0).numpy()
+        high = high_res[i].cpu().squeeze(0).numpy()
+        pred = output[i].cpu().squeeze(0).numpy()
         
         # Plot images
         plt.subplot(samples, 3, i*3 + 1)
@@ -181,10 +179,10 @@ def train(args):
         optimizer, mode='min', factor=0.5, patience=args.patience // 2, verbose=True
     )
 
-    # Create dataset with normalization to [-1, 1]
+    # Create dataset with normalization to [0, 1] range
     transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5], std=[0.5])
+        # Removing the normalization to [-1, 1]
     ])
     
     dataset = MRISuperResDataset(
@@ -229,12 +227,12 @@ def train(args):
         alpha=args.ssim_weight,
         window_size=11,
         sigma=1.5,
-        val_range=2.0,  # For [-1, 1] normalized data
+        val_range=1.0,  # For [0, 1] normalized data
         device=device
     )
     
     # Using consistent parameters for metrics
-    ssim_metric = SSIM(window_size=11, sigma=1.5, val_range=2.0)
+    ssim_metric = SSIM(window_size=11, sigma=1.5, val_range=1.0)
     
     # Create tensorboard writer if available
     writer = SummaryWriter(args.log_dir) if TENSORBOARD_AVAILABLE and args.use_tensorboard else None

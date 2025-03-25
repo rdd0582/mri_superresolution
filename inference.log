@@ -579,3 +579,58 @@
 2025-03-25 15:20:03,719 - INFO - MAE: 0.1201
 2025-03-25 15:20:03,730 - INFO - Enhanced image saved to output.png
 2025-03-25 15:20:17,171 - INFO - Inference completed successfully!
+2025-03-25 15:31:10,400 - INFO - Using device: cuda
+2025-03-25 15:31:10,407 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 15:31:10,407 - INFO - Memory allocated: 0.00 GB
+2025-03-25 15:31:10,408 - INFO - Memory reserved: 0.00 GB
+2025-03-25 15:31:10,408 - INFO - Using Automatic Mixed Precision (AMP) for inference.
+2025-03-25 15:31:10,408 - INFO - Using best model checkpoint: ./checkpoints\best_model_unet.pth
+2025-03-25 15:31:10,608 - INFO - Loaded model from epoch 9
+2025-03-25 15:31:10,835 - INFO - Enhanced image saved to output.png
+2025-03-25 15:31:19,429 - ERROR - Error during inference: local variable 'metrics' referenced before assignment
+2025-03-25 15:38:42,869 - INFO - Using device: cuda
+2025-03-25 15:38:42,876 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 15:38:42,876 - INFO - Memory allocated: 0.00 GB
+2025-03-25 15:38:42,877 - INFO - Memory reserved: 0.00 GB
+2025-03-25 15:38:42,877 - INFO - Using Automatic Mixed Precision (AMP) for inference.
+2025-03-25 15:38:42,877 - INFO - Using best model checkpoint: ./checkpoints\best_model_unet.pth
+2025-03-25 15:38:43,103 - INFO - Loaded model from epoch 40
+2025-03-25 15:38:43,354 - INFO - SSIM: 0.9214
+2025-03-25 15:38:43,355 - INFO - RMSE: 0.0703
+2025-03-25 15:38:43,355 - INFO - MAE: 0.0380
+2025-03-25 15:38:43,364 - INFO - Enhanced image saved to output.png
+2025-03-25 15:51:36,225 - INFO - Using device: cuda
+2025-03-25 15:51:36,231 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 15:51:36,231 - INFO - Memory allocated: 0.00 GB
+2025-03-25 15:51:36,232 - INFO - Memory reserved: 0.00 GB
+2025-03-25 15:51:36,232 - INFO - Using Automatic Mixed Precision (AMP) for inference.
+2025-03-25 15:51:36,233 - INFO - Using best model checkpoint: ./checkpoints\best_model_unet.pth
+2025-03-25 15:51:36,442 - INFO - Loaded model from epoch 48
+2025-03-25 15:51:36,699 - INFO - SSIM: 0.9209
+2025-03-25 15:51:36,700 - INFO - RMSE: 0.0664
+2025-03-25 15:51:36,700 - INFO - MAE: 0.0375
+2025-03-25 15:51:36,709 - INFO - Enhanced image saved to output.png
+2025-03-25 15:52:01,914 - INFO - Inference completed successfully!
+2025-03-25 16:02:27,853 - INFO - Using device: cuda
+2025-03-25 16:02:27,860 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 16:02:27,860 - INFO - Memory allocated: 0.00 GB
+2025-03-25 16:02:27,861 - INFO - Memory reserved: 0.00 GB
+2025-03-25 16:02:27,861 - INFO - Using Automatic Mixed Precision (AMP) for inference.
+2025-03-25 16:02:27,861 - INFO - Using best model checkpoint: ./checkpoints\best_model_unet.pth
+2025-03-25 16:02:28,072 - INFO - Loaded model from epoch 44
+2025-03-25 16:02:28,338 - INFO - SSIM: 0.7861
+2025-03-25 16:02:28,338 - INFO - RMSE: 0.4751
+2025-03-25 16:02:28,338 - INFO - MAE: 0.2248
+2025-03-25 16:02:28,346 - INFO - Enhanced image saved to output.png
+2025-03-25 16:04:51,075 - INFO - Inference completed successfully!
+2025-03-25 16:13:58,276 - INFO - Using device: cuda
+2025-03-25 16:13:58,282 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 16:13:58,282 - INFO - Memory allocated: 0.00 GB
+2025-03-25 16:13:58,283 - INFO - Memory reserved: 0.00 GB
+2025-03-25 16:13:58,284 - INFO - Using Automatic Mixed Precision (AMP) for inference.
+2025-03-25 16:13:58,284 - INFO - Using best model checkpoint: ./checkpoints\best_model_unet.pth
+2025-03-25 16:13:58,498 - INFO - Loaded model from epoch 17
+2025-03-25 16:13:58,765 - INFO - SSIM: 0.9438
+2025-03-25 16:13:58,765 - INFO - RMSE: 0.0314
+2025-03-25 16:13:58,766 - INFO - MAE: 0.0193
+2025-03-25 16:13:58,770 - INFO - Enhanced image saved to output.png

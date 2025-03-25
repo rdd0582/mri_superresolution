@@ -101,4 +101,5 @@ class CNNSuperRes(nn.Module):
         if self.scale_factor == 1:
             out = out + input_img
             
-        return out
+        # Constrain output to [0, 1] range
+        return torch.sigmoid(out)

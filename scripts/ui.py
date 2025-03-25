@@ -95,6 +95,16 @@ def check_amp_availability():
     except ImportError:
         return False
 
+def get_optimal_workers():
+    """Get the optimal number of workers based on system CPU count"""
+    try:
+        import multiprocessing
+        cpu_count = multiprocessing.cpu_count()
+        # Use half of available CPU cores, but at least 1 and at most 8
+        return max(1, min(8, cpu_count // 2))
+    except Exception:
+        return 4  # Fallback to a reasonable default
+
 # UI Class
 class MRIUI:
     def __init__(self, stdscr):
@@ -136,7 +146,7 @@ class MRIUI:
             "ssim_weight": 0.7,
             "validation_split": 0.2,
             "patience": 10,
-            "num_workers": 4,
+            "num_workers": get_optimal_workers(),  # Set based on system capabilities
             "seed": random.randint(1, 10000),
             "augmentation": False,
             "use_tensorboard": False,

@@ -1082,3 +1082,819 @@
 2025-03-25 15:19:39,750 - INFO - Saved best model with validation loss: 0.252504
 2025-03-25 15:19:39,750 - INFO - info: {'type': 'info', 'epoch': 9, 'train_loss': 0.2966342106461525, 'val_loss': 0.2525039352476597, 'train_ssim': 0.6307344277699788, 'val_ssim': 0.6894781515002251, 'elapsed': 6.609314441680908}
 2025-03-25 15:19:40,206 - INFO - Training completed. Final model saved to ./checkpoints\final_model_unet.pth
+2025-03-25 15:31:55,850 - INFO - Using device: cuda
+2025-03-25 15:31:55,857 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 15:31:55,858 - INFO - Memory allocated: 0.00 GB
+2025-03-25 15:31:55,858 - INFO - Memory reserved: 0.00 GB
+2025-03-25 15:31:55,858 - INFO - Using Automatic Mixed Precision (AMP) training.
+2025-03-25 15:31:56,025 - INFO - info: {'type': 'info', 'model_type': 'unet', 'batch_size': 8, 'epochs': 100, 'learning_rate': 0.0001, 'weight_decay': 1e-05, 'ssim_weight': 0.3, 'augmentation': False, 'validation_split': 0.2, 'patience': 10, 'num_workers': 4, 'seed': 2}
+2025-03-25 15:32:05,830 - INFO - info: {'type': 'info', 'epoch': 0, 'batch': 0, 'total_batches': 30, 'loss': 2.4124081134796143}
+2025-03-25 15:32:07,329 - INFO - info: {'type': 'info', 'epoch': 0, 'batch': 10, 'total_batches': 30, 'loss': 1.7385963201522827}
+2025-03-25 15:32:08,789 - INFO - info: {'type': 'info', 'epoch': 0, 'batch': 20, 'total_batches': 30, 'loss': 1.470237374305725}
+2025-03-25 15:32:21,237 - INFO - Saved best model with validation loss: 0.914544
+2025-03-25 15:32:21,238 - INFO - info: {'type': 'info', 'epoch': 0, 'train_loss': 1.7098467508951822, 'val_loss': 0.9145443439483643, 'train_ssim': 0.007506941150253018, 'val_ssim': 0.010554512846283615, 'elapsed': 25.2134907245636}
+2025-03-25 15:32:22,574 - INFO - info: {'type': 'info', 'epoch': 1, 'batch': 0, 'total_batches': 30, 'loss': 1.2991454601287842}
+2025-03-25 15:32:24,189 - INFO - info: {'type': 'info', 'epoch': 1, 'batch': 10, 'total_batches': 30, 'loss': 1.0861958265304565}
+2025-03-25 15:32:25,857 - INFO - info: {'type': 'info', 'epoch': 1, 'batch': 20, 'total_batches': 30, 'loss': 0.8839952349662781}
+2025-03-25 15:32:28,047 - INFO - Saved best model with validation loss: 0.726382
+2025-03-25 15:32:28,047 - INFO - info: {'type': 'info', 'epoch': 1, 'train_loss': 0.9856662511825561, 'val_loss': 0.7263823971152306, 'train_ssim': 0.037499497489382826, 'val_ssim': 0.0637689339928329, 'elapsed': 5.668650150299072}
+2025-03-25 15:32:28,248 - INFO - info: {'type': 'info', 'epoch': 2, 'batch': 0, 'total_batches': 30, 'loss': 0.786489725112915}
+2025-03-25 15:32:29,965 - INFO - info: {'type': 'info', 'epoch': 2, 'batch': 10, 'total_batches': 30, 'loss': 0.6604722738265991}
+2025-03-25 15:32:31,748 - INFO - info: {'type': 'info', 'epoch': 2, 'batch': 20, 'total_batches': 30, 'loss': 0.6617253422737122}
+2025-03-25 15:32:34,068 - INFO - Saved best model with validation loss: 0.711107
+2025-03-25 15:32:34,068 - INFO - info: {'type': 'info', 'epoch': 2, 'train_loss': 0.6969402730464935, 'val_loss': 0.7111069187521935, 'train_ssim': 0.09653712821503481, 'val_ssim': 0.12493943888694048, 'elapsed': 6.020817518234253}
+2025-03-25 15:32:34,264 - INFO - info: {'type': 'info', 'epoch': 3, 'batch': 0, 'total_batches': 30, 'loss': 0.5533145666122437}
+2025-03-25 15:32:36,042 - INFO - info: {'type': 'info', 'epoch': 3, 'batch': 10, 'total_batches': 30, 'loss': 0.5753628015518188}
+2025-03-25 15:32:37,840 - INFO - info: {'type': 'info', 'epoch': 3, 'batch': 20, 'total_batches': 30, 'loss': 0.4593616724014282}
+2025-03-25 15:32:40,205 - INFO - Saved best model with validation loss: 0.436190
+2025-03-25 15:32:40,205 - INFO - info: {'type': 'info', 'epoch': 3, 'train_loss': 0.5252561956644058, 'val_loss': 0.43618953973054886, 'train_ssim': 0.19404911994934082, 'val_ssim': 0.27614773623645306, 'elapsed': 6.1358277797698975}
+2025-03-25 15:32:40,421 - INFO - info: {'type': 'info', 'epoch': 4, 'batch': 0, 'total_batches': 30, 'loss': 0.5378313660621643}
+2025-03-25 15:32:42,305 - INFO - info: {'type': 'info', 'epoch': 4, 'batch': 10, 'total_batches': 30, 'loss': 0.40915530920028687}
+2025-03-25 15:32:44,183 - INFO - info: {'type': 'info', 'epoch': 4, 'batch': 20, 'total_batches': 30, 'loss': 0.35343658924102783}
+2025-03-25 15:32:46,382 - INFO - info: {'type': 'info', 'epoch': 4, 'train_loss': 0.4168109039465586, 'val_loss': 0.4388705641031265, 'train_ssim': 0.31128299832344053, 'val_ssim': 0.3805762715637684, 'elapsed': 6.174745321273804}
+2025-03-25 15:32:46,637 - INFO - info: {'type': 'info', 'epoch': 5, 'batch': 0, 'total_batches': 30, 'loss': 0.332164466381073}
+2025-03-25 15:32:48,576 - INFO - info: {'type': 'info', 'epoch': 5, 'batch': 10, 'total_batches': 30, 'loss': 0.32449960708618164}
+2025-03-25 15:32:50,484 - INFO - info: {'type': 'info', 'epoch': 5, 'batch': 20, 'total_batches': 30, 'loss': 0.39845210313796997}
+2025-03-25 15:32:53,005 - INFO - Saved best model with validation loss: 0.364044
+2025-03-25 15:32:53,005 - INFO - info: {'type': 'info', 'epoch': 5, 'train_loss': 0.3446322619915009, 'val_loss': 0.36404359340667725, 'train_ssim': 0.4119377821683884, 'val_ssim': 0.49282390996813774, 'elapsed': 6.623171329498291}
+2025-03-25 15:32:54,280 - INFO - info: {'type': 'info', 'epoch': 6, 'batch': 0, 'total_batches': 30, 'loss': 0.2789520025253296}
+2025-03-25 15:32:56,329 - INFO - info: {'type': 'info', 'epoch': 6, 'batch': 10, 'total_batches': 30, 'loss': 0.2768740653991699}
+2025-03-25 15:32:58,350 - INFO - info: {'type': 'info', 'epoch': 6, 'batch': 20, 'total_batches': 30, 'loss': 0.3119322955608368}
+2025-03-25 15:33:00,926 - INFO - Saved best model with validation loss: 0.261318
+2025-03-25 15:33:00,926 - INFO - info: {'type': 'info', 'epoch': 6, 'train_loss': 0.2876766199866931, 'val_loss': 0.26131797954440117, 'train_ssim': 0.4905484865109126, 'val_ssim': 0.5861138142645359, 'elapsed': 6.842343330383301}
+2025-03-25 15:33:01,133 - INFO - info: {'type': 'info', 'epoch': 7, 'batch': 0, 'total_batches': 30, 'loss': 0.25781601667404175}
+2025-03-25 15:33:03,070 - INFO - info: {'type': 'info', 'epoch': 7, 'batch': 10, 'total_batches': 30, 'loss': 0.2398768812417984}
+2025-03-25 15:33:05,038 - INFO - info: {'type': 'info', 'epoch': 7, 'batch': 20, 'total_batches': 30, 'loss': 0.22673016786575317}
+2025-03-25 15:33:07,592 - INFO - Saved best model with validation loss: 0.237211
+2025-03-25 15:33:07,593 - INFO - info: {'type': 'info', 'epoch': 7, 'train_loss': 0.25814067473014196, 'val_loss': 0.23721086978912354, 'train_ssim': 0.5406118462483088, 'val_ssim': 0.6190757527947426, 'elapsed': 6.6664979457855225}
+2025-03-25 15:33:07,821 - INFO - info: {'type': 'info', 'epoch': 8, 'batch': 0, 'total_batches': 30, 'loss': 0.1962471604347229}
+2025-03-25 15:33:09,807 - INFO - info: {'type': 'info', 'epoch': 8, 'batch': 10, 'total_batches': 30, 'loss': 0.20630335807800293}
+2025-03-25 15:33:11,799 - INFO - info: {'type': 'info', 'epoch': 8, 'batch': 20, 'total_batches': 30, 'loss': 0.2345445603132248}
+2025-03-25 15:33:14,009 - INFO - info: {'type': 'info', 'epoch': 8, 'train_loss': 0.2313984309633573, 'val_loss': 0.28495724499225616, 'train_ssim': 0.5803633938233058, 'val_ssim': 0.6038145869970322, 'elapsed': 6.414367437362671}
+2025-03-25 15:33:14,252 - INFO - info: {'type': 'info', 'epoch': 9, 'batch': 0, 'total_batches': 30, 'loss': 0.20009687542915344}
+2025-03-25 15:33:16,129 - INFO - info: {'type': 'info', 'epoch': 9, 'batch': 10, 'total_batches': 30, 'loss': 0.1837601512670517}
+2025-03-25 15:33:18,009 - INFO - info: {'type': 'info', 'epoch': 9, 'batch': 20, 'total_batches': 30, 'loss': 0.28078314661979675}
+2025-03-25 15:33:20,378 - INFO - Saved best model with validation loss: 0.189062
+2025-03-25 15:33:20,378 - INFO - info: {'type': 'info', 'epoch': 9, 'train_loss': 0.2324934979279836, 'val_loss': 0.189062075689435, 'train_ssim': 0.599815716346105, 'val_ssim': 0.6404430419206619, 'elapsed': 6.3693413734436035}
+2025-03-25 15:33:20,583 - INFO - info: {'type': 'info', 'epoch': 10, 'batch': 0, 'total_batches': 30, 'loss': 0.232625812292099}
+2025-03-25 15:33:22,431 - INFO - info: {'type': 'info', 'epoch': 10, 'batch': 10, 'total_batches': 30, 'loss': 0.19076363742351532}
+2025-03-25 15:33:24,255 - INFO - info: {'type': 'info', 'epoch': 10, 'batch': 20, 'total_batches': 30, 'loss': 0.28840142488479614}
+2025-03-25 15:33:26,629 - INFO - Saved best model with validation loss: 0.144116
+2025-03-25 15:33:26,629 - INFO - info: {'type': 'info', 'epoch': 10, 'train_loss': 0.1996141364177068, 'val_loss': 0.144116154871881, 'train_ssim': 0.6469311892986298, 'val_ssim': 0.7279438599944115, 'elapsed': 6.249374866485596}
+2025-03-25 15:33:27,788 - INFO - info: {'type': 'info', 'epoch': 11, 'batch': 0, 'total_batches': 30, 'loss': 0.15739509463310242}
+2025-03-25 15:33:29,559 - INFO - info: {'type': 'info', 'epoch': 11, 'batch': 10, 'total_batches': 30, 'loss': 0.13981395959854126}
+2025-03-25 15:33:31,296 - INFO - info: {'type': 'info', 'epoch': 11, 'batch': 20, 'total_batches': 30, 'loss': 0.16938620805740356}
+2025-03-25 15:33:33,346 - INFO - info: {'type': 'info', 'epoch': 11, 'train_loss': 0.1833997706572215, 'val_loss': 0.14716800022870302, 'train_ssim': 0.6608779033025106, 'val_ssim': 0.7265497893095016, 'elapsed': 5.771053314208984}
+2025-03-25 15:33:33,560 - INFO - info: {'type': 'info', 'epoch': 12, 'batch': 0, 'total_batches': 30, 'loss': 0.2055695652961731}
+2025-03-25 15:33:35,303 - INFO - info: {'type': 'info', 'epoch': 12, 'batch': 10, 'total_batches': 30, 'loss': 0.25622594356536865}
+2025-03-25 15:33:37,045 - INFO - info: {'type': 'info', 'epoch': 12, 'batch': 20, 'total_batches': 30, 'loss': 0.19538690149784088}
+2025-03-25 15:33:39,344 - INFO - Saved best model with validation loss: 0.130898
+2025-03-25 15:33:39,344 - INFO - info: {'type': 'info', 'epoch': 12, 'train_loss': 0.1869403844078382, 'val_loss': 0.13089809194207191, 'train_ssim': 0.6654214024543762, 'val_ssim': 0.777183435857296, 'elapsed': 5.996817111968994}
+2025-03-25 15:33:39,537 - INFO - info: {'type': 'info', 'epoch': 13, 'batch': 0, 'total_batches': 30, 'loss': 0.19111177325248718}
+2025-03-25 15:33:41,306 - INFO - info: {'type': 'info', 'epoch': 13, 'batch': 10, 'total_batches': 30, 'loss': 0.18060117959976196}
+2025-03-25 15:33:43,172 - INFO - info: {'type': 'info', 'epoch': 13, 'batch': 20, 'total_batches': 30, 'loss': 0.13390836119651794}
+2025-03-25 15:33:45,534 - INFO - Saved best model with validation loss: 0.115258
+2025-03-25 15:33:45,535 - INFO - info: {'type': 'info', 'epoch': 13, 'train_loss': 0.1636531059940656, 'val_loss': 0.1152578555047512, 'train_ssim': 0.7031814455986023, 'val_ssim': 0.7935286462306976, 'elapsed': 6.189630746841431}
+2025-03-25 15:33:45,750 - INFO - info: {'type': 'info', 'epoch': 14, 'batch': 0, 'total_batches': 30, 'loss': 0.20054706931114197}
+2025-03-25 15:33:47,569 - INFO - info: {'type': 'info', 'epoch': 14, 'batch': 10, 'total_batches': 30, 'loss': 0.13999241590499878}
+2025-03-25 15:33:49,356 - INFO - info: {'type': 'info', 'epoch': 14, 'batch': 20, 'total_batches': 30, 'loss': 0.11377504467964172}
+2025-03-25 15:33:51,530 - INFO - info: {'type': 'info', 'epoch': 14, 'train_loss': 0.15456928660472233, 'val_loss': 0.1308414414525032, 'train_ssim': 0.7271189053853353, 'val_ssim': 0.7542104125022888, 'elapsed': 5.99420952796936}
+2025-03-25 15:33:51,758 - INFO - info: {'type': 'info', 'epoch': 15, 'batch': 0, 'total_batches': 30, 'loss': 0.1625707745552063}
+2025-03-25 15:33:53,541 - INFO - info: {'type': 'info', 'epoch': 15, 'batch': 10, 'total_batches': 30, 'loss': 0.115296870470047}
+2025-03-25 15:33:55,368 - INFO - info: {'type': 'info', 'epoch': 15, 'batch': 20, 'total_batches': 30, 'loss': 0.12355828285217285}
+2025-03-25 15:33:57,681 - INFO - Saved best model with validation loss: 0.098191
+2025-03-25 15:33:57,683 - INFO - info: {'type': 'info', 'epoch': 15, 'train_loss': 0.14838450973232586, 'val_loss': 0.09819133300334215, 'train_ssim': 0.7302961866060893, 'val_ssim': 0.8214024230837822, 'elapsed': 6.152864694595337}
+2025-03-25 15:33:58,829 - INFO - info: {'type': 'info', 'epoch': 16, 'batch': 0, 'total_batches': 30, 'loss': 0.15383562445640564}
+2025-03-25 15:34:00,579 - INFO - info: {'type': 'info', 'epoch': 16, 'batch': 10, 'total_batches': 30, 'loss': 0.14641854166984558}
+2025-03-25 15:34:02,377 - INFO - info: {'type': 'info', 'epoch': 16, 'batch': 20, 'total_batches': 30, 'loss': 0.16919520497322083}
+2025-03-25 15:34:04,404 - INFO - info: {'type': 'info', 'epoch': 16, 'train_loss': 0.15144235690434774, 'val_loss': 0.14886452164500952, 'train_ssim': 0.7287395457426707, 'val_ssim': 0.771188884973526, 'elapsed': 5.791442155838013}
+2025-03-25 15:34:04,621 - INFO - info: {'type': 'info', 'epoch': 17, 'batch': 0, 'total_batches': 30, 'loss': 0.18053941428661346}
+2025-03-25 15:34:06,386 - INFO - info: {'type': 'info', 'epoch': 17, 'batch': 10, 'total_batches': 30, 'loss': 0.10153760015964508}
+2025-03-25 15:34:08,141 - INFO - info: {'type': 'info', 'epoch': 17, 'batch': 20, 'total_batches': 30, 'loss': 0.13785114884376526}
+2025-03-25 15:34:10,212 - INFO - info: {'type': 'info', 'epoch': 17, 'train_loss': 0.15580022980769476, 'val_loss': 0.11718320474028587, 'train_ssim': 0.7210446963707606, 'val_ssim': 0.7729159146547318, 'elapsed': 5.804738283157349}
+2025-03-25 15:34:10,425 - INFO - info: {'type': 'info', 'epoch': 18, 'batch': 0, 'total_batches': 30, 'loss': 0.1113707572221756}
+2025-03-25 15:34:12,117 - INFO - info: {'type': 'info', 'epoch': 18, 'batch': 10, 'total_batches': 30, 'loss': 0.20099113881587982}
+2025-03-25 15:34:13,858 - INFO - info: {'type': 'info', 'epoch': 18, 'batch': 20, 'total_batches': 30, 'loss': 0.1791238784790039}
+2025-03-25 15:34:15,873 - INFO - info: {'type': 'info', 'epoch': 18, 'train_loss': 0.14777060672640802, 'val_loss': 0.10294194146990776, 'train_ssim': 0.7276659846305847, 'val_ssim': 0.8050656020641327, 'elapsed': 5.661350965499878}
+2025-03-25 15:34:16,095 - INFO - info: {'type': 'info', 'epoch': 19, 'batch': 0, 'total_batches': 30, 'loss': 0.16340824961662292}
+2025-03-25 15:34:17,829 - INFO - info: {'type': 'info', 'epoch': 19, 'batch': 10, 'total_batches': 30, 'loss': 0.12359204888343811}
+2025-03-25 15:34:19,507 - INFO - info: {'type': 'info', 'epoch': 19, 'batch': 20, 'total_batches': 30, 'loss': 0.15799428522586823}
+2025-03-25 15:34:21,585 - INFO - Saved best model with validation loss: 0.097539
+2025-03-25 15:34:21,585 - INFO - info: {'type': 'info', 'epoch': 19, 'train_loss': 0.14083038022120795, 'val_loss': 0.09753943234682083, 'train_ssim': 0.7451790610949198, 'val_ssim': 0.8147805780172348, 'elapsed': 5.711683511734009}
+2025-03-25 15:34:21,768 - INFO - info: {'type': 'info', 'epoch': 20, 'batch': 0, 'total_batches': 30, 'loss': 0.12625478208065033}
+2025-03-25 15:34:23,518 - INFO - info: {'type': 'info', 'epoch': 20, 'batch': 10, 'total_batches': 30, 'loss': 0.09698309004306793}
+2025-03-25 15:34:25,303 - INFO - info: {'type': 'info', 'epoch': 20, 'batch': 20, 'total_batches': 30, 'loss': 0.13283996284008026}
+2025-03-25 15:34:27,420 - INFO - Saved best model with validation loss: 0.096219
+2025-03-25 15:34:27,422 - INFO - info: {'type': 'info', 'epoch': 20, 'train_loss': 0.1313234085838, 'val_loss': 0.09621893800795078, 'train_ssim': 0.762912799914678, 'val_ssim': 0.8116568103432655, 'elapsed': 5.834129095077515}
+2025-03-25 15:34:28,073 - INFO - info: {'type': 'info', 'epoch': 21, 'batch': 0, 'total_batches': 30, 'loss': 0.1346123367547989}
+2025-03-25 15:34:29,805 - INFO - info: {'type': 'info', 'epoch': 21, 'batch': 10, 'total_batches': 30, 'loss': 0.16956423223018646}
+2025-03-25 15:34:31,536 - INFO - info: {'type': 'info', 'epoch': 21, 'batch': 20, 'total_batches': 30, 'loss': 0.09527401626110077}
+2025-03-25 15:34:33,688 - INFO - Saved best model with validation loss: 0.094313
+2025-03-25 15:34:33,689 - INFO - info: {'type': 'info', 'epoch': 21, 'train_loss': 0.12816786194841068, 'val_loss': 0.09431299567222595, 'train_ssim': 0.7627541542053222, 'val_ssim': 0.8231059983372688, 'elapsed': 5.790060997009277}
+2025-03-25 15:34:33,874 - INFO - info: {'type': 'info', 'epoch': 22, 'batch': 0, 'total_batches': 30, 'loss': 0.08758623898029327}
+2025-03-25 15:34:35,569 - INFO - info: {'type': 'info', 'epoch': 22, 'batch': 10, 'total_batches': 30, 'loss': 0.08202968537807465}
+2025-03-25 15:34:37,312 - INFO - info: {'type': 'info', 'epoch': 22, 'batch': 20, 'total_batches': 30, 'loss': 0.11200776696205139}
+2025-03-25 15:34:39,443 - INFO - Saved best model with validation loss: 0.075983
+2025-03-25 15:34:39,445 - INFO - info: {'type': 'info', 'epoch': 22, 'train_loss': 0.11944553032517433, 'val_loss': 0.07598316576331854, 'train_ssim': 0.7795928279558818, 'val_ssim': 0.866132028400898, 'elapsed': 5.754883766174316}
+2025-03-25 15:34:39,620 - INFO - info: {'type': 'info', 'epoch': 23, 'batch': 0, 'total_batches': 30, 'loss': 0.08317360281944275}
+2025-03-25 15:34:41,310 - INFO - info: {'type': 'info', 'epoch': 23, 'batch': 10, 'total_batches': 30, 'loss': 0.1790992021560669}
+2025-03-25 15:34:43,011 - INFO - info: {'type': 'info', 'epoch': 23, 'batch': 20, 'total_batches': 30, 'loss': 0.2261035144329071}
+2025-03-25 15:34:44,983 - INFO - info: {'type': 'info', 'epoch': 23, 'train_loss': 0.13169143746296566, 'val_loss': 0.08818659465759993, 'train_ssim': 0.7623234828313191, 'val_ssim': 0.8449215739965439, 'elapsed': 5.538023471832275}
+2025-03-25 15:34:45,188 - INFO - info: {'type': 'info', 'epoch': 24, 'batch': 0, 'total_batches': 30, 'loss': 0.10978561639785767}
+2025-03-25 15:34:46,865 - INFO - info: {'type': 'info', 'epoch': 24, 'batch': 10, 'total_batches': 30, 'loss': 0.19999557733535767}
+2025-03-25 15:34:48,537 - INFO - info: {'type': 'info', 'epoch': 24, 'batch': 20, 'total_batches': 30, 'loss': 0.08240562677383423}
+2025-03-25 15:34:50,501 - INFO - info: {'type': 'info', 'epoch': 24, 'train_loss': 0.12263032048940659, 'val_loss': 0.07674454478546977, 'train_ssim': 0.7725464622179667, 'val_ssim': 0.863797701895237, 'elapsed': 5.517980337142944}
+2025-03-25 15:34:50,695 - INFO - info: {'type': 'info', 'epoch': 25, 'batch': 0, 'total_batches': 30, 'loss': 0.0891137421131134}
+2025-03-25 15:34:52,382 - INFO - info: {'type': 'info', 'epoch': 25, 'batch': 10, 'total_batches': 30, 'loss': 0.12818613648414612}
+2025-03-25 15:34:54,225 - INFO - info: {'type': 'info', 'epoch': 25, 'batch': 20, 'total_batches': 30, 'loss': 0.10938040912151337}
+2025-03-25 15:34:56,403 - INFO - info: {'type': 'info', 'epoch': 25, 'train_loss': 0.12350947335362435, 'val_loss': 0.08475762978196144, 'train_ssim': 0.771702449520429, 'val_ssim': 0.8756602704524994, 'elapsed': 5.89975380897522}
+2025-03-25 15:34:57,551 - INFO - info: {'type': 'info', 'epoch': 26, 'batch': 0, 'total_batches': 30, 'loss': 0.15063458681106567}
+2025-03-25 15:34:59,317 - INFO - info: {'type': 'info', 'epoch': 26, 'batch': 10, 'total_batches': 30, 'loss': 0.12283897399902344}
+2025-03-25 15:35:01,135 - INFO - info: {'type': 'info', 'epoch': 26, 'batch': 20, 'total_batches': 30, 'loss': 0.09886029362678528}
+2025-03-25 15:35:03,197 - INFO - info: {'type': 'info', 'epoch': 26, 'train_loss': 0.1206107864777247, 'val_loss': 0.07628054823726416, 'train_ssim': 0.781644211212794, 'val_ssim': 0.8497622609138489, 'elapsed': 5.8315184116363525}
+2025-03-25 15:35:03,404 - INFO - info: {'type': 'info', 'epoch': 27, 'batch': 0, 'total_batches': 30, 'loss': 0.109568290412426}
+2025-03-25 15:35:05,185 - INFO - info: {'type': 'info', 'epoch': 27, 'batch': 10, 'total_batches': 30, 'loss': 0.11704349517822266}
+2025-03-25 15:35:06,935 - INFO - info: {'type': 'info', 'epoch': 27, 'batch': 20, 'total_batches': 30, 'loss': 0.08958049863576889}
+2025-03-25 15:35:08,989 - INFO - info: {'type': 'info', 'epoch': 27, 'train_loss': 0.11949262196818987, 'val_loss': 0.07821090333163738, 'train_ssim': 0.7796815792719524, 'val_ssim': 0.8555878400802612, 'elapsed': 5.7894744873046875}
+2025-03-25 15:35:09,201 - INFO - info: {'type': 'info', 'epoch': 28, 'batch': 0, 'total_batches': 30, 'loss': 0.08881131559610367}
+2025-03-25 15:35:10,919 - INFO - info: {'type': 'info', 'epoch': 28, 'batch': 10, 'total_batches': 30, 'loss': 0.11446720361709595}
+2025-03-25 15:35:12,620 - INFO - info: {'type': 'info', 'epoch': 28, 'batch': 20, 'total_batches': 30, 'loss': 0.07397407293319702}
+2025-03-25 15:35:14,801 - INFO - Saved best model with validation loss: 0.074204
+2025-03-25 15:35:14,802 - INFO - info: {'type': 'info', 'epoch': 28, 'train_loss': 0.10560002798835437, 'val_loss': 0.07420405093580484, 'train_ssim': 0.8083831270535787, 'val_ssim': 0.8630127534270287, 'elapsed': 5.812541246414185}
+2025-03-25 15:35:14,991 - INFO - info: {'type': 'info', 'epoch': 29, 'batch': 0, 'total_batches': 30, 'loss': 0.11445282399654388}
+2025-03-25 15:35:16,641 - INFO - info: {'type': 'info', 'epoch': 29, 'batch': 10, 'total_batches': 30, 'loss': 0.18504229187965393}
+2025-03-25 15:35:18,280 - INFO - info: {'type': 'info', 'epoch': 29, 'batch': 20, 'total_batches': 30, 'loss': 0.10602350533008575}
+2025-03-25 15:35:20,454 - INFO - Saved best model with validation loss: 0.071070
+2025-03-25 15:35:20,455 - INFO - info: {'type': 'info', 'epoch': 29, 'train_loss': 0.11563840135931969, 'val_loss': 0.0710703395307064, 'train_ssim': 0.7952182432015736, 'val_ssim': 0.8842528387904167, 'elapsed': 5.652029037475586}
+2025-03-25 15:35:20,652 - INFO - info: {'type': 'info', 'epoch': 30, 'batch': 0, 'total_batches': 30, 'loss': 0.17190276086330414}
+2025-03-25 15:35:22,322 - INFO - info: {'type': 'info', 'epoch': 30, 'batch': 10, 'total_batches': 30, 'loss': 0.10823363065719604}
+2025-03-25 15:35:23,966 - INFO - info: {'type': 'info', 'epoch': 30, 'batch': 20, 'total_batches': 30, 'loss': 0.15010938048362732}
+2025-03-25 15:35:25,939 - INFO - info: {'type': 'info', 'epoch': 30, 'train_loss': 0.11130609239141147, 'val_loss': 0.07341375714167953, 'train_ssim': 0.7950596332550048, 'val_ssim': 0.8690654784440994, 'elapsed': 5.483306169509888}
+2025-03-25 15:35:27,078 - INFO - info: {'type': 'info', 'epoch': 31, 'batch': 0, 'total_batches': 30, 'loss': 0.05677245929837227}
+2025-03-25 15:35:28,686 - INFO - info: {'type': 'info', 'epoch': 31, 'batch': 10, 'total_batches': 30, 'loss': 0.11797551065683365}
+2025-03-25 15:35:30,292 - INFO - info: {'type': 'info', 'epoch': 31, 'batch': 20, 'total_batches': 30, 'loss': 0.11345987021923065}
+2025-03-25 15:35:32,217 - INFO - info: {'type': 'info', 'epoch': 31, 'train_loss': 0.12871370799839496, 'val_loss': 0.09516584873199463, 'train_ssim': 0.7650360465049744, 'val_ssim': 0.8145377859473228, 'elapsed': 5.342621088027954}
+2025-03-25 15:35:32,423 - INFO - info: {'type': 'info', 'epoch': 32, 'batch': 0, 'total_batches': 30, 'loss': 0.12601153552532196}
+2025-03-25 15:35:34,021 - INFO - info: {'type': 'info', 'epoch': 32, 'batch': 10, 'total_batches': 30, 'loss': 0.19565993547439575}
+2025-03-25 15:35:35,652 - INFO - info: {'type': 'info', 'epoch': 32, 'batch': 20, 'total_batches': 30, 'loss': 0.12804874777793884}
+2025-03-25 15:35:37,541 - INFO - info: {'type': 'info', 'epoch': 32, 'train_loss': 0.13523484071095784, 'val_loss': 0.10946676135063171, 'train_ssim': 0.7567678689956665, 'val_ssim': 0.8069649189710617, 'elapsed': 5.32394552230835}
+2025-03-25 15:35:37,761 - INFO - info: {'type': 'info', 'epoch': 33, 'batch': 0, 'total_batches': 30, 'loss': 0.13014554977416992}
+2025-03-25 15:35:39,374 - INFO - info: {'type': 'info', 'epoch': 33, 'batch': 10, 'total_batches': 30, 'loss': 0.10196161270141602}
+2025-03-25 15:35:40,977 - INFO - info: {'type': 'info', 'epoch': 33, 'batch': 20, 'total_batches': 30, 'loss': 0.09078988432884216}
+2025-03-25 15:35:42,875 - INFO - info: {'type': 'info', 'epoch': 33, 'train_loss': 0.11704106430212656, 'val_loss': 0.07456792937591672, 'train_ssim': 0.7886589209238688, 'val_ssim': 0.8704521358013153, 'elapsed': 5.333558797836304}
+2025-03-25 15:35:43,069 - INFO - info: {'type': 'info', 'epoch': 34, 'batch': 0, 'total_batches': 30, 'loss': 0.1870671808719635}
+2025-03-25 15:35:44,699 - INFO - info: {'type': 'info', 'epoch': 34, 'batch': 10, 'total_batches': 30, 'loss': 0.08076734840869904}
+2025-03-25 15:35:46,346 - INFO - info: {'type': 'info', 'epoch': 34, 'batch': 20, 'total_batches': 30, 'loss': 0.10723505169153214}
+2025-03-25 15:35:48,313 - INFO - info: {'type': 'info', 'epoch': 34, 'train_loss': 0.11624436552325884, 'val_loss': 0.09022299386560917, 'train_ssim': 0.7820336043834686, 'val_ssim': 0.8313092663884163, 'elapsed': 5.4364845752716064}
+2025-03-25 15:35:48,506 - INFO - info: {'type': 'info', 'epoch': 35, 'batch': 0, 'total_batches': 30, 'loss': 0.1756945550441742}
+2025-03-25 15:35:50,134 - INFO - info: {'type': 'info', 'epoch': 35, 'batch': 10, 'total_batches': 30, 'loss': 0.09429434686899185}
+2025-03-25 15:35:51,740 - INFO - info: {'type': 'info', 'epoch': 35, 'batch': 20, 'total_batches': 30, 'loss': 0.10767510533332825}
+2025-03-25 15:35:53,625 - INFO - info: {'type': 'info', 'epoch': 35, 'train_loss': 0.10467285960912705, 'val_loss': 0.07229098957031965, 'train_ssim': 0.8068616151809692, 'val_ssim': 0.87396389991045, 'elapsed': 5.311608076095581}
+2025-03-25 15:35:54,776 - INFO - info: {'type': 'info', 'epoch': 36, 'batch': 0, 'total_batches': 30, 'loss': 0.17308466136455536}
+2025-03-25 15:35:56,340 - INFO - info: {'type': 'info', 'epoch': 36, 'batch': 10, 'total_batches': 30, 'loss': 0.10642418265342712}
+2025-03-25 15:35:57,937 - INFO - info: {'type': 'info', 'epoch': 36, 'batch': 20, 'total_batches': 30, 'loss': 0.07331688702106476}
+2025-03-25 15:36:00,059 - INFO - Saved best model with validation loss: 0.062773
+2025-03-25 15:36:00,060 - INFO - info: {'type': 'info', 'epoch': 36, 'train_loss': 0.10863674233357111, 'val_loss': 0.06277343677356839, 'train_ssim': 0.7987054785092672, 'val_ssim': 0.8928340822458267, 'elapsed': 5.49045205116272}
+2025-03-25 15:36:00,277 - INFO - info: {'type': 'info', 'epoch': 37, 'batch': 0, 'total_batches': 30, 'loss': 0.06620845198631287}
+2025-03-25 15:36:01,844 - INFO - info: {'type': 'info', 'epoch': 37, 'batch': 10, 'total_batches': 30, 'loss': 0.06502225250005722}
+2025-03-25 15:36:03,406 - INFO - info: {'type': 'info', 'epoch': 37, 'batch': 20, 'total_batches': 30, 'loss': 0.0754513293504715}
+2025-03-25 15:36:05,434 - INFO - Saved best model with validation loss: 0.059419
+2025-03-25 15:36:05,435 - INFO - info: {'type': 'info', 'epoch': 37, 'train_loss': 0.09589345815281074, 'val_loss': 0.05941941449418664, 'train_ssim': 0.8208676020304362, 'val_ssim': 0.8942347317934036, 'elapsed': 5.375248908996582}
+2025-03-25 15:36:05,631 - INFO - info: {'type': 'info', 'epoch': 38, 'batch': 0, 'total_batches': 30, 'loss': 0.06514912098646164}
+2025-03-25 15:36:07,240 - INFO - info: {'type': 'info', 'epoch': 38, 'batch': 10, 'total_batches': 30, 'loss': 0.17330291867256165}
+2025-03-25 15:36:08,860 - INFO - info: {'type': 'info', 'epoch': 38, 'batch': 20, 'total_batches': 30, 'loss': 0.06165469437837601}
+2025-03-25 15:36:10,768 - INFO - info: {'type': 'info', 'epoch': 38, 'train_loss': 0.10158819258213043, 'val_loss': 0.05998450890183449, 'train_ssim': 0.8096092681090037, 'val_ssim': 0.8935260996222496, 'elapsed': 5.332663059234619}
+2025-03-25 15:36:10,947 - INFO - info: {'type': 'info', 'epoch': 39, 'batch': 0, 'total_batches': 30, 'loss': 0.05799560993909836}
+2025-03-25 15:36:12,570 - INFO - info: {'type': 'info', 'epoch': 39, 'batch': 10, 'total_batches': 30, 'loss': 0.08274722099304199}
+2025-03-25 15:36:14,198 - INFO - info: {'type': 'info', 'epoch': 39, 'batch': 20, 'total_batches': 30, 'loss': 0.05543138459324837}
+2025-03-25 15:36:16,107 - INFO - info: {'type': 'info', 'epoch': 39, 'train_loss': 0.09216962233185769, 'val_loss': 0.06121577834710479, 'train_ssim': 0.8317287782828013, 'val_ssim': 0.8889722973108292, 'elapsed': 5.337916374206543}
+2025-03-25 15:36:16,317 - INFO - info: {'type': 'info', 'epoch': 40, 'batch': 0, 'total_batches': 30, 'loss': 0.1213429719209671}
+2025-03-25 15:36:17,911 - INFO - info: {'type': 'info', 'epoch': 40, 'batch': 10, 'total_batches': 30, 'loss': 0.0533553808927536}
+2025-03-25 15:36:19,504 - INFO - info: {'type': 'info', 'epoch': 40, 'batch': 20, 'total_batches': 30, 'loss': 0.07336431741714478}
+2025-03-25 15:36:21,569 - INFO - Saved best model with validation loss: 0.056945
+2025-03-25 15:36:21,570 - INFO - info: {'type': 'info', 'epoch': 40, 'train_loss': 0.09948348651329676, 'val_loss': 0.05694477632641792, 'train_ssim': 0.8180607736110688, 'val_ssim': 0.8986300230026245, 'elapsed': 5.4616172313690186}
+2025-03-25 15:36:22,808 - INFO - info: {'type': 'info', 'epoch': 41, 'batch': 0, 'total_batches': 30, 'loss': 0.11500604450702667}
+2025-03-25 15:36:24,397 - INFO - info: {'type': 'info', 'epoch': 41, 'batch': 10, 'total_batches': 30, 'loss': 0.14996469020843506}
+2025-03-25 15:36:26,037 - INFO - info: {'type': 'info', 'epoch': 41, 'batch': 20, 'total_batches': 30, 'loss': 0.12728068232536316}
+2025-03-25 15:36:27,937 - INFO - info: {'type': 'info', 'epoch': 41, 'train_loss': 0.09689064224561056, 'val_loss': 0.06464526988565922, 'train_ssim': 0.8251879115899404, 'val_ssim': 0.8911394774913788, 'elapsed': 5.331207513809204}
+2025-03-25 15:36:28,156 - INFO - info: {'type': 'info', 'epoch': 42, 'batch': 0, 'total_batches': 30, 'loss': 0.08638814091682434}
+2025-03-25 15:36:29,754 - INFO - info: {'type': 'info', 'epoch': 42, 'batch': 10, 'total_batches': 30, 'loss': 0.0752200037240982}
+2025-03-25 15:36:31,351 - INFO - info: {'type': 'info', 'epoch': 42, 'batch': 20, 'total_batches': 30, 'loss': 0.07566900551319122}
+2025-03-25 15:36:33,208 - INFO - info: {'type': 'info', 'epoch': 42, 'train_loss': 0.10256820830206076, 'val_loss': 0.07627175794914365, 'train_ssim': 0.8085578203201294, 'val_ssim': 0.8560886010527611, 'elapsed': 5.270784854888916}
+2025-03-25 15:36:33,408 - INFO - info: {'type': 'info', 'epoch': 43, 'batch': 0, 'total_batches': 30, 'loss': 0.061831001192331314}
+2025-03-25 15:36:35,053 - INFO - info: {'type': 'info', 'epoch': 43, 'batch': 10, 'total_batches': 30, 'loss': 0.05216072499752045}
+2025-03-25 15:36:36,668 - INFO - info: {'type': 'info', 'epoch': 43, 'batch': 20, 'total_batches': 30, 'loss': 0.06324651092290878}
+2025-03-25 15:36:38,574 - INFO - info: {'type': 'info', 'epoch': 43, 'train_loss': 0.09535020093123119, 'val_loss': 0.060214617755264044, 'train_ssim': 0.8236065983772278, 'val_ssim': 0.8953358605504036, 'elapsed': 5.3641581535339355}
+2025-03-25 15:36:38,807 - INFO - info: {'type': 'info', 'epoch': 44, 'batch': 0, 'total_batches': 30, 'loss': 0.16954803466796875}
+2025-03-25 15:36:40,465 - INFO - info: {'type': 'info', 'epoch': 44, 'batch': 10, 'total_batches': 30, 'loss': 0.0717349648475647}
+2025-03-25 15:36:42,074 - INFO - info: {'type': 'info', 'epoch': 44, 'batch': 20, 'total_batches': 30, 'loss': 0.12258458882570267}
+2025-03-25 15:36:43,980 - INFO - info: {'type': 'info', 'epoch': 44, 'train_loss': 0.09584499684472879, 'val_loss': 0.06328537734225392, 'train_ssim': 0.8222764253616333, 'val_ssim': 0.8842520415782928, 'elapsed': 5.401993274688721}
+2025-03-25 15:36:44,204 - INFO - info: {'type': 'info', 'epoch': 45, 'batch': 0, 'total_batches': 30, 'loss': 0.09708035737276077}
+2025-03-25 15:36:45,802 - INFO - info: {'type': 'info', 'epoch': 45, 'batch': 10, 'total_batches': 30, 'loss': 0.13022267818450928}
+2025-03-25 15:36:47,411 - INFO - info: {'type': 'info', 'epoch': 45, 'batch': 20, 'total_batches': 30, 'loss': 0.08855585753917694}
+2025-03-25 15:36:49,300 - INFO - info: {'type': 'info', 'epoch': 45, 'train_loss': 0.11109047532081603, 'val_loss': 0.06925342790782452, 'train_ssim': 0.7999484221140544, 'val_ssim': 0.9013814777135849, 'elapsed': 5.318789958953857}
+2025-03-25 15:36:50,815 - INFO - info: {'type': 'info', 'epoch': 46, 'batch': 0, 'total_batches': 30, 'loss': 0.07433439791202545}
+2025-03-25 15:36:52,394 - INFO - info: {'type': 'info', 'epoch': 46, 'batch': 10, 'total_batches': 30, 'loss': 0.10884808748960495}
+2025-03-25 15:36:53,984 - INFO - info: {'type': 'info', 'epoch': 46, 'batch': 20, 'total_batches': 30, 'loss': 0.09451069682836533}
+2025-03-25 15:36:55,879 - INFO - info: {'type': 'info', 'epoch': 46, 'train_loss': 0.10859441123902798, 'val_loss': 0.060961258597671986, 'train_ssim': 0.7977863013744354, 'val_ssim': 0.8978693261742592, 'elapsed': 5.284456729888916}
+2025-03-25 15:36:56,105 - INFO - info: {'type': 'info', 'epoch': 47, 'batch': 0, 'total_batches': 30, 'loss': 0.08736491948366165}
+2025-03-25 15:36:57,694 - INFO - info: {'type': 'info', 'epoch': 47, 'batch': 10, 'total_batches': 30, 'loss': 0.12184597551822662}
+2025-03-25 15:36:59,306 - INFO - info: {'type': 'info', 'epoch': 47, 'batch': 20, 'total_batches': 30, 'loss': 0.13267801702022552}
+2025-03-25 15:37:01,187 - INFO - info: {'type': 'info', 'epoch': 47, 'train_loss': 0.09922396851082643, 'val_loss': 0.0613000076264143, 'train_ssim': 0.8245752255121866, 'val_ssim': 0.8827887922525406, 'elapsed': 5.307232141494751}
+2025-03-25 15:37:01,385 - INFO - info: {'type': 'info', 'epoch': 48, 'batch': 0, 'total_batches': 30, 'loss': 0.06398684531450272}
+2025-03-25 15:37:02,985 - INFO - info: {'type': 'info', 'epoch': 48, 'batch': 10, 'total_batches': 30, 'loss': 0.06679041683673859}
+2025-03-25 15:37:04,581 - INFO - info: {'type': 'info', 'epoch': 48, 'batch': 20, 'total_batches': 30, 'loss': 0.053204942494630814}
+2025-03-25 15:37:06,455 - INFO - info: {'type': 'info', 'epoch': 48, 'train_loss': 0.09537511728703976, 'val_loss': 0.06304395757615566, 'train_ssim': 0.8268957992394765, 'val_ssim': 0.8908164501190186, 'elapsed': 5.268362522125244}
+2025-03-25 15:37:06,643 - INFO - info: {'type': 'info', 'epoch': 49, 'batch': 0, 'total_batches': 30, 'loss': 0.09138961881399155}
+2025-03-25 15:37:08,227 - INFO - info: {'type': 'info', 'epoch': 49, 'batch': 10, 'total_batches': 30, 'loss': 0.11588194221258163}
+2025-03-25 15:37:09,785 - INFO - info: {'type': 'info', 'epoch': 49, 'batch': 20, 'total_batches': 30, 'loss': 0.17173922061920166}
+2025-03-25 15:37:11,621 - INFO - info: {'type': 'info', 'epoch': 49, 'train_loss': 0.09840636116762956, 'val_loss': 0.06587152648717165, 'train_ssim': 0.8198954224586487, 'val_ssim': 0.8734448850154877, 'elapsed': 5.164799690246582}
+2025-03-25 15:37:11,821 - INFO - info: {'type': 'info', 'epoch': 50, 'batch': 0, 'total_batches': 30, 'loss': 0.07259802520275116}
+2025-03-25 15:37:13,385 - INFO - info: {'type': 'info', 'epoch': 50, 'batch': 10, 'total_batches': 30, 'loss': 0.10547053813934326}
+2025-03-25 15:37:14,943 - INFO - info: {'type': 'info', 'epoch': 50, 'batch': 20, 'total_batches': 30, 'loss': 0.09173501282930374}
+2025-03-25 15:37:16,795 - INFO - info: {'type': 'info', 'epoch': 50, 'train_loss': 0.09047081445654233, 'val_loss': 0.058735260274261236, 'train_ssim': 0.8348998844623565, 'val_ssim': 0.8822917863726616, 'elapsed': 5.172524690628052}
+2025-03-25 15:37:17,689 - INFO - Early stopping triggered after 51 epochs
+2025-03-25 15:37:17,917 - INFO - Training completed. Final model saved to ./checkpoints\final_model_unet.pth
+2025-03-25 15:43:47,872 - INFO - Using device: cuda
+2025-03-25 15:43:47,880 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 15:43:47,880 - INFO - Memory allocated: 0.00 GB
+2025-03-25 15:43:47,880 - INFO - Memory reserved: 0.00 GB
+2025-03-25 15:43:47,881 - INFO - Using Automatic Mixed Precision (AMP) training.
+2025-03-25 15:43:48,046 - INFO - info: {'type': 'info', 'model_type': 'unet', 'batch_size': 8, 'epochs': 100, 'learning_rate': 0.0001, 'weight_decay': 1e-05, 'ssim_weight': 0.5, 'augmentation': False, 'validation_split': 0.2, 'patience': 10, 'num_workers': 7, 'seed': 1982}
+2025-03-25 15:44:06,792 - INFO - info: {'type': 'info', 'epoch': 0, 'batch': 0, 'total_batches': 30, 'loss': 2.4330332279205322}
+2025-03-25 15:44:08,282 - INFO - info: {'type': 'info', 'epoch': 0, 'batch': 10, 'total_batches': 30, 'loss': 2.052154064178467}
+2025-03-25 15:44:09,762 - INFO - info: {'type': 'info', 'epoch': 0, 'batch': 20, 'total_batches': 30, 'loss': 1.7110979557037354}
+2025-03-25 15:44:29,873 - INFO - Saved best model with validation loss: 1.326193
+2025-03-25 15:44:29,874 - INFO - info: {'type': 'info', 'epoch': 0, 'train_loss': 1.9005820512771607, 'val_loss': 1.3261934369802475, 'train_ssim': 0.007126040391934415, 'val_ssim': 0.007352181302849203, 'elapsed': 41.826934814453125}
+2025-03-25 15:44:30,506 - INFO - info: {'type': 'info', 'epoch': 1, 'batch': 0, 'total_batches': 30, 'loss': 1.7463972568511963}
+2025-03-25 15:44:32,174 - INFO - info: {'type': 'info', 'epoch': 1, 'batch': 10, 'total_batches': 30, 'loss': 1.3781626224517822}
+2025-03-25 15:44:34,004 - INFO - info: {'type': 'info', 'epoch': 1, 'batch': 20, 'total_batches': 30, 'loss': 1.4460084438323975}
+2025-03-25 15:44:36,459 - INFO - Saved best model with validation loss: 1.172233
+2025-03-25 15:44:36,459 - INFO - info: {'type': 'info', 'epoch': 1, 'train_loss': 1.375903554757436, 'val_loss': 1.1722333282232285, 'train_ssim': 0.025127984924862783, 'val_ssim': 0.02425358258187771, 'elapsed': 6.135167837142944}
+2025-03-25 15:44:36,698 - INFO - info: {'type': 'info', 'epoch': 2, 'batch': 0, 'total_batches': 30, 'loss': 1.1376460790634155}
+2025-03-25 15:44:38,919 - INFO - info: {'type': 'info', 'epoch': 2, 'batch': 10, 'total_batches': 30, 'loss': 1.0667495727539062}
+2025-03-25 15:44:41,195 - INFO - info: {'type': 'info', 'epoch': 2, 'batch': 20, 'total_batches': 30, 'loss': 0.9010088443756104}
+2025-03-25 15:44:43,996 - INFO - Saved best model with validation loss: 1.055151
+2025-03-25 15:44:43,996 - INFO - info: {'type': 'info', 'epoch': 2, 'train_loss': 1.0086172242959341, 'val_loss': 1.0551506355404854, 'train_ssim': 0.048649567645043135, 'val_ssim': 0.048915572464466095, 'elapsed': 7.536714315414429}
+2025-03-25 15:44:44,236 - INFO - info: {'type': 'info', 'epoch': 3, 'batch': 0, 'total_batches': 30, 'loss': 0.8468152284622192}
+2025-03-25 15:44:46,530 - INFO - info: {'type': 'info', 'epoch': 3, 'batch': 10, 'total_batches': 30, 'loss': 0.7573474645614624}
+2025-03-25 15:44:48,820 - INFO - info: {'type': 'info', 'epoch': 3, 'batch': 20, 'total_batches': 30, 'loss': 0.8015415668487549}
+2025-03-25 15:44:51,618 - INFO - Saved best model with validation loss: 0.741754
+2025-03-25 15:44:51,619 - INFO - info: {'type': 'info', 'epoch': 3, 'train_loss': 0.8072044551372528, 'val_loss': 0.7417537868022919, 'train_ssim': 0.07859812850753466, 'val_ssim': 0.12952926941215992, 'elapsed': 7.622159004211426}
+2025-03-25 15:44:51,870 - INFO - info: {'type': 'info', 'epoch': 4, 'batch': 0, 'total_batches': 30, 'loss': 0.7026886343955994}
+2025-03-25 15:44:54,160 - INFO - info: {'type': 'info', 'epoch': 4, 'batch': 10, 'total_batches': 30, 'loss': 0.6909604072570801}
+2025-03-25 15:44:56,449 - INFO - info: {'type': 'info', 'epoch': 4, 'batch': 20, 'total_batches': 30, 'loss': 0.6297305226325989}
+2025-03-25 15:44:59,261 - INFO - Saved best model with validation loss: 0.602837
+2025-03-25 15:44:59,262 - INFO - info: {'type': 'info', 'epoch': 4, 'train_loss': 0.6785178085168203, 'val_loss': 0.6028366237878799, 'train_ssim': 0.15927041694521904, 'val_ssim': 0.22206413373351097, 'elapsed': 7.642599105834961}
+2025-03-25 15:44:59,543 - INFO - info: {'type': 'info', 'epoch': 5, 'batch': 0, 'total_batches': 30, 'loss': 0.5864790678024292}
+2025-03-25 15:45:01,830 - INFO - info: {'type': 'info', 'epoch': 5, 'batch': 10, 'total_batches': 30, 'loss': 0.5847896337509155}
+2025-03-25 15:45:04,119 - INFO - info: {'type': 'info', 'epoch': 5, 'batch': 20, 'total_batches': 30, 'loss': 0.5498613119125366}
+2025-03-25 15:45:06,924 - INFO - Saved best model with validation loss: 0.506017
+2025-03-25 15:45:06,925 - INFO - info: {'type': 'info', 'epoch': 5, 'train_loss': 0.5808157463868459, 'val_loss': 0.506017055362463, 'train_ssim': 0.24664985487858454, 'val_ssim': 0.322435162961483, 'elapsed': 7.662922143936157}
+2025-03-25 15:45:07,807 - INFO - info: {'type': 'info', 'epoch': 6, 'batch': 0, 'total_batches': 30, 'loss': 0.5278515815734863}
+2025-03-25 15:45:10,100 - INFO - info: {'type': 'info', 'epoch': 6, 'batch': 10, 'total_batches': 30, 'loss': 0.4599836468696594}
+2025-03-25 15:45:12,388 - INFO - info: {'type': 'info', 'epoch': 6, 'batch': 20, 'total_batches': 30, 'loss': 0.45363712310791016}
+2025-03-25 15:45:15,216 - INFO - Saved best model with validation loss: 0.423935
+2025-03-25 15:45:15,217 - INFO - info: {'type': 'info', 'epoch': 6, 'train_loss': 0.49148267408212026, 'val_loss': 0.42393483221530914, 'train_ssim': 0.3426535318295161, 'val_ssim': 0.4155735932290554, 'elapsed': 7.663885593414307}
+2025-03-25 15:45:15,511 - INFO - info: {'type': 'info', 'epoch': 7, 'batch': 0, 'total_batches': 30, 'loss': 0.4022974967956543}
+2025-03-25 15:45:17,806 - INFO - info: {'type': 'info', 'epoch': 7, 'batch': 10, 'total_batches': 30, 'loss': 0.3742763102054596}
+2025-03-25 15:45:20,099 - INFO - info: {'type': 'info', 'epoch': 7, 'batch': 20, 'total_batches': 30, 'loss': 0.43244582414627075}
+2025-03-25 15:45:22,905 - INFO - Saved best model with validation loss: 0.383259
+2025-03-25 15:45:22,906 - INFO - info: {'type': 'info', 'epoch': 7, 'train_loss': 0.4244924267133077, 'val_loss': 0.38325896114110947, 'train_ssim': 0.4141179690758387, 'val_ssim': 0.48447248712182045, 'elapsed': 7.688192129135132}
+2025-03-25 15:45:23,171 - INFO - info: {'type': 'info', 'epoch': 8, 'batch': 0, 'total_batches': 30, 'loss': 0.3675965964794159}
+2025-03-25 15:45:25,467 - INFO - info: {'type': 'info', 'epoch': 8, 'batch': 10, 'total_batches': 30, 'loss': 0.3814491927623749}
+2025-03-25 15:45:27,756 - INFO - info: {'type': 'info', 'epoch': 8, 'batch': 20, 'total_batches': 30, 'loss': 0.40340644121170044}
+2025-03-25 15:45:30,596 - INFO - Saved best model with validation loss: 0.313863
+2025-03-25 15:45:30,596 - INFO - info: {'type': 'info', 'epoch': 8, 'train_loss': 0.3807626247406006, 'val_loss': 0.3138628862798214, 'train_ssim': 0.46984299421310427, 'val_ssim': 0.5539987087249756, 'elapsed': 7.689265966415405}
+2025-03-25 15:45:30,843 - INFO - info: {'type': 'info', 'epoch': 9, 'batch': 0, 'total_batches': 30, 'loss': 0.3117430806159973}
+2025-03-25 15:45:33,133 - INFO - info: {'type': 'info', 'epoch': 9, 'batch': 10, 'total_batches': 30, 'loss': 0.3239792287349701}
+2025-03-25 15:45:35,422 - INFO - info: {'type': 'info', 'epoch': 9, 'batch': 20, 'total_batches': 30, 'loss': 0.3262568712234497}
+2025-03-25 15:45:38,237 - INFO - Saved best model with validation loss: 0.286064
+2025-03-25 15:45:38,238 - INFO - info: {'type': 'info', 'epoch': 9, 'train_loss': 0.3390852799018224, 'val_loss': 0.2860643304884434, 'train_ssim': 0.5129733681678772, 'val_ssim': 0.5796195790171623, 'elapsed': 7.64155387878418}
+2025-03-25 15:45:38,477 - INFO - info: {'type': 'info', 'epoch': 10, 'batch': 0, 'total_batches': 30, 'loss': 0.34936076402664185}
+2025-03-25 15:45:40,770 - INFO - info: {'type': 'info', 'epoch': 10, 'batch': 10, 'total_batches': 30, 'loss': 0.26743072271347046}
+2025-03-25 15:45:42,995 - INFO - info: {'type': 'info', 'epoch': 10, 'batch': 20, 'total_batches': 30, 'loss': 0.2744389474391937}
+2025-03-25 15:45:45,485 - INFO - Saved best model with validation loss: 0.274796
+2025-03-25 15:45:45,486 - INFO - info: {'type': 'info', 'epoch': 10, 'train_loss': 0.32940371334552765, 'val_loss': 0.27479618415236473, 'train_ssim': 0.5387296165029208, 'val_ssim': 0.6151741147041321, 'elapsed': 7.246386766433716}
+2025-03-25 15:45:46,181 - INFO - info: {'type': 'info', 'epoch': 11, 'batch': 0, 'total_batches': 30, 'loss': 0.29425081610679626}
+2025-03-25 15:45:48,239 - INFO - info: {'type': 'info', 'epoch': 11, 'batch': 10, 'total_batches': 30, 'loss': 0.3341013491153717}
+2025-03-25 15:45:50,161 - INFO - info: {'type': 'info', 'epoch': 11, 'batch': 20, 'total_batches': 30, 'loss': 0.4500327706336975}
+2025-03-25 15:45:52,417 - INFO - info: {'type': 'info', 'epoch': 11, 'train_loss': 0.2827974413832029, 'val_loss': 0.3316321074962616, 'train_ssim': 0.5890931596358617, 'val_ssim': 0.5804047137498856, 'elapsed': 6.4384894371032715}
+2025-03-25 15:45:52,624 - INFO - info: {'type': 'info', 'epoch': 12, 'batch': 0, 'total_batches': 30, 'loss': 0.2094939947128296}
+2025-03-25 15:45:54,533 - INFO - info: {'type': 'info', 'epoch': 12, 'batch': 10, 'total_batches': 30, 'loss': 0.3878421187400818}
+2025-03-25 15:45:56,462 - INFO - info: {'type': 'info', 'epoch': 12, 'batch': 20, 'total_batches': 30, 'loss': 0.28610002994537354}
+2025-03-25 15:45:58,782 - INFO - Saved best model with validation loss: 0.226118
+2025-03-25 15:45:58,783 - INFO - info: {'type': 'info', 'epoch': 12, 'train_loss': 0.27024465749661125, 'val_loss': 0.22611827217042446, 'train_ssim': 0.6156277894973755, 'val_ssim': 0.6765824109315872, 'elapsed': 6.366129636764526}
+2025-03-25 15:45:58,988 - INFO - info: {'type': 'info', 'epoch': 13, 'batch': 0, 'total_batches': 30, 'loss': 0.25343385338783264}
+2025-03-25 15:46:00,871 - INFO - info: {'type': 'info', 'epoch': 13, 'batch': 10, 'total_batches': 30, 'loss': 0.2555517554283142}
+2025-03-25 15:46:02,671 - INFO - info: {'type': 'info', 'epoch': 13, 'batch': 20, 'total_batches': 30, 'loss': 0.21835501492023468}
+2025-03-25 15:46:04,901 - INFO - Saved best model with validation loss: 0.208404
+2025-03-25 15:46:04,902 - INFO - info: {'type': 'info', 'epoch': 13, 'train_loss': 0.25786787619193396, 'val_loss': 0.20840364135801792, 'train_ssim': 0.6324811120827992, 'val_ssim': 0.7029996663331985, 'elapsed': 6.118082523345947}
+2025-03-25 15:46:05,113 - INFO - info: {'type': 'info', 'epoch': 14, 'batch': 0, 'total_batches': 30, 'loss': 0.23261582851409912}
+2025-03-25 15:46:06,914 - INFO - info: {'type': 'info', 'epoch': 14, 'batch': 10, 'total_batches': 30, 'loss': 0.2486853152513504}
+2025-03-25 15:46:08,714 - INFO - info: {'type': 'info', 'epoch': 14, 'batch': 20, 'total_batches': 30, 'loss': 0.23642641305923462}
+2025-03-25 15:46:10,939 - INFO - Saved best model with validation loss: 0.177472
+2025-03-25 15:46:10,940 - INFO - info: {'type': 'info', 'epoch': 14, 'train_loss': 0.23799761533737182, 'val_loss': 0.17747164145112038, 'train_ssim': 0.6530314962069194, 'val_ssim': 0.7299923375248909, 'elapsed': 6.037161588668823}
+2025-03-25 15:46:11,122 - INFO - info: {'type': 'info', 'epoch': 15, 'batch': 0, 'total_batches': 30, 'loss': 0.1874852180480957}
+2025-03-25 15:46:12,958 - INFO - info: {'type': 'info', 'epoch': 15, 'batch': 10, 'total_batches': 30, 'loss': 0.2263081967830658}
+2025-03-25 15:46:14,796 - INFO - info: {'type': 'info', 'epoch': 15, 'batch': 20, 'total_batches': 30, 'loss': 0.17794354259967804}
+2025-03-25 15:46:16,858 - INFO - info: {'type': 'info', 'epoch': 15, 'train_loss': 0.20758862545092902, 'val_loss': 0.1829795390367508, 'train_ssim': 0.6921741187572479, 'val_ssim': 0.7366403043270111, 'elapsed': 5.9178626537323}
+2025-03-25 15:46:17,483 - INFO - info: {'type': 'info', 'epoch': 16, 'batch': 0, 'total_batches': 30, 'loss': 0.17575174570083618}
+2025-03-25 15:46:19,242 - INFO - info: {'type': 'info', 'epoch': 16, 'batch': 10, 'total_batches': 30, 'loss': 0.2652406096458435}
+2025-03-25 15:46:21,044 - INFO - info: {'type': 'info', 'epoch': 16, 'batch': 20, 'total_batches': 30, 'loss': 0.2990851402282715}
+2025-03-25 15:46:23,284 - INFO - Saved best model with validation loss: 0.166387
+2025-03-25 15:46:23,284 - INFO - info: {'type': 'info', 'epoch': 16, 'train_loss': 0.22753165314594906, 'val_loss': 0.16638731583952904, 'train_ssim': 0.6710835794607798, 'val_ssim': 0.7466209754347801, 'elapsed': 6.015191078186035}
+2025-03-25 15:46:23,463 - INFO - info: {'type': 'info', 'epoch': 17, 'batch': 0, 'total_batches': 30, 'loss': 0.16583862900733948}
+2025-03-25 15:46:25,250 - INFO - info: {'type': 'info', 'epoch': 17, 'batch': 10, 'total_batches': 30, 'loss': 0.19411903619766235}
+2025-03-25 15:46:27,016 - INFO - info: {'type': 'info', 'epoch': 17, 'batch': 20, 'total_batches': 30, 'loss': 0.19510939717292786}
+2025-03-25 15:46:29,060 - INFO - info: {'type': 'info', 'epoch': 17, 'train_loss': 0.21843974888324738, 'val_loss': 0.18296369723975658, 'train_ssim': 0.6841161866982778, 'val_ssim': 0.7367373630404472, 'elapsed': 5.775115013122559}
+2025-03-25 15:46:29,278 - INFO - info: {'type': 'info', 'epoch': 18, 'batch': 0, 'total_batches': 30, 'loss': 0.22841772437095642}
+2025-03-25 15:46:31,026 - INFO - info: {'type': 'info', 'epoch': 18, 'batch': 10, 'total_batches': 30, 'loss': 0.14222458004951477}
+2025-03-25 15:46:32,776 - INFO - info: {'type': 'info', 'epoch': 18, 'batch': 20, 'total_batches': 30, 'loss': 0.17276598513126373}
+2025-03-25 15:46:34,953 - INFO - Saved best model with validation loss: 0.152934
+2025-03-25 15:46:34,954 - INFO - info: {'type': 'info', 'epoch': 18, 'train_loss': 0.19142219771941502, 'val_loss': 0.15293439477682114, 'train_ssim': 0.7190065522988637, 'val_ssim': 0.7537951394915581, 'elapsed': 5.894048452377319}
+2025-03-25 15:46:35,160 - INFO - info: {'type': 'info', 'epoch': 19, 'batch': 0, 'total_batches': 30, 'loss': 0.13619808852672577}
+2025-03-25 15:46:36,868 - INFO - info: {'type': 'info', 'epoch': 19, 'batch': 10, 'total_batches': 30, 'loss': 0.19826003909111023}
+2025-03-25 15:46:38,629 - INFO - info: {'type': 'info', 'epoch': 19, 'batch': 20, 'total_batches': 30, 'loss': 0.16122879087924957}
+2025-03-25 15:46:40,627 - INFO - info: {'type': 'info', 'epoch': 19, 'train_loss': 0.20417986089984577, 'val_loss': 0.15910849906504154, 'train_ssim': 0.7024738351504008, 'val_ssim': 0.7523375973105431, 'elapsed': 5.671459436416626}
+2025-03-25 15:46:40,845 - INFO - info: {'type': 'info', 'epoch': 20, 'batch': 0, 'total_batches': 30, 'loss': 0.19367823004722595}
+2025-03-25 15:46:42,576 - INFO - info: {'type': 'info', 'epoch': 20, 'batch': 10, 'total_batches': 30, 'loss': 0.13864867389202118}
+2025-03-25 15:46:44,311 - INFO - info: {'type': 'info', 'epoch': 20, 'batch': 20, 'total_batches': 30, 'loss': 0.17942021787166595}
+2025-03-25 15:46:46,491 - INFO - Saved best model with validation loss: 0.149472
+2025-03-25 15:46:46,491 - INFO - info: {'type': 'info', 'epoch': 20, 'train_loss': 0.18314045617977778, 'val_loss': 0.1494723092764616, 'train_ssim': 0.7278763135274251, 'val_ssim': 0.7848230004310608, 'elapsed': 5.864228010177612}
+2025-03-25 15:46:47,310 - INFO - info: {'type': 'info', 'epoch': 21, 'batch': 0, 'total_batches': 30, 'loss': 0.14479756355285645}
+2025-03-25 15:46:49,031 - INFO - info: {'type': 'info', 'epoch': 21, 'batch': 10, 'total_batches': 30, 'loss': 0.207974374294281}
+2025-03-25 15:46:50,772 - INFO - info: {'type': 'info', 'epoch': 21, 'batch': 20, 'total_batches': 30, 'loss': 0.149662584066391}
+2025-03-25 15:46:52,962 - INFO - Saved best model with validation loss: 0.135167
+2025-03-25 15:46:52,963 - INFO - info: {'type': 'info', 'epoch': 21, 'train_loss': 0.17683403690656027, 'val_loss': 0.13516695331782103, 'train_ssim': 0.7340538442134857, 'val_ssim': 0.7847724854946136, 'elapsed': 5.826526641845703}
+2025-03-25 15:46:53,155 - INFO - info: {'type': 'info', 'epoch': 22, 'batch': 0, 'total_batches': 30, 'loss': 0.16209667921066284}
+2025-03-25 15:46:54,846 - INFO - info: {'type': 'info', 'epoch': 22, 'batch': 10, 'total_batches': 30, 'loss': 0.16157624125480652}
+2025-03-25 15:46:56,585 - INFO - info: {'type': 'info', 'epoch': 22, 'batch': 20, 'total_batches': 30, 'loss': 0.14731548726558685}
+2025-03-25 15:46:58,593 - INFO - info: {'type': 'info', 'epoch': 22, 'train_loss': 0.16993622605999312, 'val_loss': 0.14457364287227392, 'train_ssim': 0.7483961959679921, 'val_ssim': 0.7929170876741409, 'elapsed': 5.62925910949707}
+2025-03-25 15:46:58,799 - INFO - info: {'type': 'info', 'epoch': 23, 'batch': 0, 'total_batches': 30, 'loss': 0.18283352255821228}
+2025-03-25 15:47:00,504 - INFO - info: {'type': 'info', 'epoch': 23, 'batch': 10, 'total_batches': 30, 'loss': 0.18448065221309662}
+2025-03-25 15:47:02,188 - INFO - info: {'type': 'info', 'epoch': 23, 'batch': 20, 'total_batches': 30, 'loss': 0.19985713064670563}
+2025-03-25 15:47:04,162 - INFO - info: {'type': 'info', 'epoch': 23, 'train_loss': 0.19094516734282177, 'val_loss': 0.15941025502979755, 'train_ssim': 0.7174887180328369, 'val_ssim': 0.7666160985827446, 'elapsed': 5.567929744720459}
+2025-03-25 15:47:04,397 - INFO - info: {'type': 'info', 'epoch': 24, 'batch': 0, 'total_batches': 30, 'loss': 0.13203801214694977}
+2025-03-25 15:47:06,064 - INFO - info: {'type': 'info', 'epoch': 24, 'batch': 10, 'total_batches': 30, 'loss': 0.281849205493927}
+2025-03-25 15:47:07,744 - INFO - info: {'type': 'info', 'epoch': 24, 'batch': 20, 'total_batches': 30, 'loss': 0.10813884437084198}
+2025-03-25 15:47:09,965 - INFO - Saved best model with validation loss: 0.129678
+2025-03-25 15:47:09,965 - INFO - info: {'type': 'info', 'epoch': 24, 'train_loss': 0.1745786209901174, 'val_loss': 0.12967756390571594, 'train_ssim': 0.7449909061193466, 'val_ssim': 0.8095570504665375, 'elapsed': 5.803127765655518}
+2025-03-25 15:47:10,169 - INFO - info: {'type': 'info', 'epoch': 25, 'batch': 0, 'total_batches': 30, 'loss': 0.2091265320777893}
+2025-03-25 15:47:11,807 - INFO - info: {'type': 'info', 'epoch': 25, 'batch': 10, 'total_batches': 30, 'loss': 0.147395521402359}
+2025-03-25 15:47:13,473 - INFO - info: {'type': 'info', 'epoch': 25, 'batch': 20, 'total_batches': 30, 'loss': 0.10451839119195938}
+2025-03-25 15:47:15,652 - INFO - Saved best model with validation loss: 0.114287
+2025-03-25 15:47:15,652 - INFO - info: {'type': 'info', 'epoch': 25, 'train_loss': 0.1770318957666556, 'val_loss': 0.11428678873926401, 'train_ssim': 0.7410186807314555, 'val_ssim': 0.8177715614438057, 'elapsed': 5.686424732208252}
+2025-03-25 15:47:16,797 - INFO - info: {'type': 'info', 'epoch': 26, 'batch': 0, 'total_batches': 30, 'loss': 0.1368923932313919}
+2025-03-25 15:47:18,428 - INFO - info: {'type': 'info', 'epoch': 26, 'batch': 10, 'total_batches': 30, 'loss': 0.17741671204566956}
+2025-03-25 15:47:20,061 - INFO - info: {'type': 'info', 'epoch': 26, 'batch': 20, 'total_batches': 30, 'loss': 0.2841604948043823}
+2025-03-25 15:47:22,217 - INFO - Saved best model with validation loss: 0.111267
+2025-03-25 15:47:22,218 - INFO - info: {'type': 'info', 'epoch': 26, 'train_loss': 0.14983788554867108, 'val_loss': 0.11126691568642855, 'train_ssim': 0.776609069108963, 'val_ssim': 0.8279341235756874, 'elapsed': 5.631591081619263}
+2025-03-25 15:47:22,451 - INFO - info: {'type': 'info', 'epoch': 27, 'batch': 0, 'total_batches': 30, 'loss': 0.1344519555568695}
+2025-03-25 15:47:24,057 - INFO - info: {'type': 'info', 'epoch': 27, 'batch': 10, 'total_batches': 30, 'loss': 0.18127769231796265}
+2025-03-25 15:47:25,686 - INFO - info: {'type': 'info', 'epoch': 27, 'batch': 20, 'total_batches': 30, 'loss': 0.1723739355802536}
+2025-03-25 15:47:27,603 - INFO - info: {'type': 'info', 'epoch': 27, 'train_loss': 0.16538979435960452, 'val_loss': 0.14199081622064114, 'train_ssim': 0.7592713137467703, 'val_ssim': 0.7865514531731606, 'elapsed': 5.384134531021118}
+2025-03-25 15:47:27,799 - INFO - info: {'type': 'info', 'epoch': 28, 'batch': 0, 'total_batches': 30, 'loss': 0.13577155768871307}
+2025-03-25 15:47:29,423 - INFO - info: {'type': 'info', 'epoch': 28, 'batch': 10, 'total_batches': 30, 'loss': 0.21343941986560822}
+2025-03-25 15:47:31,045 - INFO - info: {'type': 'info', 'epoch': 28, 'batch': 20, 'total_batches': 30, 'loss': 0.20030343532562256}
+2025-03-25 15:47:32,958 - INFO - info: {'type': 'info', 'epoch': 28, 'train_loss': 0.18410968830188115, 'val_loss': 0.14412486925721169, 'train_ssim': 0.7308913111686707, 'val_ssim': 0.7661582008004189, 'elapsed': 5.354203462600708}
+2025-03-25 15:47:33,160 - INFO - info: {'type': 'info', 'epoch': 29, 'batch': 0, 'total_batches': 30, 'loss': 0.13921093940734863}
+2025-03-25 15:47:34,772 - INFO - info: {'type': 'info', 'epoch': 29, 'batch': 10, 'total_batches': 30, 'loss': 0.16838999092578888}
+2025-03-25 15:47:36,386 - INFO - info: {'type': 'info', 'epoch': 29, 'batch': 20, 'total_batches': 30, 'loss': 0.148629292845726}
+2025-03-25 15:47:38,300 - INFO - info: {'type': 'info', 'epoch': 29, 'train_loss': 0.174326528608799, 'val_loss': 0.12491143867373466, 'train_ssim': 0.7414534986019135, 'val_ssim': 0.8119344189763069, 'elapsed': 5.340961933135986}
+2025-03-25 15:47:38,499 - INFO - info: {'type': 'info', 'epoch': 30, 'batch': 0, 'total_batches': 30, 'loss': 0.17730914056301117}
+2025-03-25 15:47:40,115 - INFO - info: {'type': 'info', 'epoch': 30, 'batch': 10, 'total_batches': 30, 'loss': 0.13845613598823547}
+2025-03-25 15:47:41,731 - INFO - info: {'type': 'info', 'epoch': 30, 'batch': 20, 'total_batches': 30, 'loss': 0.1451748162508011}
+2025-03-25 15:47:43,803 - INFO - Saved best model with validation loss: 0.110678
+2025-03-25 15:47:43,803 - INFO - info: {'type': 'info', 'epoch': 30, 'train_loss': 0.15004371230800947, 'val_loss': 0.11067775078117847, 'train_ssim': 0.7778293331464131, 'val_ssim': 0.8310920745134354, 'elapsed': 5.503592491149902}
+2025-03-25 15:47:44,934 - INFO - info: {'type': 'info', 'epoch': 31, 'batch': 0, 'total_batches': 30, 'loss': 0.20392459630966187}
+2025-03-25 15:47:46,563 - INFO - info: {'type': 'info', 'epoch': 31, 'batch': 10, 'total_batches': 30, 'loss': 0.10857447981834412}
+2025-03-25 15:47:48,177 - INFO - info: {'type': 'info', 'epoch': 31, 'batch': 20, 'total_batches': 30, 'loss': 0.1347111463546753}
+2025-03-25 15:47:50,109 - INFO - info: {'type': 'info', 'epoch': 31, 'train_loss': 0.15720016956329347, 'val_loss': 0.11375980079174042, 'train_ssim': 0.7641603291034699, 'val_ssim': 0.8248275890946388, 'elapsed': 5.4001524448394775}
+2025-03-25 15:47:50,331 - INFO - info: {'type': 'info', 'epoch': 32, 'batch': 0, 'total_batches': 30, 'loss': 0.16354025900363922}
+2025-03-25 15:47:51,929 - INFO - info: {'type': 'info', 'epoch': 32, 'batch': 10, 'total_batches': 30, 'loss': 0.09990738332271576}
+2025-03-25 15:47:53,526 - INFO - info: {'type': 'info', 'epoch': 32, 'batch': 20, 'total_batches': 30, 'loss': 0.12740540504455566}
+2025-03-25 15:47:55,663 - INFO - Saved best model with validation loss: 0.107915
+2025-03-25 15:47:55,664 - INFO - info: {'type': 'info', 'epoch': 32, 'train_loss': 0.154682087401549, 'val_loss': 0.10791491251438856, 'train_ssim': 0.7670053780078888, 'val_ssim': 0.8447879329323769, 'elapsed': 5.554646015167236}
+2025-03-25 15:47:55,886 - INFO - info: {'type': 'info', 'epoch': 33, 'batch': 0, 'total_batches': 30, 'loss': 0.09858744591474533}
+2025-03-25 15:47:57,463 - INFO - info: {'type': 'info', 'epoch': 33, 'batch': 10, 'total_batches': 30, 'loss': 0.2026975303888321}
+2025-03-25 15:47:59,062 - INFO - info: {'type': 'info', 'epoch': 33, 'batch': 20, 'total_batches': 30, 'loss': 0.17410458624362946}
+2025-03-25 15:48:01,194 - INFO - Saved best model with validation loss: 0.102849
+2025-03-25 15:48:01,195 - INFO - info: {'type': 'info', 'epoch': 33, 'train_loss': 0.15123371705412864, 'val_loss': 0.10284936148673296, 'train_ssim': 0.7757521808147431, 'val_ssim': 0.8496596813201904, 'elapsed': 5.529557466506958}
+2025-03-25 15:48:01,409 - INFO - info: {'type': 'info', 'epoch': 34, 'batch': 0, 'total_batches': 30, 'loss': 0.1254115104675293}
+2025-03-25 15:48:02,990 - INFO - info: {'type': 'info', 'epoch': 34, 'batch': 10, 'total_batches': 30, 'loss': 0.1028657779097557}
+2025-03-25 15:48:04,573 - INFO - info: {'type': 'info', 'epoch': 34, 'batch': 20, 'total_batches': 30, 'loss': 0.24677999317646027}
+2025-03-25 15:48:06,712 - INFO - Saved best model with validation loss: 0.096223
+2025-03-25 15:48:06,713 - INFO - info: {'type': 'info', 'epoch': 34, 'train_loss': 0.14885786523421604, 'val_loss': 0.09622288029640913, 'train_ssim': 0.7766049623489379, 'val_ssim': 0.8540175184607506, 'elapsed': 5.517286062240601}
+2025-03-25 15:48:06,944 - INFO - info: {'type': 'info', 'epoch': 35, 'batch': 0, 'total_batches': 30, 'loss': 0.17628954350948334}
+2025-03-25 15:48:08,532 - INFO - info: {'type': 'info', 'epoch': 35, 'batch': 10, 'total_batches': 30, 'loss': 0.22985142469406128}
+2025-03-25 15:48:10,116 - INFO - info: {'type': 'info', 'epoch': 35, 'batch': 20, 'total_batches': 30, 'loss': 0.1500340700149536}
+2025-03-25 15:48:11,995 - INFO - info: {'type': 'info', 'epoch': 35, 'train_loss': 0.1613494614760081, 'val_loss': 0.12216879706829786, 'train_ssim': 0.7652774393558502, 'val_ssim': 0.8179872557520866, 'elapsed': 5.281450510025024}
+2025-03-25 15:48:13,301 - INFO - info: {'type': 'info', 'epoch': 36, 'batch': 0, 'total_batches': 30, 'loss': 0.11364061385393143}
+2025-03-25 15:48:14,878 - INFO - info: {'type': 'info', 'epoch': 36, 'batch': 10, 'total_batches': 30, 'loss': 0.15136456489562988}
+2025-03-25 15:48:16,480 - INFO - info: {'type': 'info', 'epoch': 36, 'batch': 20, 'total_batches': 30, 'loss': 0.11372929811477661}
+2025-03-25 15:48:18,455 - INFO - info: {'type': 'info', 'epoch': 36, 'train_loss': 0.14200291112065316, 'val_loss': 0.09992235153913498, 'train_ssim': 0.7944055318832397, 'val_ssim': 0.8397733196616173, 'elapsed': 5.360169887542725}
+2025-03-25 15:48:18,691 - INFO - info: {'type': 'info', 'epoch': 37, 'batch': 0, 'total_batches': 30, 'loss': 0.17672738432884216}
+2025-03-25 15:48:20,389 - INFO - info: {'type': 'info', 'epoch': 37, 'batch': 10, 'total_batches': 30, 'loss': 0.15047046542167664}
+2025-03-25 15:48:22,073 - INFO - info: {'type': 'info', 'epoch': 37, 'batch': 20, 'total_batches': 30, 'loss': 0.10418020188808441}
+2025-03-25 15:48:24,040 - INFO - info: {'type': 'info', 'epoch': 37, 'train_loss': 0.14356300656994184, 'val_loss': 0.11032166611403227, 'train_ssim': 0.7839243352413178, 'val_ssim': 0.8463046103715897, 'elapsed': 5.584589242935181}
+2025-03-25 15:48:24,315 - INFO - info: {'type': 'info', 'epoch': 38, 'batch': 0, 'total_batches': 30, 'loss': 0.09083785116672516}
+2025-03-25 15:48:26,372 - INFO - info: {'type': 'info', 'epoch': 38, 'batch': 10, 'total_batches': 30, 'loss': 0.14761067926883698}
+2025-03-25 15:48:28,326 - INFO - info: {'type': 'info', 'epoch': 38, 'batch': 20, 'total_batches': 30, 'loss': 0.08164919912815094}
+2025-03-25 15:48:31,704 - INFO - Saved best model with validation loss: 0.092066
+2025-03-25 15:48:31,706 - INFO - info: {'type': 'info', 'epoch': 38, 'train_loss': 0.1441014642516772, 'val_loss': 0.09206639043986797, 'train_ssim': 0.7882364193598429, 'val_ssim': 0.8546022325754166, 'elapsed': 7.665128707885742}
+2025-03-25 15:48:32,348 - INFO - info: {'type': 'info', 'epoch': 39, 'batch': 0, 'total_batches': 30, 'loss': 0.08670146763324738}
+2025-03-25 15:48:34,081 - INFO - info: {'type': 'info', 'epoch': 39, 'batch': 10, 'total_batches': 30, 'loss': 0.16906197369098663}
+2025-03-25 15:48:35,743 - INFO - info: {'type': 'info', 'epoch': 39, 'batch': 20, 'total_batches': 30, 'loss': 0.16783306002616882}
+2025-03-25 15:48:37,697 - INFO - info: {'type': 'info', 'epoch': 39, 'train_loss': 0.15489035521944364, 'val_loss': 0.11614461801946163, 'train_ssim': 0.7675752381483714, 'val_ssim': 0.8194184973835945, 'elapsed': 5.989218711853027}
+2025-03-25 15:48:37,950 - INFO - info: {'type': 'info', 'epoch': 40, 'batch': 0, 'total_batches': 30, 'loss': 0.10546600073575974}
+2025-03-25 15:48:39,582 - INFO - info: {'type': 'info', 'epoch': 40, 'batch': 10, 'total_batches': 30, 'loss': 0.10520192980766296}
+2025-03-25 15:48:41,237 - INFO - info: {'type': 'info', 'epoch': 40, 'batch': 20, 'total_batches': 30, 'loss': 0.16364753246307373}
+2025-03-25 15:48:43,279 - INFO - info: {'type': 'info', 'epoch': 40, 'train_loss': 0.13408333137631417, 'val_loss': 0.12430287059396505, 'train_ssim': 0.7969755550225576, 'val_ssim': 0.8117771968245506, 'elapsed': 5.580292701721191}
+2025-03-25 15:48:45,996 - INFO - info: {'type': 'info', 'epoch': 41, 'batch': 0, 'total_batches': 30, 'loss': 0.12174685299396515}
+2025-03-25 15:48:47,659 - INFO - info: {'type': 'info', 'epoch': 41, 'batch': 10, 'total_batches': 30, 'loss': 0.1146777868270874}
+2025-03-25 15:48:49,241 - INFO - info: {'type': 'info', 'epoch': 41, 'batch': 20, 'total_batches': 30, 'loss': 0.14772193133831024}
+2025-03-25 15:48:51,107 - INFO - info: {'type': 'info', 'epoch': 41, 'train_loss': 0.13614246621727943, 'val_loss': 0.09791778586804867, 'train_ssim': 0.7943948109944662, 'val_ssim': 0.8409761935472488, 'elapsed': 5.6442365646362305}
+2025-03-25 15:48:51,310 - INFO - info: {'type': 'info', 'epoch': 42, 'batch': 0, 'total_batches': 30, 'loss': 0.10592944920063019}
+2025-03-25 15:48:52,901 - INFO - info: {'type': 'info', 'epoch': 42, 'batch': 10, 'total_batches': 30, 'loss': 0.08500474691390991}
+2025-03-25 15:48:54,493 - INFO - info: {'type': 'info', 'epoch': 42, 'batch': 20, 'total_batches': 30, 'loss': 0.13587312400341034}
+2025-03-25 15:48:56,441 - INFO - info: {'type': 'info', 'epoch': 42, 'train_loss': 0.13082501913110414, 'val_loss': 0.2317093200981617, 'train_ssim': 0.8007064153750737, 'val_ssim': 0.7043299600481987, 'elapsed': 5.332563638687134}
+2025-03-25 15:48:56,684 - INFO - info: {'type': 'info', 'epoch': 43, 'batch': 0, 'total_batches': 30, 'loss': 0.1813344955444336}
+2025-03-25 15:48:58,333 - INFO - info: {'type': 'info', 'epoch': 43, 'batch': 10, 'total_batches': 30, 'loss': 0.12460877001285553}
+2025-03-25 15:48:59,943 - INFO - info: {'type': 'info', 'epoch': 43, 'batch': 20, 'total_batches': 30, 'loss': 0.15092787146568298}
+2025-03-25 15:49:01,834 - INFO - info: {'type': 'info', 'epoch': 43, 'train_loss': 0.1454159421225389, 'val_loss': 0.10546668991446495, 'train_ssim': 0.7818201879660288, 'val_ssim': 0.8366305455565453, 'elapsed': 5.392925977706909}
+2025-03-25 15:49:02,064 - INFO - info: {'type': 'info', 'epoch': 44, 'batch': 0, 'total_batches': 30, 'loss': 0.09668106585741043}
+2025-03-25 15:49:03,680 - INFO - info: {'type': 'info', 'epoch': 44, 'batch': 10, 'total_batches': 30, 'loss': 0.07260426133871078}
+2025-03-25 15:49:05,302 - INFO - info: {'type': 'info', 'epoch': 44, 'batch': 20, 'total_batches': 30, 'loss': 0.1174827590584755}
+2025-03-25 15:49:07,570 - INFO - Saved best model with validation loss: 0.092061
+2025-03-25 15:49:07,571 - INFO - info: {'type': 'info', 'epoch': 44, 'train_loss': 0.13408843552072844, 'val_loss': 0.09206093195825815, 'train_ssim': 0.7970077176888783, 'val_ssim': 0.853174515068531, 'elapsed': 5.736523151397705}
+2025-03-25 15:49:07,784 - INFO - info: {'type': 'info', 'epoch': 45, 'batch': 0, 'total_batches': 30, 'loss': 0.1207544207572937}
+2025-03-25 15:49:09,353 - INFO - info: {'type': 'info', 'epoch': 45, 'batch': 10, 'total_batches': 30, 'loss': 0.10301877558231354}
+2025-03-25 15:49:10,938 - INFO - info: {'type': 'info', 'epoch': 45, 'batch': 20, 'total_batches': 30, 'loss': 0.12615543603897095}
+2025-03-25 15:49:12,848 - INFO - info: {'type': 'info', 'epoch': 45, 'train_loss': 0.1266510638097922, 'val_loss': 0.09934089798480272, 'train_ssim': 0.8072989404201507, 'val_ssim': 0.8530334085226059, 'elapsed': 5.276080369949341}
+2025-03-25 15:49:13,980 - INFO - info: {'type': 'info', 'epoch': 46, 'batch': 0, 'total_batches': 30, 'loss': 0.08836136758327484}
+2025-03-25 15:49:15,586 - INFO - info: {'type': 'info', 'epoch': 46, 'batch': 10, 'total_batches': 30, 'loss': 0.1670628786087036}
+2025-03-25 15:49:17,185 - INFO - info: {'type': 'info', 'epoch': 46, 'batch': 20, 'total_batches': 30, 'loss': 0.15585729479789734}
+2025-03-25 15:49:19,281 - INFO - Saved best model with validation loss: 0.089001
+2025-03-25 15:49:19,282 - INFO - info: {'type': 'info', 'epoch': 46, 'train_loss': 0.12870753854513167, 'val_loss': 0.08900062274187803, 'train_ssim': 0.8045384466648102, 'val_ssim': 0.8564700111746788, 'elapsed': 5.516894340515137}
+2025-03-25 15:49:19,464 - INFO - info: {'type': 'info', 'epoch': 47, 'batch': 0, 'total_batches': 30, 'loss': 0.0713970959186554}
+2025-03-25 15:49:21,028 - INFO - info: {'type': 'info', 'epoch': 47, 'batch': 10, 'total_batches': 30, 'loss': 0.10434328019618988}
+2025-03-25 15:49:22,640 - INFO - info: {'type': 'info', 'epoch': 47, 'batch': 20, 'total_batches': 30, 'loss': 0.17137031257152557}
+2025-03-25 15:49:24,563 - INFO - info: {'type': 'info', 'epoch': 47, 'train_loss': 0.11069953640302023, 'val_loss': 0.08963510766625404, 'train_ssim': 0.8319415311018626, 'val_ssim': 0.8496582955121994, 'elapsed': 5.280742168426514}
+2025-03-25 15:49:24,762 - INFO - info: {'type': 'info', 'epoch': 48, 'batch': 0, 'total_batches': 30, 'loss': 0.10253261029720306}
+2025-03-25 15:49:26,362 - INFO - info: {'type': 'info', 'epoch': 48, 'batch': 10, 'total_batches': 30, 'loss': 0.18480531871318817}
+2025-03-25 15:49:27,928 - INFO - info: {'type': 'info', 'epoch': 48, 'batch': 20, 'total_batches': 30, 'loss': 0.08278413861989975}
+2025-03-25 15:49:29,933 - INFO - Saved best model with validation loss: 0.081301
+2025-03-25 15:49:29,935 - INFO - info: {'type': 'info', 'epoch': 48, 'train_loss': 0.11712211668491364, 'val_loss': 0.08130059950053692, 'train_ssim': 0.8226346711317698, 'val_ssim': 0.8652124330401421, 'elapsed': 5.371629238128662}
+2025-03-25 15:49:30,151 - INFO - info: {'type': 'info', 'epoch': 49, 'batch': 0, 'total_batches': 30, 'loss': 0.08062879741191864}
+2025-03-25 15:49:31,754 - INFO - info: {'type': 'info', 'epoch': 49, 'batch': 10, 'total_batches': 30, 'loss': 0.08000148087739944}
+2025-03-25 15:49:33,358 - INFO - info: {'type': 'info', 'epoch': 49, 'batch': 20, 'total_batches': 30, 'loss': 0.15945766866207123}
+2025-03-25 15:49:35,310 - INFO - info: {'type': 'info', 'epoch': 49, 'train_loss': 0.12791661818822225, 'val_loss': 0.09242979995906353, 'train_ssim': 0.8041389425595601, 'val_ssim': 0.8588864281773567, 'elapsed': 5.373656272888184}
+2025-03-25 15:49:35,555 - INFO - info: {'type': 'info', 'epoch': 50, 'batch': 0, 'total_batches': 30, 'loss': 0.24855777621269226}
+2025-03-25 15:49:37,120 - INFO - info: {'type': 'info', 'epoch': 50, 'batch': 10, 'total_batches': 30, 'loss': 0.16112655401229858}
+2025-03-25 15:49:38,724 - INFO - info: {'type': 'info', 'epoch': 50, 'batch': 20, 'total_batches': 30, 'loss': 0.08225448429584503}
+2025-03-25 15:49:40,595 - INFO - info: {'type': 'info', 'epoch': 50, 'train_loss': 0.12064458280801774, 'val_loss': 0.0859502931125462, 'train_ssim': 0.8154192427794139, 'val_ssim': 0.8669071346521378, 'elapsed': 5.284948348999023}
+2025-03-25 15:49:41,861 - INFO - info: {'type': 'info', 'epoch': 51, 'batch': 0, 'total_batches': 30, 'loss': 0.10945513099431992}
+2025-03-25 15:49:43,412 - INFO - info: {'type': 'info', 'epoch': 51, 'batch': 10, 'total_batches': 30, 'loss': 0.13286979496479034}
+2025-03-25 15:49:44,980 - INFO - info: {'type': 'info', 'epoch': 51, 'batch': 20, 'total_batches': 30, 'loss': 0.07598037272691727}
+2025-03-25 15:49:46,945 - INFO - info: {'type': 'info', 'epoch': 51, 'train_loss': 0.12964080969492595, 'val_loss': 0.09834054578095675, 'train_ssim': 0.802545424302419, 'val_ssim': 0.8409699648618698, 'elapsed': 5.274730920791626}
+2025-03-25 15:49:47,175 - INFO - info: {'type': 'info', 'epoch': 52, 'batch': 0, 'total_batches': 30, 'loss': 0.20258605480194092}
+2025-03-25 15:49:48,801 - INFO - info: {'type': 'info', 'epoch': 52, 'batch': 10, 'total_batches': 30, 'loss': 0.18282128870487213}
+2025-03-25 15:49:50,395 - INFO - info: {'type': 'info', 'epoch': 52, 'batch': 20, 'total_batches': 30, 'loss': 0.10030223429203033}
+2025-03-25 15:49:52,258 - INFO - info: {'type': 'info', 'epoch': 52, 'train_loss': 0.13576338738203048, 'val_loss': 0.10988271422684193, 'train_ssim': 0.794360754887263, 'val_ssim': 0.8434258624911308, 'elapsed': 5.310606002807617}
+2025-03-25 15:49:52,482 - INFO - info: {'type': 'info', 'epoch': 53, 'batch': 0, 'total_batches': 30, 'loss': 0.08352617919445038}
+2025-03-25 15:49:54,058 - INFO - info: {'type': 'info', 'epoch': 53, 'batch': 10, 'total_batches': 30, 'loss': 0.08091508597135544}
+2025-03-25 15:49:55,666 - INFO - info: {'type': 'info', 'epoch': 53, 'batch': 20, 'total_batches': 30, 'loss': 0.08045344799757004}
+2025-03-25 15:49:57,527 - INFO - info: {'type': 'info', 'epoch': 53, 'train_loss': 0.1285858305792014, 'val_loss': 0.09713947772979736, 'train_ssim': 0.8071987291177114, 'val_ssim': 0.8501445055007935, 'elapsed': 5.2678563594818115}
+2025-03-25 15:49:57,724 - INFO - info: {'type': 'info', 'epoch': 54, 'batch': 0, 'total_batches': 30, 'loss': 0.08651085197925568}
+2025-03-25 15:49:59,313 - INFO - info: {'type': 'info', 'epoch': 54, 'batch': 10, 'total_batches': 30, 'loss': 0.0842534601688385}
+2025-03-25 15:50:00,896 - INFO - info: {'type': 'info', 'epoch': 54, 'batch': 20, 'total_batches': 30, 'loss': 0.06573373824357986}
+2025-03-25 15:50:02,776 - INFO - info: {'type': 'info', 'epoch': 54, 'train_loss': 0.11917007689674695, 'val_loss': 0.09271923638880253, 'train_ssim': 0.8193076372146606, 'val_ssim': 0.8670744076371193, 'elapsed': 5.248795032501221}
+2025-03-25 15:50:02,998 - INFO - info: {'type': 'info', 'epoch': 55, 'batch': 0, 'total_batches': 30, 'loss': 0.09195412695407867}
+2025-03-25 15:50:04,586 - INFO - info: {'type': 'info', 'epoch': 55, 'batch': 10, 'total_batches': 30, 'loss': 0.0756024569272995}
+2025-03-25 15:50:06,164 - INFO - info: {'type': 'info', 'epoch': 55, 'batch': 20, 'total_batches': 30, 'loss': 0.10174307972192764}
+2025-03-25 15:50:08,036 - INFO - info: {'type': 'info', 'epoch': 55, 'train_loss': 0.1210307960708936, 'val_loss': 0.09197116084396839, 'train_ssim': 0.8169155796368917, 'val_ssim': 0.8543353229761124, 'elapsed': 5.258526802062988}
+2025-03-25 15:50:09,165 - INFO - info: {'type': 'info', 'epoch': 56, 'batch': 0, 'total_batches': 30, 'loss': 0.14899419248104095}
+2025-03-25 15:50:10,719 - INFO - info: {'type': 'info', 'epoch': 56, 'batch': 10, 'total_batches': 30, 'loss': 0.07555946707725525}
+2025-03-25 15:50:12,304 - INFO - info: {'type': 'info', 'epoch': 56, 'batch': 20, 'total_batches': 30, 'loss': 0.10652056336402893}
+2025-03-25 15:50:14,157 - INFO - info: {'type': 'info', 'epoch': 56, 'train_loss': 0.1125338559349378, 'val_loss': 0.08561445027589798, 'train_ssim': 0.8294602413972219, 'val_ssim': 0.8686860501766205, 'elapsed': 5.177796363830566}
+2025-03-25 15:50:14,379 - INFO - info: {'type': 'info', 'epoch': 57, 'batch': 0, 'total_batches': 30, 'loss': 0.16252368688583374}
+2025-03-25 15:50:15,968 - INFO - info: {'type': 'info', 'epoch': 57, 'batch': 10, 'total_batches': 30, 'loss': 0.10788557678461075}
+2025-03-25 15:50:17,597 - INFO - info: {'type': 'info', 'epoch': 57, 'batch': 20, 'total_batches': 30, 'loss': 0.08021268248558044}
+2025-03-25 15:50:19,470 - INFO - info: {'type': 'info', 'epoch': 57, 'train_loss': 0.10809880544741948, 'val_loss': 0.09421218652278185, 'train_ssim': 0.8345236420631409, 'val_ssim': 0.8501232713460922, 'elapsed': 5.312028646469116}
+2025-03-25 15:50:19,682 - INFO - info: {'type': 'info', 'epoch': 58, 'batch': 0, 'total_batches': 30, 'loss': 0.1129516065120697}
+2025-03-25 15:50:21,299 - INFO - info: {'type': 'info', 'epoch': 58, 'batch': 10, 'total_batches': 30, 'loss': 0.09749685227870941}
+2025-03-25 15:50:22,879 - INFO - info: {'type': 'info', 'epoch': 58, 'batch': 20, 'total_batches': 30, 'loss': 0.17817316949367523}
+2025-03-25 15:50:24,786 - INFO - info: {'type': 'info', 'epoch': 58, 'train_loss': 0.11933859412868818, 'val_loss': 0.08489919500425458, 'train_ssim': 0.8179790417353312, 'val_ssim': 0.859316922724247, 'elapsed': 5.314810514450073}
+2025-03-25 15:50:24,786 - INFO - Early stopping triggered after 59 epochs
+2025-03-25 15:50:25,134 - INFO - Training completed. Final model saved to ./checkpoints\final_model_unet.pth
+2025-03-25 15:52:33,423 - INFO - Using device: cuda
+2025-03-25 15:52:33,430 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 15:52:33,430 - INFO - Memory allocated: 0.00 GB
+2025-03-25 15:52:33,431 - INFO - Memory reserved: 0.00 GB
+2025-03-25 15:52:33,431 - INFO - Using Automatic Mixed Precision (AMP) training.
+2025-03-25 15:52:33,598 - INFO - info: {'type': 'info', 'model_type': 'unet', 'batch_size': 12, 'epochs': 100, 'learning_rate': 0.0001, 'weight_decay': 1e-05, 'ssim_weight': 1.0, 'augmentation': False, 'validation_split': 0.2, 'patience': 10, 'num_workers': 7, 'seed': 1982}
+2025-03-25 15:52:52,387 - INFO - info: {'type': 'info', 'epoch': 0, 'batch': 0, 'total_batches': 20, 'loss': 0.9989126920700073}
+2025-03-25 15:52:54,526 - INFO - info: {'type': 'info', 'epoch': 0, 'batch': 10, 'total_batches': 20, 'loss': 0.992203414440155}
+2025-03-25 15:53:15,126 - INFO - Saved best model with validation loss: 0.987440
+2025-03-25 15:53:15,127 - INFO - info: {'type': 'info', 'epoch': 0, 'train_loss': 0.9914425492286683, 'val_loss': 0.987439775466919, 'train_ssim': 0.008592524699633942, 'val_ssim': 0.012744543701410293, 'elapsed': 41.52852416038513}
+2025-03-25 15:53:16,538 - INFO - info: {'type': 'info', 'epoch': 1, 'batch': 0, 'total_batches': 20, 'loss': 0.9913228750228882}
+2025-03-25 15:53:18,730 - INFO - info: {'type': 'info', 'epoch': 1, 'batch': 10, 'total_batches': 20, 'loss': 0.9857555627822876}
+2025-03-25 15:53:21,192 - INFO - info: {'type': 'info', 'epoch': 1, 'train_loss': 0.9832094430923461, 'val_loss': 0.9883472204208374, 'train_ssim': 0.016830769693478943, 'val_ssim': 0.011734344251453876, 'elapsed': 4.947535514831543}
+2025-03-25 15:53:21,501 - INFO - info: {'type': 'info', 'epoch': 2, 'batch': 0, 'total_batches': 20, 'loss': 0.976779580116272}
+2025-03-25 15:53:23,846 - INFO - info: {'type': 'info', 'epoch': 2, 'batch': 10, 'total_batches': 20, 'loss': 0.9708577990531921}
+2025-03-25 15:53:26,621 - INFO - Saved best model with validation loss: 0.975863
+2025-03-25 15:53:26,622 - INFO - info: {'type': 'info', 'epoch': 2, 'train_loss': 0.9750687390565872, 'val_loss': 0.9758625268936157, 'train_ssim': 0.024996738601475953, 'val_ssim': 0.024209702387452126, 'elapsed': 5.430155277252197}
+2025-03-25 15:53:26,947 - INFO - info: {'type': 'info', 'epoch': 3, 'batch': 0, 'total_batches': 20, 'loss': 0.9689350724220276}
+2025-03-25 15:53:29,330 - INFO - info: {'type': 'info', 'epoch': 3, 'batch': 10, 'total_batches': 20, 'loss': 0.9597264528274536}
+2025-03-25 15:53:32,255 - INFO - Saved best model with validation loss: 0.946358
+2025-03-25 15:53:32,255 - INFO - info: {'type': 'info', 'epoch': 3, 'train_loss': 0.9619216620922089, 'val_loss': 0.9463578939437867, 'train_ssim': 0.0383188009262085, 'val_ssim': 0.054080188274383545, 'elapsed': 5.632155895233154}
+2025-03-25 15:53:32,575 - INFO - info: {'type': 'info', 'epoch': 4, 'batch': 0, 'total_batches': 20, 'loss': 0.9497547149658203}
+2025-03-25 15:53:35,046 - INFO - info: {'type': 'info', 'epoch': 4, 'batch': 10, 'total_batches': 20, 'loss': 0.9195243120193481}
+2025-03-25 15:53:37,944 - INFO - Saved best model with validation loss: 0.938151
+2025-03-25 15:53:37,945 - INFO - info: {'type': 'info', 'epoch': 4, 'train_loss': 0.9374240845441818, 'val_loss': 0.9381507992744446, 'train_ssim': 0.0631109356880188, 'val_ssim': 0.06270099580287933, 'elapsed': 5.689436674118042}
+2025-03-25 15:53:38,264 - INFO - info: {'type': 'info', 'epoch': 5, 'batch': 0, 'total_batches': 20, 'loss': 0.9203954935073853}
+2025-03-25 15:53:40,878 - INFO - info: {'type': 'info', 'epoch': 5, 'batch': 10, 'total_batches': 20, 'loss': 0.8730699419975281}
+2025-03-25 15:53:43,844 - INFO - Saved best model with validation loss: 0.913428
+2025-03-25 15:53:43,844 - INFO - info: {'type': 'info', 'epoch': 5, 'train_loss': 0.8987619787454605, 'val_loss': 0.9134282946586609, 'train_ssim': 0.1021132230758667, 'val_ssim': 0.08843612521886826, 'elapsed': 5.897820234298706}
+2025-03-25 15:53:45,179 - INFO - info: {'type': 'info', 'epoch': 6, 'batch': 0, 'total_batches': 20, 'loss': 0.8298419713973999}
+2025-03-25 15:53:47,662 - INFO - info: {'type': 'info', 'epoch': 6, 'batch': 10, 'total_batches': 20, 'loss': 0.8473339080810547}
+2025-03-25 15:53:50,632 - INFO - Saved best model with validation loss: 0.786053
+2025-03-25 15:53:50,633 - INFO - info: {'type': 'info', 'epoch': 6, 'train_loss': 0.8496823668479919, 'val_loss': 0.7860527276992798, 'train_ssim': 0.15106526464223863, 'val_ssim': 0.2122522383928299, 'elapsed': 5.756192445755005}
+2025-03-25 15:53:50,957 - INFO - info: {'type': 'info', 'epoch': 7, 'batch': 0, 'total_batches': 20, 'loss': 0.8467642068862915}
+2025-03-25 15:53:53,469 - INFO - info: {'type': 'info', 'epoch': 7, 'batch': 10, 'total_batches': 20, 'loss': 0.8214268088340759}
+2025-03-25 15:53:56,400 - INFO - Saved best model with validation loss: 0.728179
+2025-03-25 15:53:56,400 - INFO - info: {'type': 'info', 'epoch': 7, 'train_loss': 0.799429389834404, 'val_loss': 0.7281794667243957, 'train_ssim': 0.20075563713908195, 'val_ssim': 0.27009227573871614, 'elapsed': 5.766804933547974}
+2025-03-25 15:53:56,682 - INFO - info: {'type': 'info', 'epoch': 8, 'batch': 0, 'total_batches': 20, 'loss': 0.73893141746521}
+2025-03-25 15:53:59,196 - INFO - info: {'type': 'info', 'epoch': 8, 'batch': 10, 'total_batches': 20, 'loss': 0.7205054759979248}
+2025-03-25 15:54:02,065 - INFO - Saved best model with validation loss: 0.688730
+2025-03-25 15:54:02,066 - INFO - info: {'type': 'info', 'epoch': 8, 'train_loss': 0.7348164796829224, 'val_loss': 0.688730251789093, 'train_ssim': 0.26304453015327456, 'val_ssim': 0.3073310494422913, 'elapsed': 5.663971424102783}
+2025-03-25 15:54:02,358 - INFO - info: {'type': 'info', 'epoch': 9, 'batch': 0, 'total_batches': 20, 'loss': 0.6626178026199341}
+2025-03-25 15:54:04,824 - INFO - info: {'type': 'info', 'epoch': 9, 'batch': 10, 'total_batches': 20, 'loss': 0.6871545314788818}
+2025-03-25 15:54:07,696 - INFO - Saved best model with validation loss: 0.646346
+2025-03-25 15:54:07,697 - INFO - info: {'type': 'info', 'epoch': 9, 'train_loss': 0.6938797622919083, 'val_loss': 0.6463464975357056, 'train_ssim': 0.30330113023519517, 'val_ssim': 0.3431436657905579, 'elapsed': 5.631486177444458}
+2025-03-25 15:54:07,993 - INFO - info: {'type': 'info', 'epoch': 10, 'batch': 0, 'total_batches': 20, 'loss': 0.7092256546020508}
+2025-03-25 15:54:10,449 - INFO - info: {'type': 'info', 'epoch': 10, 'batch': 10, 'total_batches': 20, 'loss': 0.7947400808334351}
+2025-03-25 15:54:13,378 - INFO - Saved best model with validation loss: 0.631304
+2025-03-25 15:54:13,378 - INFO - info: {'type': 'info', 'epoch': 10, 'train_loss': 0.6699775874614715, 'val_loss': 0.631304132938385, 'train_ssim': 0.3228368327021599, 'val_ssim': 0.36337360739707947, 'elapsed': 5.679771184921265}
+2025-03-25 15:54:14,572 - INFO - info: {'type': 'info', 'epoch': 11, 'batch': 0, 'total_batches': 20, 'loss': 0.6334037780761719}
+2025-03-25 15:54:17,020 - INFO - info: {'type': 'info', 'epoch': 11, 'batch': 10, 'total_batches': 20, 'loss': 0.5928021669387817}
+2025-03-25 15:54:19,902 - INFO - Saved best model with validation loss: 0.617091
+2025-03-25 15:54:19,903 - INFO - info: {'type': 'info', 'epoch': 11, 'train_loss': 0.6524634569883346, 'val_loss': 0.6170907139778137, 'train_ssim': 0.3390100494027138, 'val_ssim': 0.37601863741874697, 'elapsed': 5.633105039596558}
+2025-03-25 15:54:20,185 - INFO - info: {'type': 'info', 'epoch': 12, 'batch': 0, 'total_batches': 20, 'loss': 0.6024512052536011}
+2025-03-25 15:54:22,600 - INFO - info: {'type': 'info', 'epoch': 12, 'batch': 10, 'total_batches': 20, 'loss': 0.6588174104690552}
+2025-03-25 15:54:25,348 - INFO - Saved best model with validation loss: 0.602692
+2025-03-25 15:54:25,349 - INFO - info: {'type': 'info', 'epoch': 12, 'train_loss': 0.6327981770038604, 'val_loss': 0.6026920557022095, 'train_ssim': 0.3594596520066261, 'val_ssim': 0.38969714045524595, 'elapsed': 5.446101188659668}
+2025-03-25 15:54:25,626 - INFO - info: {'type': 'info', 'epoch': 13, 'batch': 0, 'total_batches': 20, 'loss': 0.5803964138031006}
+2025-03-25 15:54:28,147 - INFO - info: {'type': 'info', 'epoch': 13, 'batch': 10, 'total_batches': 20, 'loss': 0.6470913887023926}
+2025-03-25 15:54:30,963 - INFO - Saved best model with validation loss: 0.592408
+2025-03-25 15:54:30,964 - INFO - info: {'type': 'info', 'epoch': 13, 'train_loss': 0.6222867906093598, 'val_loss': 0.5924076795578003, 'train_ssim': 0.3660725623369217, 'val_ssim': 0.3989038348197937, 'elapsed': 5.613504886627197}
+2025-03-25 15:54:31,235 - INFO - info: {'type': 'info', 'epoch': 14, 'batch': 0, 'total_batches': 20, 'loss': 0.648146390914917}
+2025-03-25 15:54:33,786 - INFO - info: {'type': 'info', 'epoch': 14, 'batch': 10, 'total_batches': 20, 'loss': 0.6027061939239502}
+2025-03-25 15:54:36,758 - INFO - Saved best model with validation loss: 0.586737
+2025-03-25 15:54:36,759 - INFO - info: {'type': 'info', 'epoch': 14, 'train_loss': 0.6124941855669022, 'val_loss': 0.5867374777793884, 'train_ssim': 0.37896730899810793, 'val_ssim': 0.40617122054100036, 'elapsed': 5.794919013977051}
+2025-03-25 15:54:37,105 - INFO - info: {'type': 'info', 'epoch': 15, 'batch': 0, 'total_batches': 20, 'loss': 0.5318117141723633}
+2025-03-25 15:54:39,550 - INFO - info: {'type': 'info', 'epoch': 15, 'batch': 10, 'total_batches': 20, 'loss': 0.6133660078048706}
+2025-03-25 15:54:42,419 - INFO - Saved best model with validation loss: 0.578322
+2025-03-25 15:54:42,419 - INFO - info: {'type': 'info', 'epoch': 15, 'train_loss': 0.6066110104322433, 'val_loss': 0.578321897983551, 'train_ssim': 0.3838030233979225, 'val_ssim': 0.41183470487594603, 'elapsed': 5.660009145736694}
+2025-03-25 15:54:43,634 - INFO - info: {'type': 'info', 'epoch': 16, 'batch': 0, 'total_batches': 20, 'loss': 0.594091534614563}
+2025-03-25 15:54:46,028 - INFO - info: {'type': 'info', 'epoch': 16, 'batch': 10, 'total_batches': 20, 'loss': 0.6497436761856079}
+2025-03-25 15:54:48,883 - INFO - Saved best model with validation loss: 0.576895
+2025-03-25 15:54:48,884 - INFO - info: {'type': 'info', 'epoch': 16, 'train_loss': 0.6077880948781967, 'val_loss': 0.5768949627876282, 'train_ssim': 0.38141457736492157, 'val_ssim': 0.4161777853965759, 'elapsed': 5.542830467224121}
+2025-03-25 15:54:49,170 - INFO - info: {'type': 'info', 'epoch': 17, 'batch': 0, 'total_batches': 20, 'loss': 0.5375169515609741}
+2025-03-25 15:54:51,618 - INFO - info: {'type': 'info', 'epoch': 17, 'batch': 10, 'total_batches': 20, 'loss': 0.5741856098175049}
+2025-03-25 15:54:54,509 - INFO - Saved best model with validation loss: 0.567713
+2025-03-25 15:54:54,510 - INFO - info: {'type': 'info', 'epoch': 17, 'train_loss': 0.5959803521633148, 'val_loss': 0.5677126526832581, 'train_ssim': 0.3911584511399269, 'val_ssim': 0.42553905248641966, 'elapsed': 5.6254823207855225}
+2025-03-25 15:54:54,824 - INFO - info: {'type': 'info', 'epoch': 18, 'batch': 0, 'total_batches': 20, 'loss': 0.63739413022995}
+2025-03-25 15:54:57,238 - INFO - info: {'type': 'info', 'epoch': 18, 'batch': 10, 'total_batches': 20, 'loss': 0.5581365823745728}
+2025-03-25 15:55:00,075 - INFO - Saved best model with validation loss: 0.555262
+2025-03-25 15:55:00,076 - INFO - info: {'type': 'info', 'epoch': 18, 'train_loss': 0.5860062062740325, 'val_loss': 0.5552621722221375, 'train_ssim': 0.40358979552984237, 'val_ssim': 0.43196120858192444, 'elapsed': 5.563716411590576}
+2025-03-25 15:55:00,378 - INFO - info: {'type': 'info', 'epoch': 19, 'batch': 0, 'total_batches': 20, 'loss': 0.5267624258995056}
+2025-03-25 15:55:02,761 - INFO - info: {'type': 'info', 'epoch': 19, 'batch': 10, 'total_batches': 20, 'loss': 0.6502379179000854}
+2025-03-25 15:55:05,614 - INFO - Saved best model with validation loss: 0.546220
+2025-03-25 15:55:05,615 - INFO - info: {'type': 'info', 'epoch': 19, 'train_loss': 0.5850948035717011, 'val_loss': 0.546220326423645, 'train_ssim': 0.40552451759576796, 'val_ssim': 0.43874146938323977, 'elapsed': 5.538998365402222}
+2025-03-25 15:55:05,934 - INFO - info: {'type': 'info', 'epoch': 20, 'batch': 0, 'total_batches': 20, 'loss': 0.495056688785553}
+2025-03-25 15:55:08,315 - INFO - info: {'type': 'info', 'epoch': 20, 'batch': 10, 'total_batches': 20, 'loss': 0.635434091091156}
+2025-03-25 15:55:11,123 - INFO - Saved best model with validation loss: 0.545604
+2025-03-25 15:55:11,123 - INFO - info: {'type': 'info', 'epoch': 20, 'train_loss': 0.5803610533475876, 'val_loss': 0.5456043720245362, 'train_ssim': 0.407989975810051, 'val_ssim': 0.4469893932342529, 'elapsed': 5.507337331771851}
+2025-03-25 15:55:12,443 - INFO - info: {'type': 'info', 'epoch': 21, 'batch': 0, 'total_batches': 20, 'loss': 0.529833197593689}
+2025-03-25 15:55:14,733 - INFO - info: {'type': 'info', 'epoch': 21, 'batch': 10, 'total_batches': 20, 'loss': 0.5503286123275757}
+2025-03-25 15:55:17,527 - INFO - Saved best model with validation loss: 0.529010
+2025-03-25 15:55:17,528 - INFO - info: {'type': 'info', 'epoch': 21, 'train_loss': 0.5686785489320755, 'val_loss': 0.5290095448493958, 'train_ssim': 0.4224303483963013, 'val_ssim': 0.4545919358730316, 'elapsed': 5.38329815864563}
+2025-03-25 15:55:17,823 - INFO - info: {'type': 'info', 'epoch': 22, 'batch': 0, 'total_batches': 20, 'loss': 0.5407661199569702}
+2025-03-25 15:55:20,133 - INFO - info: {'type': 'info', 'epoch': 22, 'batch': 10, 'total_batches': 20, 'loss': 0.4862145781517029}
+2025-03-25 15:55:22,684 - INFO - info: {'type': 'info', 'epoch': 22, 'train_loss': 0.5607241123914719, 'val_loss': 0.5351025700569153, 'train_ssim': 0.4276684135198593, 'val_ssim': 0.45831078886985777, 'elapsed': 5.154775381088257}
+2025-03-25 15:55:23,035 - INFO - info: {'type': 'info', 'epoch': 23, 'batch': 0, 'total_batches': 20, 'loss': 0.499744713306427}
+2025-03-25 15:55:25,370 - INFO - info: {'type': 'info', 'epoch': 23, 'batch': 10, 'total_batches': 20, 'loss': 0.5714830160140991}
+2025-03-25 15:55:28,149 - INFO - Saved best model with validation loss: 0.525962
+2025-03-25 15:55:28,150 - INFO - info: {'type': 'info', 'epoch': 23, 'train_loss': 0.5534565895795822, 'val_loss': 0.5259624361991883, 'train_ssim': 0.4348938688635826, 'val_ssim': 0.46453126668930056, 'elapsed': 5.465150594711304}
+2025-03-25 15:55:28,409 - INFO - info: {'type': 'info', 'epoch': 24, 'batch': 0, 'total_batches': 20, 'loss': 0.480682909488678}
+2025-03-25 15:55:30,760 - INFO - info: {'type': 'info', 'epoch': 24, 'batch': 10, 'total_batches': 20, 'loss': 0.6539421081542969}
+2025-03-25 15:55:33,508 - INFO - Saved best model with validation loss: 0.498438
+2025-03-25 15:55:33,510 - INFO - info: {'type': 'info', 'epoch': 24, 'train_loss': 0.5444113343954087, 'val_loss': 0.49843792915344237, 'train_ssim': 0.4444469600915909, 'val_ssim': 0.4824105203151703, 'elapsed': 5.357410430908203}
+2025-03-25 15:55:33,815 - INFO - info: {'type': 'info', 'epoch': 25, 'batch': 0, 'total_batches': 20, 'loss': 0.5756611824035645}
+2025-03-25 15:55:36,131 - INFO - info: {'type': 'info', 'epoch': 25, 'batch': 10, 'total_batches': 20, 'loss': 0.5788928270339966}
+2025-03-25 15:55:38,755 - INFO - Saved best model with validation loss: 0.494242
+2025-03-25 15:55:38,756 - INFO - info: {'type': 'info', 'epoch': 25, 'train_loss': 0.5379634439945221, 'val_loss': 0.49424210786819456, 'train_ssim': 0.44859649837017057, 'val_ssim': 0.49635436534881594, 'elapsed': 5.24556040763855}
+2025-03-25 15:55:39,382 - INFO - info: {'type': 'info', 'epoch': 26, 'batch': 0, 'total_batches': 20, 'loss': 0.4678741693496704}
+2025-03-25 15:55:41,818 - INFO - info: {'type': 'info', 'epoch': 26, 'batch': 10, 'total_batches': 20, 'loss': 0.4771649241447449}
+2025-03-25 15:55:44,810 - INFO - Saved best model with validation loss: 0.472891
+2025-03-25 15:55:44,812 - INFO - info: {'type': 'info', 'epoch': 26, 'train_loss': 0.5100537329912186, 'val_loss': 0.47289093732833865, 'train_ssim': 0.4772334173321724, 'val_ssim': 0.5213190376758575, 'elapsed': 5.6906960010528564}
+2025-03-25 15:55:45,135 - INFO - info: {'type': 'info', 'epoch': 27, 'batch': 0, 'total_batches': 20, 'loss': 0.5507082343101501}
+2025-03-25 15:55:47,614 - INFO - info: {'type': 'info', 'epoch': 27, 'batch': 10, 'total_batches': 20, 'loss': 0.5966147780418396}
+2025-03-25 15:55:50,450 - INFO - Saved best model with validation loss: 0.439381
+2025-03-25 15:55:50,450 - INFO - info: {'type': 'info', 'epoch': 27, 'train_loss': 0.49304225444793703, 'val_loss': 0.4393805623054504, 'train_ssim': 0.49413698315620425, 'val_ssim': 0.5456891655921936, 'elapsed': 5.638787508010864}
+2025-03-25 15:55:50,729 - INFO - info: {'type': 'info', 'epoch': 28, 'batch': 0, 'total_batches': 20, 'loss': 0.46679240465164185}
+2025-03-25 15:55:53,151 - INFO - info: {'type': 'info', 'epoch': 28, 'batch': 10, 'total_batches': 20, 'loss': 0.6552045941352844}
+2025-03-25 15:55:55,820 - INFO - info: {'type': 'info', 'epoch': 28, 'train_loss': 0.4953880697488785, 'val_loss': 0.4713356614112854, 'train_ssim': 0.49284286648035047, 'val_ssim': 0.5130759537220001, 'elapsed': 5.368263483047485}
+2025-03-25 15:55:56,142 - INFO - info: {'type': 'info', 'epoch': 29, 'batch': 0, 'total_batches': 20, 'loss': 0.4568246006965637}
+2025-03-25 15:55:58,550 - INFO - info: {'type': 'info', 'epoch': 29, 'batch': 10, 'total_batches': 20, 'loss': 0.42093783617019653}
+2025-03-25 15:56:01,368 - INFO - Saved best model with validation loss: 0.434835
+2025-03-25 15:56:01,369 - INFO - info: {'type': 'info', 'epoch': 29, 'train_loss': 0.48360214531421664, 'val_loss': 0.43483476638793944, 'train_ssim': 0.5058211952447891, 'val_ssim': 0.547417151927948, 'elapsed': 5.548109769821167}
+2025-03-25 15:56:01,643 - INFO - info: {'type': 'info', 'epoch': 30, 'batch': 0, 'total_batches': 20, 'loss': 0.4343510866165161}
+2025-03-25 15:56:04,020 - INFO - info: {'type': 'info', 'epoch': 30, 'batch': 10, 'total_batches': 20, 'loss': 0.504446804523468}
+2025-03-25 15:56:06,898 - INFO - Saved best model with validation loss: 0.392704
+2025-03-25 15:56:06,898 - INFO - info: {'type': 'info', 'epoch': 30, 'train_loss': 0.46475922167301176, 'val_loss': 0.392704164981842, 'train_ssim': 0.5216963425278663, 'val_ssim': 0.5932071685791016, 'elapsed': 5.529259443283081}
+2025-03-25 15:56:08,041 - INFO - info: {'type': 'info', 'epoch': 31, 'batch': 0, 'total_batches': 20, 'loss': 0.47814714908599854}
+2025-03-25 15:56:10,360 - INFO - info: {'type': 'info', 'epoch': 31, 'batch': 10, 'total_batches': 20, 'loss': 0.40349555015563965}
+2025-03-25 15:56:13,118 - INFO - Saved best model with validation loss: 0.385406
+2025-03-25 15:56:13,119 - INFO - info: {'type': 'info', 'epoch': 31, 'train_loss': 0.4421173930168152, 'val_loss': 0.38540621995925906, 'train_ssim': 0.547062523663044, 'val_ssim': 0.6055083870887756, 'elapsed': 5.34238600730896}
+2025-03-25 15:56:13,398 - INFO - info: {'type': 'info', 'epoch': 32, 'batch': 0, 'total_batches': 20, 'loss': 0.3706827759742737}
+2025-03-25 15:56:15,702 - INFO - info: {'type': 'info', 'epoch': 32, 'batch': 10, 'total_batches': 20, 'loss': 0.42782801389694214}
+2025-03-25 15:56:18,467 - INFO - Saved best model with validation loss: 0.377588
+2025-03-25 15:56:18,467 - INFO - info: {'type': 'info', 'epoch': 32, 'train_loss': 0.41410556733608245, 'val_loss': 0.37758814096450805, 'train_ssim': 0.5738690033555031, 'val_ssim': 0.6081130385398865, 'elapsed': 5.34737491607666}
+2025-03-25 15:56:18,814 - INFO - info: {'type': 'info', 'epoch': 33, 'batch': 0, 'total_batches': 20, 'loss': 0.5052639245986938}
+2025-03-25 15:56:21,152 - INFO - info: {'type': 'info', 'epoch': 33, 'batch': 10, 'total_batches': 20, 'loss': 0.47858870029449463}
+2025-03-25 15:56:23,680 - INFO - info: {'type': 'info', 'epoch': 33, 'train_loss': 0.4185845494270325, 'val_loss': 0.41829681396484375, 'train_ssim': 0.5670945659279824, 'val_ssim': 0.5668977260589599, 'elapsed': 5.212441921234131}
+2025-03-25 15:56:23,965 - INFO - info: {'type': 'info', 'epoch': 34, 'batch': 0, 'total_batches': 20, 'loss': 0.4311843514442444}
+2025-03-25 15:56:26,300 - INFO - info: {'type': 'info', 'epoch': 34, 'batch': 10, 'total_batches': 20, 'loss': 0.3852160573005676}
+2025-03-25 15:56:29,030 - INFO - Saved best model with validation loss: 0.376483
+2025-03-25 15:56:29,031 - INFO - info: {'type': 'info', 'epoch': 34, 'train_loss': 0.4233494371175766, 'val_loss': 0.3764832615852356, 'train_ssim': 0.5647313550114632, 'val_ssim': 0.6029948711395263, 'elapsed': 5.3497538566589355}
+2025-03-25 15:56:29,376 - INFO - info: {'type': 'info', 'epoch': 35, 'batch': 0, 'total_batches': 20, 'loss': 0.415988028049469}
+2025-03-25 15:56:31,691 - INFO - info: {'type': 'info', 'epoch': 35, 'batch': 10, 'total_batches': 20, 'loss': 0.6302094459533691}
+2025-03-25 15:56:34,432 - INFO - Saved best model with validation loss: 0.376326
+2025-03-25 15:56:34,433 - INFO - info: {'type': 'info', 'epoch': 35, 'train_loss': 0.41919832229614257, 'val_loss': 0.3763262152671814, 'train_ssim': 0.5694653168320656, 'val_ssim': 0.6133889198303223, 'elapsed': 5.400876045227051}
+2025-03-25 15:56:35,849 - INFO - info: {'type': 'info', 'epoch': 36, 'batch': 0, 'total_batches': 20, 'loss': 0.3957318663597107}
+2025-03-25 15:56:38,120 - INFO - info: {'type': 'info', 'epoch': 36, 'batch': 10, 'total_batches': 20, 'loss': 0.30828922986984253}
+2025-03-25 15:56:40,885 - INFO - Saved best model with validation loss: 0.359775
+2025-03-25 15:56:40,886 - INFO - info: {'type': 'info', 'epoch': 36, 'train_loss': 0.3944009989500046, 'val_loss': 0.35977500677108765, 'train_ssim': 0.593163987994194, 'val_ssim': 0.6280328392982483, 'elapsed': 5.364012956619263}
+2025-03-25 15:56:41,183 - INFO - info: {'type': 'info', 'epoch': 37, 'batch': 0, 'total_batches': 20, 'loss': 0.4576706290245056}
+2025-03-25 15:56:43,481 - INFO - info: {'type': 'info', 'epoch': 37, 'batch': 10, 'total_batches': 20, 'loss': 0.34648799896240234}
+2025-03-25 15:56:46,014 - INFO - info: {'type': 'info', 'epoch': 37, 'train_loss': 0.39279755055904386, 'val_loss': 0.44077320098876954, 'train_ssim': 0.5941715091466904, 'val_ssim': 0.5484297692775726, 'elapsed': 5.127624034881592}
+2025-03-25 15:56:46,294 - INFO - info: {'type': 'info', 'epoch': 38, 'batch': 0, 'total_batches': 20, 'loss': 0.3740335702896118}
+2025-03-25 15:56:48,570 - INFO - info: {'type': 'info', 'epoch': 38, 'batch': 10, 'total_batches': 20, 'loss': 0.36877572536468506}
+2025-03-25 15:56:51,287 - INFO - Saved best model with validation loss: 0.352340
+2025-03-25 15:56:51,288 - INFO - info: {'type': 'info', 'epoch': 38, 'train_loss': 0.40049445629119873, 'val_loss': 0.3523401737213135, 'train_ssim': 0.5849279269576073, 'val_ssim': 0.6243497848510742, 'elapsed': 5.273388385772705}
+2025-03-25 15:56:51,568 - INFO - info: {'type': 'info', 'epoch': 39, 'batch': 0, 'total_batches': 20, 'loss': 0.36534178256988525}
+2025-03-25 15:56:53,837 - INFO - info: {'type': 'info', 'epoch': 39, 'batch': 10, 'total_batches': 20, 'loss': 0.3298095464706421}
+2025-03-25 15:56:56,310 - INFO - info: {'type': 'info', 'epoch': 39, 'train_loss': 0.3820525765419006, 'val_loss': 0.36014477014541624, 'train_ssim': 0.6063586175441742, 'val_ssim': 0.6294814825057984, 'elapsed': 5.022284269332886}
+2025-03-25 15:56:56,620 - INFO - info: {'type': 'info', 'epoch': 40, 'batch': 0, 'total_batches': 20, 'loss': 0.31901878118515015}
+2025-03-25 15:56:58,888 - INFO - info: {'type': 'info', 'epoch': 40, 'batch': 10, 'total_batches': 20, 'loss': 0.32814091444015503}
+2025-03-25 15:57:01,577 - INFO - Saved best model with validation loss: 0.326871
+2025-03-25 15:57:01,577 - INFO - info: {'type': 'info', 'epoch': 40, 'train_loss': 0.36326107680797576, 'val_loss': 0.3268712401390076, 'train_ssim': 0.6216445595026017, 'val_ssim': 0.6651497602462768, 'elapsed': 5.265533924102783}
+2025-03-25 15:57:02,766 - INFO - info: {'type': 'info', 'epoch': 41, 'batch': 0, 'total_batches': 20, 'loss': 0.35819584131240845}
+2025-03-25 15:57:05,008 - INFO - info: {'type': 'info', 'epoch': 41, 'batch': 10, 'total_batches': 20, 'loss': 0.33151155710220337}
+2025-03-25 15:57:07,740 - INFO - Saved best model with validation loss: 0.310257
+2025-03-25 15:57:07,741 - INFO - info: {'type': 'info', 'epoch': 41, 'train_loss': 0.3429920881986618, 'val_loss': 0.31025731563568115, 'train_ssim': 0.6424167573451995, 'val_ssim': 0.6817592740058899, 'elapsed': 5.252214431762695}
+2025-03-25 15:57:08,030 - INFO - info: {'type': 'info', 'epoch': 42, 'batch': 0, 'total_batches': 20, 'loss': 0.3272075653076172}
+2025-03-25 15:57:10,309 - INFO - info: {'type': 'info', 'epoch': 42, 'batch': 10, 'total_batches': 20, 'loss': 0.3093051314353943}
+2025-03-25 15:57:12,812 - INFO - info: {'type': 'info', 'epoch': 42, 'train_loss': 0.34351673126220705, 'val_loss': 0.31868151426315305, 'train_ssim': 0.6424743413925171, 'val_ssim': 0.6703550457954407, 'elapsed': 5.070569038391113}
+2025-03-25 15:57:13,133 - INFO - info: {'type': 'info', 'epoch': 43, 'batch': 0, 'total_batches': 20, 'loss': 0.3325781226158142}
+2025-03-25 15:57:15,426 - INFO - info: {'type': 'info', 'epoch': 43, 'batch': 10, 'total_batches': 20, 'loss': 0.3467034697532654}
+2025-03-25 15:57:17,941 - INFO - info: {'type': 'info', 'epoch': 43, 'train_loss': 0.35142127573490145, 'val_loss': 0.3168236017227173, 'train_ssim': 0.634876212477684, 'val_ssim': 0.6603645443916321, 'elapsed': 5.128139019012451}
+2025-03-25 15:57:18,219 - INFO - info: {'type': 'info', 'epoch': 44, 'batch': 0, 'total_batches': 20, 'loss': 0.2541391849517822}
+2025-03-25 15:57:20,486 - INFO - info: {'type': 'info', 'epoch': 44, 'batch': 10, 'total_batches': 20, 'loss': 0.35312068462371826}
+2025-03-25 15:57:23,215 - INFO - Saved best model with validation loss: 0.305040
+2025-03-25 15:57:23,216 - INFO - info: {'type': 'info', 'epoch': 44, 'train_loss': 0.3451336085796356, 'val_loss': 0.30504025220870973, 'train_ssim': 0.6408331394195557, 'val_ssim': 0.6766599893569947, 'elapsed': 5.273429870605469}
+2025-03-25 15:57:23,529 - INFO - info: {'type': 'info', 'epoch': 45, 'batch': 0, 'total_batches': 20, 'loss': 0.35516268014907837}
+2025-03-25 15:57:25,759 - INFO - info: {'type': 'info', 'epoch': 45, 'batch': 10, 'total_batches': 20, 'loss': 0.284159779548645}
+2025-03-25 15:57:28,205 - INFO - info: {'type': 'info', 'epoch': 45, 'train_loss': 0.3358853280544281, 'val_loss': 0.3164546489715576, 'train_ssim': 0.647650058567524, 'val_ssim': 0.672485089302063, 'elapsed': 4.989471912384033}
+2025-03-25 15:57:29,398 - INFO - info: {'type': 'info', 'epoch': 46, 'batch': 0, 'total_batches': 20, 'loss': 0.35325974225997925}
+2025-03-25 15:57:31,527 - INFO - info: {'type': 'info', 'epoch': 46, 'batch': 10, 'total_batches': 20, 'loss': 0.43090713024139404}
+2025-03-25 15:57:33,916 - INFO - info: {'type': 'info', 'epoch': 46, 'train_loss': 0.3928000658750534, 'val_loss': 0.48010122776031494, 'train_ssim': 0.5979233399033547, 'val_ssim': 0.5161776423454285, 'elapsed': 4.795989751815796}
+2025-03-25 15:57:34,197 - INFO - info: {'type': 'info', 'epoch': 47, 'batch': 0, 'total_batches': 20, 'loss': 0.4550926089286804}
+2025-03-25 15:57:36,372 - INFO - info: {'type': 'info', 'epoch': 47, 'batch': 10, 'total_batches': 20, 'loss': 0.571292519569397}
+2025-03-25 15:57:38,782 - INFO - info: {'type': 'info', 'epoch': 47, 'train_loss': 0.5959574043750763, 'val_loss': 0.8848190188407898, 'train_ssim': 0.4022821709513664, 'val_ssim': 0.11399223357439041, 'elapsed': 4.864941358566284}
+2025-03-25 15:57:39,054 - INFO - info: {'type': 'info', 'epoch': 48, 'batch': 0, 'total_batches': 20, 'loss': 0.6943336725234985}
+2025-03-25 15:57:41,210 - INFO - info: {'type': 'info', 'epoch': 48, 'batch': 10, 'total_batches': 20, 'loss': 0.8274980783462524}
+2025-03-25 15:57:43,638 - INFO - info: {'type': 'info', 'epoch': 48, 'train_loss': 0.7988049060106277, 'val_loss': 0.8787657260894776, 'train_ssim': 0.19933853410184382, 'val_ssim': 0.12010119408369065, 'elapsed': 4.855671644210815}
+2025-03-25 15:57:43,972 - INFO - info: {'type': 'info', 'epoch': 49, 'batch': 0, 'total_batches': 20, 'loss': 0.8809815049171448}
+2025-03-25 15:57:46,125 - INFO - info: {'type': 'info', 'epoch': 49, 'batch': 10, 'total_batches': 20, 'loss': 0.9840496778488159}
+2025-03-25 15:57:48,507 - INFO - info: {'type': 'info', 'epoch': 49, 'train_loss': 0.8844570726156235, 'val_loss': 0.9406107425689697, 'train_ssim': 0.11422434302512556, 'val_ssim': 0.059196822345256805, 'elapsed': 4.867038249969482}
+2025-03-25 15:57:48,790 - INFO - info: {'type': 'info', 'epoch': 50, 'batch': 0, 'total_batches': 20, 'loss': 0.9661062955856323}
+2025-03-25 15:57:50,970 - INFO - info: {'type': 'info', 'epoch': 50, 'batch': 10, 'total_batches': 20, 'loss': 1.1170355081558228}
+2025-03-25 15:57:53,381 - INFO - info: {'type': 'info', 'epoch': 50, 'train_loss': 0.956861075758934, 'val_loss': 0.9373932480812073, 'train_ssim': 0.04267320530489087, 'val_ssim': 0.06236743293702603, 'elapsed': 4.874112367630005}
+2025-03-25 15:57:54,739 - INFO - info: {'type': 'info', 'epoch': 51, 'batch': 0, 'total_batches': 20, 'loss': 1.0468122959136963}
+2025-03-25 15:57:56,873 - INFO - info: {'type': 'info', 'epoch': 51, 'batch': 10, 'total_batches': 20, 'loss': 0.8976666331291199}
+2025-03-25 15:57:59,250 - INFO - info: {'type': 'info', 'epoch': 51, 'train_loss': 0.9777463525533676, 'val_loss': 0.9509048342704773, 'train_ssim': 0.022509347065351903, 'val_ssim': 0.049138666689395906, 'elapsed': 4.852261543273926}
+2025-03-25 15:57:59,572 - INFO - info: {'type': 'info', 'epoch': 52, 'batch': 0, 'total_batches': 20, 'loss': 1.10282301902771}
+2025-03-25 15:58:01,744 - INFO - info: {'type': 'info', 'epoch': 52, 'batch': 10, 'total_batches': 20, 'loss': 1.0587271451950073}
+2025-03-25 15:58:04,133 - INFO - info: {'type': 'info', 'epoch': 52, 'train_loss': 0.9877476155757904, 'val_loss': 0.976148808002472, 'train_ssim': 0.012424096837639809, 'val_ssim': 0.024340163357555865, 'elapsed': 4.883463144302368}
+2025-03-25 15:58:04,410 - INFO - info: {'type': 'info', 'epoch': 53, 'batch': 0, 'total_batches': 20, 'loss': 1.054200530052185}
+2025-03-25 15:58:06,552 - INFO - info: {'type': 'info', 'epoch': 53, 'batch': 10, 'total_batches': 20, 'loss': 0.9425417184829712}
+2025-03-25 15:58:08,942 - INFO - info: {'type': 'info', 'epoch': 53, 'train_loss': 0.9986452490091324, 'val_loss': 0.9728090405464173, 'train_ssim': 0.0014668493065983057, 'val_ssim': 0.027665239479392766, 'elapsed': 4.808278799057007}
+2025-03-25 15:58:09,237 - INFO - info: {'type': 'info', 'epoch': 54, 'batch': 0, 'total_batches': 20, 'loss': 1.0338457822799683}
+2025-03-25 15:58:11,415 - INFO - info: {'type': 'info', 'epoch': 54, 'batch': 10, 'total_batches': 20, 'loss': 0.9580263495445251}
+2025-03-25 15:58:13,779 - INFO - info: {'type': 'info', 'epoch': 54, 'train_loss': 0.9949595779180527, 'val_loss': 0.9422935605049133, 'train_ssim': 0.005414397735148668, 'val_ssim': 0.05761765949428081, 'elapsed': 4.835172891616821}
+2025-03-25 15:58:13,779 - INFO - Early stopping triggered after 55 epochs
+2025-03-25 15:58:14,002 - INFO - Training completed. Final model saved to ./checkpoints\final_model_unet.pth
+2025-03-25 16:09:55,108 - INFO - Using device: cuda
+2025-03-25 16:09:55,115 - INFO - GPU: NVIDIA GeForce RTX 3050 Ti Laptop GPU
+2025-03-25 16:09:55,115 - INFO - Memory allocated: 0.00 GB
+2025-03-25 16:09:55,115 - INFO - Memory reserved: 0.00 GB
+2025-03-25 16:09:55,115 - INFO - Using Automatic Mixed Precision (AMP) training.
+2025-03-25 16:09:55,287 - INFO - info: {'type': 'info', 'model_type': 'unet', 'batch_size': 8, 'epochs': 20, 'learning_rate': 0.0001, 'weight_decay': 1e-05, 'ssim_weight': 0.7, 'augmentation': False, 'validation_split': 0.2, 'patience': 10, 'num_workers': 7, 'seed': 5592}
+2025-03-25 16:10:12,786 - INFO - info: {'type': 'info', 'epoch': 0, 'batch': 0, 'total_batches': 30, 'loss': 0.8522177934646606}
+2025-03-25 16:10:14,249 - INFO - info: {'type': 'info', 'epoch': 0, 'batch': 10, 'total_batches': 30, 'loss': 0.7242735624313354}
+2025-03-25 16:10:15,815 - INFO - info: {'type': 'info', 'epoch': 0, 'batch': 20, 'total_batches': 30, 'loss': 0.4746384918689728}
+2025-03-25 16:10:35,333 - INFO - Saved best model with validation loss: 0.761870
+2025-03-25 16:10:35,334 - INFO - info: {'type': 'info', 'epoch': 0, 'train_loss': 0.6132690260807673, 'val_loss': 0.7618695721030235, 'train_ssim': 0.2210938009278228, 'val_ssim': 0.07664806069806218, 'elapsed': 40.04502987861633}
+2025-03-25 16:10:35,979 - INFO - info: {'type': 'info', 'epoch': 1, 'batch': 0, 'total_batches': 30, 'loss': 0.429348886013031}
+2025-03-25 16:10:37,672 - INFO - info: {'type': 'info', 'epoch': 1, 'batch': 10, 'total_batches': 30, 'loss': 0.4146692156791687}
+2025-03-25 16:10:39,477 - INFO - info: {'type': 'info', 'epoch': 1, 'batch': 20, 'total_batches': 30, 'loss': 0.39394837617874146}
+2025-03-25 16:10:41,997 - INFO - Saved best model with validation loss: 0.564608
+2025-03-25 16:10:41,997 - INFO - info: {'type': 'info', 'epoch': 1, 'train_loss': 0.38154154221216835, 'val_loss': 0.564608134329319, 'train_ssim': 0.48162074387073517, 'val_ssim': 0.26643020287156105, 'elapsed': 6.216205835342407}
+2025-03-25 16:10:42,567 - INFO - info: {'type': 'info', 'epoch': 2, 'batch': 0, 'total_batches': 30, 'loss': 0.33776649832725525}
+2025-03-25 16:10:44,805 - INFO - info: {'type': 'info', 'epoch': 2, 'batch': 10, 'total_batches': 30, 'loss': 0.27908945083618164}
+2025-03-25 16:10:47,092 - INFO - info: {'type': 'info', 'epoch': 2, 'batch': 20, 'total_batches': 30, 'loss': 0.32026705145835876}
+2025-03-25 16:10:49,886 - INFO - Saved best model with validation loss: 0.303073
+2025-03-25 16:10:49,887 - INFO - info: {'type': 'info', 'epoch': 2, 'train_loss': 0.31527449091275533, 'val_loss': 0.30307272262871265, 'train_ssim': 0.5631146937608719, 'val_ssim': 0.5752497613430023, 'elapsed': 7.526350975036621}
+2025-03-25 16:10:50,496 - INFO - info: {'type': 'info', 'epoch': 3, 'batch': 0, 'total_batches': 30, 'loss': 0.29389864206314087}
+2025-03-25 16:10:52,786 - INFO - info: {'type': 'info', 'epoch': 3, 'batch': 10, 'total_batches': 30, 'loss': 0.2855137288570404}
+2025-03-25 16:10:55,075 - INFO - info: {'type': 'info', 'epoch': 3, 'batch': 20, 'total_batches': 30, 'loss': 0.2407335340976715}
+2025-03-25 16:10:57,889 - INFO - Saved best model with validation loss: 0.258356
+2025-03-25 16:10:57,889 - INFO - info: {'type': 'info', 'epoch': 3, 'train_loss': 0.28377825071414314, 'val_loss': 0.2583555746823549, 'train_ssim': 0.5976936300595601, 'val_ssim': 0.6112515479326248, 'elapsed': 7.633482933044434}
+2025-03-25 16:10:58,626 - INFO - info: {'type': 'info', 'epoch': 4, 'batch': 0, 'total_batches': 30, 'loss': 0.22247159481048584}
+2025-03-25 16:11:00,914 - INFO - info: {'type': 'info', 'epoch': 4, 'batch': 10, 'total_batches': 30, 'loss': 0.24943807721138}
+2025-03-25 16:11:03,202 - INFO - info: {'type': 'info', 'epoch': 4, 'batch': 20, 'total_batches': 30, 'loss': 0.22739113867282867}
+2025-03-25 16:11:05,991 - INFO - Saved best model with validation loss: 0.223130
+2025-03-25 16:11:05,993 - INFO - info: {'type': 'info', 'epoch': 4, 'train_loss': 0.2543399746219317, 'val_loss': 0.22312981449067593, 'train_ssim': 0.6332088152567545, 'val_ssim': 0.6507627293467522, 'elapsed': 7.626044273376465}
+2025-03-25 16:11:06,659 - INFO - info: {'type': 'info', 'epoch': 5, 'batch': 0, 'total_batches': 30, 'loss': 0.29632461071014404}
+2025-03-25 16:11:08,951 - INFO - info: {'type': 'info', 'epoch': 5, 'batch': 10, 'total_batches': 30, 'loss': 0.18116311728954315}
+2025-03-25 16:11:11,239 - INFO - info: {'type': 'info', 'epoch': 5, 'batch': 20, 'total_batches': 30, 'loss': 0.19836793839931488}
+2025-03-25 16:11:14,087 - INFO - Saved best model with validation loss: 0.214399
+2025-03-25 16:11:14,088 - INFO - info: {'type': 'info', 'epoch': 5, 'train_loss': 0.21615930497646332, 'val_loss': 0.2143994066864252, 'train_ssim': 0.6806300322214762, 'val_ssim': 0.682180292904377, 'elapsed': 7.699462890625}
+2025-03-25 16:11:14,746 - INFO - info: {'type': 'info', 'epoch': 6, 'batch': 0, 'total_batches': 30, 'loss': 0.17410004138946533}
+2025-03-25 16:11:17,037 - INFO - info: {'type': 'info', 'epoch': 6, 'batch': 10, 'total_batches': 30, 'loss': 0.18497334420681}
+2025-03-25 16:11:19,326 - INFO - info: {'type': 'info', 'epoch': 6, 'batch': 20, 'total_batches': 30, 'loss': 0.2189422845840454}
+2025-03-25 16:11:22,144 - INFO - Saved best model with validation loss: 0.137834
+2025-03-25 16:11:22,145 - INFO - info: {'type': 'info', 'epoch': 6, 'train_loss': 0.17373444388310114, 'val_loss': 0.13783377036452293, 'train_ssim': 0.7304417788982391, 'val_ssim': 0.770587295293808, 'elapsed': 7.673470973968506}
+2025-03-25 16:11:22,793 - INFO - info: {'type': 'info', 'epoch': 7, 'batch': 0, 'total_batches': 30, 'loss': 0.13721051812171936}
+2025-03-25 16:11:25,087 - INFO - info: {'type': 'info', 'epoch': 7, 'batch': 10, 'total_batches': 30, 'loss': 0.24020075798034668}
+2025-03-25 16:11:27,368 - INFO - info: {'type': 'info', 'epoch': 7, 'batch': 20, 'total_batches': 30, 'loss': 0.10943889617919922}
+2025-03-25 16:11:30,057 - INFO - info: {'type': 'info', 'epoch': 7, 'train_loss': 0.12685469513138134, 'val_loss': 0.16754510253667831, 'train_ssim': 0.7885112444559733, 'val_ssim': 0.7287791222333908, 'elapsed': 7.526058912277222}
+2025-03-25 16:11:30,704 - INFO - info: {'type': 'info', 'epoch': 8, 'batch': 0, 'total_batches': 30, 'loss': 0.15391014516353607}
+2025-03-25 16:11:32,999 - INFO - info: {'type': 'info', 'epoch': 8, 'batch': 10, 'total_batches': 30, 'loss': 0.12878668308258057}
+2025-03-25 16:11:35,296 - INFO - info: {'type': 'info', 'epoch': 8, 'batch': 20, 'total_batches': 30, 'loss': 0.101273313164711}
+2025-03-25 16:11:38,093 - INFO - Saved best model with validation loss: 0.068599
+2025-03-25 16:11:38,093 - INFO - info: {'type': 'info', 'epoch': 8, 'train_loss': 0.08890649278958639, 'val_loss': 0.06859923480078578, 'train_ssim': 0.8347511947154999, 'val_ssim': 0.8394629582762718, 'elapsed': 7.651651382446289}
+2025-03-25 16:11:38,811 - INFO - info: {'type': 'info', 'epoch': 9, 'batch': 0, 'total_batches': 30, 'loss': 0.07956133782863617}
+2025-03-25 16:11:41,102 - INFO - info: {'type': 'info', 'epoch': 9, 'batch': 10, 'total_batches': 30, 'loss': 0.14148764312267303}
+2025-03-25 16:11:43,394 - INFO - info: {'type': 'info', 'epoch': 9, 'batch': 20, 'total_batches': 30, 'loss': 0.10959521681070328}
+2025-03-25 16:11:46,087 - INFO - info: {'type': 'info', 'epoch': 9, 'train_loss': 0.06917838429411252, 'val_loss': 0.10539418179541826, 'train_ssim': 0.8587705552577972, 'val_ssim': 0.805578388273716, 'elapsed': 7.529608249664307}
+2025-03-25 16:11:46,717 - INFO - info: {'type': 'info', 'epoch': 10, 'batch': 0, 'total_batches': 30, 'loss': 0.04656487703323364}
+2025-03-25 16:11:49,014 - INFO - info: {'type': 'info', 'epoch': 10, 'batch': 10, 'total_batches': 30, 'loss': 0.061130110174417496}
+2025-03-25 16:11:51,303 - INFO - info: {'type': 'info', 'epoch': 10, 'batch': 20, 'total_batches': 30, 'loss': 0.060109224170446396}
+2025-03-25 16:11:54,117 - INFO - Saved best model with validation loss: 0.047206
+2025-03-25 16:11:54,118 - INFO - info: {'type': 'info', 'epoch': 10, 'train_loss': 0.056547801941633224, 'val_loss': 0.04720600869040936, 'train_ssim': 0.8756165027618408, 'val_ssim': 0.8750615268945694, 'elapsed': 7.644033193588257}
+2025-03-25 16:11:54,704 - INFO - info: {'type': 'info', 'epoch': 11, 'batch': 0, 'total_batches': 30, 'loss': 0.05622218921780586}
+2025-03-25 16:11:56,998 - INFO - info: {'type': 'info', 'epoch': 11, 'batch': 10, 'total_batches': 30, 'loss': 0.04946541786193848}
+2025-03-25 16:11:59,289 - INFO - info: {'type': 'info', 'epoch': 11, 'batch': 20, 'total_batches': 30, 'loss': 0.04316704347729683}
+2025-03-25 16:12:01,967 - INFO - info: {'type': 'info', 'epoch': 11, 'train_loss': 0.05344880868991216, 'val_loss': 0.048782336874864995, 'train_ssim': 0.87938205798467, 'val_ssim': 0.8747531324625015, 'elapsed': 7.474104404449463}
+2025-03-25 16:12:02,644 - INFO - info: {'type': 'info', 'epoch': 12, 'batch': 0, 'total_batches': 30, 'loss': 0.0542290061712265}
+2025-03-25 16:12:04,937 - INFO - info: {'type': 'info', 'epoch': 12, 'batch': 10, 'total_batches': 30, 'loss': 0.025326266884803772}
+2025-03-25 16:12:07,234 - INFO - info: {'type': 'info', 'epoch': 12, 'batch': 20, 'total_batches': 30, 'loss': 0.023629432544112206}
+2025-03-25 16:12:09,931 - INFO - Saved best model with validation loss: 0.043058
+2025-03-25 16:12:09,932 - INFO - info: {'type': 'info', 'epoch': 12, 'train_loss': 0.05280663724988699, 'val_loss': 0.043057747767306864, 'train_ssim': 0.8805275976657867, 'val_ssim': 0.884746290743351, 'elapsed': 7.522514581680298}
+2025-03-25 16:12:10,478 - INFO - info: {'type': 'info', 'epoch': 13, 'batch': 0, 'total_batches': 30, 'loss': 0.04253702238202095}
+2025-03-25 16:12:12,541 - INFO - info: {'type': 'info', 'epoch': 13, 'batch': 10, 'total_batches': 30, 'loss': 0.06737987697124481}
+2025-03-25 16:12:14,549 - INFO - info: {'type': 'info', 'epoch': 13, 'batch': 20, 'total_batches': 30, 'loss': 0.012769998051226139}
+2025-03-25 16:12:16,876 - INFO - Saved best model with validation loss: 0.029826
+2025-03-25 16:12:16,878 - INFO - info: {'type': 'info', 'epoch': 13, 'train_loss': 0.04203743472074469, 'val_loss': 0.029826433456037194, 'train_ssim': 0.8954457481702168, 'val_ssim': 0.8909370377659798, 'elapsed': 6.583382606506348}
+2025-03-25 16:12:17,436 - INFO - info: {'type': 'info', 'epoch': 14, 'batch': 0, 'total_batches': 30, 'loss': 0.08240137994289398}
+2025-03-25 16:12:19,311 - INFO - info: {'type': 'info', 'epoch': 14, 'batch': 10, 'total_batches': 30, 'loss': 0.030384713783860207}
+2025-03-25 16:12:21,209 - INFO - info: {'type': 'info', 'epoch': 14, 'batch': 20, 'total_batches': 30, 'loss': 0.046960264444351196}
+2025-03-25 16:12:23,569 - INFO - Saved best model with validation loss: 0.025552
+2025-03-25 16:12:23,570 - INFO - info: {'type': 'info', 'epoch': 14, 'train_loss': 0.036925734191512065, 'val_loss': 0.025551726284902543, 'train_ssim': 0.9008630911509196, 'val_ssim': 0.8976693525910378, 'elapsed': 6.3182830810546875}
+2025-03-25 16:12:24,227 - INFO - info: {'type': 'info', 'epoch': 15, 'batch': 0, 'total_batches': 30, 'loss': 0.0995311290025711}
+2025-03-25 16:12:26,054 - INFO - info: {'type': 'info', 'epoch': 15, 'batch': 10, 'total_batches': 30, 'loss': 0.01154839713126421}
+2025-03-25 16:12:27,941 - INFO - info: {'type': 'info', 'epoch': 15, 'batch': 20, 'total_batches': 30, 'loss': 0.01839645579457283}
+2025-03-25 16:12:30,148 - INFO - info: {'type': 'info', 'epoch': 15, 'train_loss': 0.041003433909888067, 'val_loss': 0.09117465978488326, 'train_ssim': 0.8966998040676117, 'val_ssim': 0.8120295479893684, 'elapsed': 6.123936176300049}
+2025-03-25 16:12:30,726 - INFO - info: {'type': 'info', 'epoch': 16, 'batch': 0, 'total_batches': 30, 'loss': 0.002708671148866415}
+2025-03-25 16:12:32,536 - INFO - info: {'type': 'info', 'epoch': 16, 'batch': 10, 'total_batches': 30, 'loss': 0.03725629299879074}
+2025-03-25 16:12:34,334 - INFO - info: {'type': 'info', 'epoch': 16, 'batch': 20, 'total_batches': 30, 'loss': 0.044658150523900986}
+2025-03-25 16:12:36,433 - INFO - info: {'type': 'info', 'epoch': 16, 'train_loss': 0.035325574176386, 'val_loss': 0.03636334737529978, 'train_ssim': 0.9030625859896342, 'val_ssim': 0.8960427269339561, 'elapsed': 5.906033992767334}
+2025-03-25 16:12:37,004 - INFO - info: {'type': 'info', 'epoch': 17, 'batch': 0, 'total_batches': 30, 'loss': 0.007264538202434778}
+2025-03-25 16:12:38,791 - INFO - info: {'type': 'info', 'epoch': 17, 'batch': 10, 'total_batches': 30, 'loss': 0.03169375658035278}
+2025-03-25 16:12:40,537 - INFO - info: {'type': 'info', 'epoch': 17, 'batch': 20, 'total_batches': 30, 'loss': 0.015058880671858788}
+2025-03-25 16:12:42,709 - INFO - Saved best model with validation loss: 0.020705
+2025-03-25 16:12:42,710 - INFO - info: {'type': 'info', 'epoch': 17, 'train_loss': 0.027422549792875846, 'val_loss': 0.02070534019730985, 'train_ssim': 0.9130799730618795, 'val_ssim': 0.9029184952378273, 'elapsed': 5.903258800506592}
+2025-03-25 16:12:43,364 - INFO - info: {'type': 'info', 'epoch': 18, 'batch': 0, 'total_batches': 30, 'loss': 0.019232749938964844}
+2025-03-25 16:12:45,193 - INFO - info: {'type': 'info', 'epoch': 18, 'batch': 10, 'total_batches': 30, 'loss': 0.008845383301377296}
+2025-03-25 16:12:46,971 - INFO - info: {'type': 'info', 'epoch': 18, 'batch': 20, 'total_batches': 30, 'loss': 0.09704212844371796}
+2025-03-25 16:12:49,069 - INFO - info: {'type': 'info', 'epoch': 18, 'train_loss': 0.04182327982659141, 'val_loss': 0.20803207345306873, 'train_ssim': 0.8977309803167979, 'val_ssim': 0.6895519569516182, 'elapsed': 5.895144462585449}
+2025-03-25 16:12:49,661 - INFO - info: {'type': 'info', 'epoch': 19, 'batch': 0, 'total_batches': 30, 'loss': 0.055942706763744354}
+2025-03-25 16:12:51,454 - INFO - info: {'type': 'info', 'epoch': 19, 'batch': 10, 'total_batches': 30, 'loss': 0.011087421327829361}
+2025-03-25 16:12:53,184 - INFO - info: {'type': 'info', 'epoch': 19, 'batch': 20, 'total_batches': 30, 'loss': 0.009726552292704582}
+2025-03-25 16:12:55,257 - INFO - info: {'type': 'info', 'epoch': 19, 'train_loss': 0.037995083009203276, 'val_loss': 0.02735329093411565, 'train_ssim': 0.8983917355537414, 'val_ssim': 0.8988134860992432, 'elapsed': 5.7794976234436035}
+2025-03-25 16:12:55,855 - INFO - Training completed. Final model saved to ./checkpoints\final_model_unet.pth

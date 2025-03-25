@@ -119,10 +119,10 @@ def preprocess_image(image_path):
         # Load image
         image = Image.open(image_path).convert('L')
         
-        # Convert to tensor and normalize to [-1, 1]
+        # Convert to tensor but keep in [0, 1] range
         transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5], std=[0.5])
+            # No normalization to [-1, 1]
         ])
         
         tensor = transform(image).unsqueeze(0)  # Add batch dimension
@@ -140,8 +140,7 @@ def postprocess_tensor(tensor):
     # Convert to numpy and ensure in [0, 1] range
     np_img = tensor_to_numpy(tensor)
     
-    # Denormalize from [-1, 1] to [0, 1] using the consistent helper function
-    np_img = denormalize_from_range(np_img, low=-1, high=1)
+    # Already in [0, 1] range, no need to denormalize
     
     # Convert to uint8 for PIL
     np_img = (np_img * 255).astype(np.uint8)

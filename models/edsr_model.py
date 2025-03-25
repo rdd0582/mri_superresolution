@@ -92,4 +92,5 @@ class EDSRSuperRes(nn.Module):
         if self.scale == 1:
             x = x + input_img
             
-        return x
+        # Constrain output to [0, 1] range
+        return torch.sigmoid(x)
