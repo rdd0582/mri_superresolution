@@ -14,6 +14,9 @@
 /training_data/
 # Omit model checkpoints (binary files that can be regenerated)
 /checkpoints/
+/ssim_detailed_comparison/
+/ssim_detailed_comparison*
+/ssim_weight_comparison_*/
 
 # ---------------------------
 # Python-related ignores

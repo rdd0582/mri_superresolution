@@ -379,8 +379,7 @@ def train(args):
             else:
                 patience_counter += 1
         else:
-            # If we skip validation, just increment patience counter
-            patience_counter += 1
+            # If we skip validation, don't increment patience counter
             # For logging purposes
             val_loss = "N/A"
             val_ssim = "N/A"
@@ -417,19 +416,22 @@ def train(args):
                 os.path.join(args.checkpoint_dir, 'samples')
             )
         
-        # Early stopping
-        if patience_counter >= args.patience:
+        # Early stopping - only check when validation is performed
+        if val_loss != "N/A" and patience_counter >= args.patience:
             log_message(f"Early stopping triggered after {epoch + 1} epochs")
             break
     
     # Save final model
     final_path = os.path.join(args.checkpoint_dir, f'final_model_{args.model_type}.pth')
+    final_val_loss = best_val_loss if val_loss == "N/A" else val_loss
+    final_val_ssim = 0.0 if val_ssim == "N/A" else val_ssim
+    
     torch.save({
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
-        'val_loss': val_loss if val_loss != "N/A" else best_val_loss,
-        'val_ssim': val_ssim if val_ssim != "N/A" else 0.0
+        'val_loss': final_val_loss,
+        'val_ssim': final_val_ssim
     }, final_path)
     
     log_message(f"Training completed. Final model saved to {final_path}")
