@@ -57,11 +57,36 @@ except ImportError:
 def log_message(message, message_type="info"):
     """Log a message both to the logger and as JSON to stdout for the UI."""
     if isinstance(message, dict):
-        message["type"] = message_type
-        print(json.dumps(message), flush=True)
-        logger.info(f"{message_type}: {message}")
+        # Format numeric values for better readability
+        formatted_message = message.copy()
+        for key, value in formatted_message.items():
+            if isinstance(value, float):
+                formatted_message[key] = round(value, 6)
+        
+        # Add message type if not already present
+        formatted_message["type"] = message_type
+        
+        # Print JSON for UI parsing
+        print(json.dumps(formatted_message), flush=True)
+        
+        # Create a readable log message for the logger
+        if message_type == "epoch_summary":
+            # Format epoch summaries in a more readable way
+            log_msg = (
+                f"Epoch {message['epoch']+1}/{message.get('total_epochs', '?')} | "
+                f"Train Loss: {message.get('train_loss', 0):.4f} | "
+                f"Train SSIM: {message.get('train_ssim', 0):.4f}"
+            )
+            if message.get('val_loss') != "N/A":
+                log_msg += f" | Val Loss: {message.get('val_loss', 0):.4f} | Val SSIM: {message.get('val_ssim', 0):.4f}"
+            log_msg += f" | Time: {message.get('elapsed', 0):.2f}s"
+            logger.info(log_msg)
+        else:
+            logger.info(f"{message_type}: {message}")
     else:
-        print(json.dumps({"type": message_type, "message": message}), flush=True)
+        # Format non-dict messages
+        formatted_message = {"type": message_type, "message": message}
+        print(json.dumps(formatted_message), flush=True)
         logger.info(message)
 
 def save_example_images(low_res, high_res, output, epoch, save_dir):
@@ -322,6 +347,16 @@ def train(args):
                     "total_batches": len(train_loader),
                     "loss": loss.item()
                 })
+                
+                # Update progress bar with current metrics
+                if isinstance(train_iterator, tqdm):
+                    current_loss = train_loss / (batch_idx + 1)
+                    current_ssim = train_ssim / (batch_idx + 1)
+                    train_iterator.set_postfix(
+                        loss=f"{current_loss:.4f}",
+                        ssim=f"{current_ssim:.4f}",
+                        lr=f"{optimizer.param_groups[0]['lr']:.2e}"
+                    )
         
         # Calculate average training metrics
         train_loss /= len(train_loader)
@@ -334,7 +369,13 @@ def train(args):
             val_ssim = 0.0
             
             with torch.no_grad():
-                for low_res, high_res in val_loader:
+                # Add validation progress bar
+                try:
+                    val_iterator = tqdm(val_loader, desc=f"Validating (Epoch {epoch+1})")
+                except ImportError:
+                    val_iterator = val_loader
+                    
+                for low_res, high_res in val_iterator:
                     low_res = low_res.to(device, non_blocking=True)
                     high_res = high_res.to(device, non_blocking=True)
                     
@@ -348,6 +389,15 @@ def train(args):
                     
                     val_loss += loss.item()
                     val_ssim += ssim_metric(output, high_res).item()
+                    
+                    # Update validation progress bar
+                    if isinstance(val_iterator, tqdm):
+                        current_val_loss = val_loss / (val_iterator.n + 1)
+                        current_val_ssim = val_ssim / (val_iterator.n + 1)
+                        val_iterator.set_postfix(
+                            loss=f"{current_val_loss:.4f}",
+                            ssim=f"{current_val_ssim:.4f}"
+                        )
                     
                     # Save the last batch for visualization
                     vis_low_res, vis_high_res, vis_output = low_res, high_res, output
@@ -391,11 +441,13 @@ def train(args):
         log_message({
             "type": "epoch_summary",
             "epoch": epoch,
+            "total_epochs": args.epochs,
             "train_loss": train_loss,
             "val_loss": val_loss,
             "train_ssim": train_ssim,
             "val_ssim": val_ssim,
-            "elapsed": epoch_time
+            "elapsed": epoch_time,
+            "lr": optimizer.param_groups[0]['lr']
         })
         
         # Log to tensorboard if available

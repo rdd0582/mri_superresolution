@@ -41,27 +41,7 @@ logger = logging.getLogger(__name__)
 # Determine if we're on Windows and import the appropriate curses library
 is_windows = sys.platform.startswith('win')
 
-# More robust curses import for Windows
-try:
-    if is_windows:
-        # Try multiple import approaches for Windows
-        try:
-            import curses
-        except ImportError:
-            try:
-                import windows_curses as curses
-            except ImportError:
-                try:
-                    from windows_curses import curses
-                except ImportError:
-                    raise ImportError("Cannot import curses or windows_curses")
-    else:
-        import curses
-except ImportError as e:
-    logger.error(f"Curses library not found: {e}. Please install: pip install windows-curses (Windows) or pip install curses (Unix)")
-    print(f"Error: Curses library not found. Please run: pip install windows-curses")
-    print(f"If you've already installed it, make sure you're using the same Python environment where it was installed.")
-    sys.exit(1)
+import curses
 
 # Import colorama for Windows color support
 try:
