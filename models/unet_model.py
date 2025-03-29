@@ -63,8 +63,8 @@ class OutConv(nn.Module):
 class UNetSuperRes(nn.Module):
     """
     U-Net for MRI quality enhancement
-    - Input: 320x320 1.5T MRI slice
-    - Output: 320x320 enhanced MRI slice
+    - Input: 320x240 1.5T MRI slice
+    - Output: 320x240 enhanced MRI slice
     - Purpose: Enhance image quality and detail without changing resolution
     """
     def __init__(self, in_channels=1, out_channels=1, base_filters=32):
@@ -103,7 +103,7 @@ class UNetSuperRes(nn.Module):
 
     def forward(self, x):
         # Encoder path
-        x1 = self.inc(x)          # 320x320
+        x1 = self.inc(x)          # 320x240
         x2 = self.down1(x1)       # 160x160
         x3 = self.down2(x2)       # 80x80
         x4 = self.down3(x3)       # 40x40
@@ -113,6 +113,6 @@ class UNetSuperRes(nn.Module):
         x = self.up1(x5, x4)      # 40x40
         x = self.up2(x, x3)       # 80x80
         x = self.up3(x, x2)       # 160x160
-        x = self.up4(x, x1)       # 320x320
+        x = self.up4(x, x1)       # 320x240
         
         return self.outc(x)

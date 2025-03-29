@@ -55,23 +55,27 @@ except ImportError:
     logger.warning("Automatic Mixed Precision not available. Using default precision.")
 
 def log_message(message, message_type="info"):
-    """Log a message both to the logger and as JSON to stdout for the UI."""
+    """Log a message both to the logger (human-readable) and as JSON to stdout (for UI)."""
+    
+    # --- Prepare and print JSON for UI ---
     if isinstance(message, dict):
-        # Format numeric values for better readability
-        formatted_message = message.copy()
-        for key, value in formatted_message.items():
+        json_message = message.copy()
+        # Format numeric values for JSON
+        for key, value in json_message.items():
             if isinstance(value, float):
-                formatted_message[key] = round(value, 6)
-        
-        # Add message type if not already present
-        formatted_message["type"] = message_type
-        
-        # Print JSON for UI parsing
-        print(json.dumps(formatted_message), flush=True)
-        
-        # Create a readable log message for the logger
+                json_message[key] = round(value, 6)
+        json_message["type"] = message_type
+        print(json.dumps(json_message), flush=True)
+    else:
+        json_message = {"type": message_type, "message": str(message)} # Ensure message is string
+        print(json.dumps(json_message), flush=True)
+
+    # --- Log human-readable message to standard logger ---
+    if message_type == "batch_update":
+         # Skip verbose batch updates in the standard log file/console logger
+         pass 
+    elif isinstance(message, dict):
         if message_type == "epoch_summary":
-            # Format epoch summaries in a more readable way
             log_msg = (
                 f"Epoch {message['epoch']+1}/{message.get('total_epochs', '?')} | "
                 f"Train Loss: {message.get('train_loss', 0):.4f} | "
@@ -81,13 +85,19 @@ def log_message(message, message_type="info"):
                 log_msg += f" | Val Loss: {message.get('val_loss', 0):.4f} | Val SSIM: {message.get('val_ssim', 0):.4f}"
             log_msg += f" | Time: {message.get('elapsed', 0):.2f}s"
             logger.info(log_msg)
-        else:
-            logger.info(f"{message_type}: {message}")
+        elif message_type == "params":
+            # Format params nicely for the logger, excluding the 'type' field itself
+            params_str = ", ".join([f"{k}={v}" for k, v in message.items() if k != 'type'])
+            logger.info(f"Training Parameters: {params_str}")
+        # Add other specific dict types here if needed for special logger formatting
+        # else:
+            # Fallback for other dictionary types: currently does nothing for the logger
+            # logger.info(f"[{message_type.upper()}] {message}") # Example if fallback needed
+            pass
     else:
-        # Format non-dict messages
-        formatted_message = {"type": message_type, "message": message}
-        print(json.dumps(formatted_message), flush=True)
-        logger.info(message)
+        # Log simple string messages directly - REMOVED to avoid duplication with JSON output
+        # logger.info(str(message)) # Ensure message is string
+        pass # Simple string messages are already printed as JSON
 
 def save_example_images(low_res, high_res, output, epoch, save_dir):
     """Save sample images to visualize model performance"""
@@ -153,11 +163,6 @@ def train(args):
     device = torch.device('cuda' if torch.cuda.is_available() and not args.cpu else 'cpu')
     log_message(f"Using device: {device}")
 
-    if device.type == 'cuda':
-        log_message(f"GPU: {torch.cuda.get_device_name(0)}")
-        log_message(f"Memory allocated: {torch.cuda.memory_allocated(0) / 1e9:.2f} GB")
-        log_message(f"Memory reserved: {torch.cuda.memory_reserved(0) / 1e9:.2f} GB")
-
     # Check if AMP can be used
     use_amp = args.use_amp and AMP_AVAILABLE and device.type == 'cuda'
     if args.use_amp and not use_amp:
@@ -195,7 +200,13 @@ def train(args):
         raise ValueError(f"Unknown model type: {args.model_type}")
     
     model = model.to(device)
-    
+
+    # Log memory usage *after* moving the model to the device
+    if device.type == 'cuda':
+        log_message(f"GPU: {torch.cuda.get_device_name(0)}")
+        log_message(f"Memory allocated after model load: {torch.cuda.memory_allocated(0) / 1e9:.2f} GB")
+        log_message(f"Memory reserved after model load: {torch.cuda.memory_reserved(0) / 1e9:.2f} GB")
+
     # Create optimizer
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
     
