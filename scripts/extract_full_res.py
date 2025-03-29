@@ -11,51 +11,23 @@ import nibabel as nib
 import numpy as np
 import cv2  # Still needed if any cv2-specific operations are required
 from utils.preprocessing import preprocess_slice, InterpolationMethod, ResizeMethod  # Import common preprocessing functions
+from utils.extraction_utils import generate_bids_identifier, generate_filename, extract_slices_3d
 
 import argparse
 
-def generate_filename(subject, slice_idx, timepoint=None):
+def preprocess_high_res_slice(slice_data, target_size=(320, 240)):
     """
-    Generate a filename with the following format:
-      SubjectName[_T{timepoint}]_s{slice_idx:03d}.png
-    (No modality suffix is added so that paired images have identical names.)
+    Wrapper function for preprocessing high-resolution slices.
     """
-    if timepoint is not None:
-        return f"{subject}_T{timepoint}_s{slice_idx:03d}.png"
-    else:
-        return f"{subject}_s{slice_idx:03d}.png"
-
-def extract_slices_3d(data, subject, output_dir, timepoint=None,
-                      n_slices=10, lower_percent=0.2, upper_percent=0.8, target_size=(320, 240)):
-    """
-    Extract n_slices equally spaced from the central portion of a 3D volume,
-    preprocess (robust normalization, letterbox resize preserving full resolution),
-    and save each slice.
-    """
-    num_slices = data.shape[2]
-    lower_index = int(lower_percent * num_slices)
-    upper_index = int(upper_percent * num_slices)
-    slice_indices = np.linspace(lower_index, upper_index, n_slices, dtype=int)
-
-    for idx in slice_indices:
-        slice_data = data[:, :, idx]
-        
-        # Process slice
-        processed_slice = preprocess_slice(
-            slice_data, 
-            target_size=target_size,
-            interpolation=InterpolationMethod.CUBIC,
-            resize_method=ResizeMethod.LETTERBOX
-        )
-        
-        # Convert from float [0,1] to uint8 [0,255] for saving
-        processed_slice = (processed_slice * 255).astype(np.uint8)
-        
-        # Generate filename
-        filename = generate_filename(subject, idx, timepoint)
-        output_path = os.path.join(output_dir, filename)
-        cv2.imwrite(output_path, processed_slice)
-        print(f"Saved: {output_path}")
+    processed_slice = preprocess_slice(
+        slice_data, 
+        target_size=target_size,
+        interpolation=InterpolationMethod.CUBIC,
+        resize_method=ResizeMethod.LETTERBOX
+    )
+    
+    # Convert from float [0,1] to uint8 [0,255] for saving
+    return (processed_slice * 255).astype(np.uint8)
 
 def extract_slices(nifti_file, output_dir, n_slices=10,
                    lower_percent=0.2, upper_percent=0.8, target_size=(320, 240)):
@@ -65,12 +37,13 @@ def extract_slices(nifti_file, output_dir, n_slices=10,
     """
     img = nib.load(nifti_file)
     data = img.get_fdata()
-    subject = os.path.splitext(os.path.basename(nifti_file))[0]
+    subject = generate_bids_identifier(nifti_file)
 
     if data.ndim == 3:
         extract_slices_3d(data, subject, output_dir,
                           n_slices=n_slices, lower_percent=lower_percent,
-                          upper_percent=upper_percent, target_size=target_size)
+                          upper_percent=upper_percent, target_size=target_size,
+                          preprocess_function=preprocess_high_res_slice)
     elif data.ndim == 4:
         num_timepoints = data.shape[3]
         print(f"Processing 4D file with {num_timepoints} time points: {nifti_file}")
@@ -78,7 +51,8 @@ def extract_slices(nifti_file, output_dir, n_slices=10,
             data_3d = data[:, :, :, t]
             extract_slices_3d(data_3d, subject, output_dir, timepoint=t,
                               n_slices=n_slices, lower_percent=lower_percent,
-                              upper_percent=upper_percent, target_size=target_size)
+                              upper_percent=upper_percent, target_size=target_size,
+                              preprocess_function=preprocess_high_res_slice)
     else:
         print(f"Unexpected data dimensionality for {nifti_file}: {data.ndim}D")
         return
