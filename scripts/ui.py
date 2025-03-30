@@ -98,16 +98,14 @@ class MRIUI:
         self.input_prompt = ""
         self.input_field = ""
         self.params = {
-            # Extract full res params
+            # Paired extraction params
             "datasets_dir": "./datasets",
-            "full_res_output_dir": "./training_data",
+            "hr_output_dir": "./training_data",
+            "lr_output_dir": "./training_data_1.5T",
             "n_slices_extract": 10,
             "lower_percent": 0.2,
             "upper_percent": 0.8,
-            
-            # Downsample params
-            "downsample_output_dir": "./training_data_1.5T",
-            "noise_std": 5,
+            "noise_std": 5,  # This is appropriate for 0-255 range (scaled internally)
             "blur_sigma": 0.5,
             
             # Training params
@@ -216,10 +214,8 @@ class MRIUI:
         
         if self.current_menu == "main":
             self.draw_main_menu()
-        elif self.current_menu == "extract_full_res":
-            self.draw_extract_full_res_menu()
-        elif self.current_menu == "downsample":
-            self.draw_downsample_menu()
+        elif self.current_menu == "extract_paired":
+            self.draw_extract_paired_menu()
         elif self.current_menu == "train":
             self.draw_train_menu()
         elif self.current_menu == "infer":
@@ -231,8 +227,7 @@ class MRIUI:
     def draw_main_menu(self):
         """Draw the main menu options"""
         self.options = [
-            "Extract Full Resolution Images",
-            "Generate Low Resolution Images",
+            "Extract Paired Slices",
             "Train Super-Resolution Model",
             "Infer on Image",
             "Exit"
@@ -253,14 +248,17 @@ class MRIUI:
             self.stdscr.addstr(start_y + i, 4, option)
             self.stdscr.attroff(attr)
     
-    def draw_extract_full_res_menu(self):
-        """Draw the extract full resolution menu"""
+    def draw_extract_paired_menu(self):
+        """Draw the extract paired slices menu"""
         self.options = [
             "datasets_dir",
-            "full_res_output_dir",
+            "hr_output_dir",
+            "lr_output_dir",
             "n_slices_extract",
             "lower_percent",
             "upper_percent",
+            "noise_std",
+            "blur_sigma",
             "Run Extraction",
             "Back to Main Menu"
         ]
@@ -270,8 +268,13 @@ class MRIUI:
         
         # Draw menu title
         self.stdscr.attron(curses.color_pair(2))
-        self.stdscr.addstr(2, 2, "Extract Full Resolution Images")
+        self.stdscr.addstr(2, 2, "Extract Paired Slices (HR & LR)")
         self.stdscr.attroff(curses.color_pair(2))
+        
+        # Add simulation explanation
+        self.stdscr.attron(curses.color_pair(6))
+        self.stdscr.addstr(3, 2, "noise_std: for 0-255 range, will be scaled automatically. Values 1-10 recommended.")
+        self.stdscr.attroff(curses.color_pair(6))
         
         # Draw options
         for i, option in enumerate(self.options):
@@ -281,47 +284,7 @@ class MRIUI:
             if option not in ["Run Extraction", "Back to Main Menu"]:
                 # Format parameter name and value
                 param_name = option.ljust(20)
-                param_value = str(self.params[option])
-                
-                self.stdscr.addstr(start_y + i, 4, param_name)
-                self.stdscr.attroff(attr)  # Turn off highlight for value
-                
-                # Use a different color for the parameter value
-                self.stdscr.attron(curses.color_pair(6))
-                self.stdscr.addstr(start_y + i, 4 + len(param_name) + 2, param_value)
-                self.stdscr.attroff(curses.color_pair(6))
-            else:
-                self.stdscr.addstr(start_y + i, 4, option)
-                self.stdscr.attroff(attr)
-    
-    def draw_downsample_menu(self):
-        """Draw the downsample menu"""
-        self.options = [
-            "datasets_dir",
-            "downsample_output_dir",
-            "noise_std",
-            "blur_sigma",
-            "Run Downsampling",
-            "Back to Main Menu"
-        ]
-        
-        height, width = self.stdscr.getmaxyx()
-        start_y = 4
-        
-        # Draw menu title
-        self.stdscr.attron(curses.color_pair(2))
-        self.stdscr.addstr(2, 2, "Generate Low Resolution Images")
-        self.stdscr.attroff(curses.color_pair(2))
-        
-        # Draw options
-        for i, option in enumerate(self.options):
-            attr = curses.color_pair(5) | Colors.HIGHLIGHT if i == self.current_option else curses.color_pair(1)
-            self.stdscr.attron(attr)
-            
-            if option not in ["Run Downsampling", "Back to Main Menu"]:
-                # Format parameter name and value
-                param_name = option.ljust(25)
-                param_value = str(self.params[option])
+                param_value = str(self.params.get(option, ""))
                 
                 self.stdscr.addstr(start_y + i, 4, param_name)
                 self.stdscr.attroff(attr)  # Turn off highlight for value
@@ -603,12 +566,8 @@ class MRIUI:
         
         # Main menu selections
         if self.current_menu == "main":
-            if selected_option == "Extract Full Resolution Images":
-                self.current_menu = "extract_full_res"
-                self.current_option = 0
-            
-            elif selected_option == "Generate Low Resolution Images":
-                self.current_menu = "downsample"
+            if selected_option == "Extract Paired Slices":
+                self.current_menu = "extract_paired"
                 self.current_option = 0
             
             elif selected_option == "Train Super-Resolution Model":
@@ -622,30 +581,10 @@ class MRIUI:
             elif selected_option == "Exit":
                 return False  # Exit the app
         
-        # Extract full res menu selections
-        elif self.current_menu == "extract_full_res":
+        # Extract paired slices menu selections
+        elif self.current_menu == "extract_paired":
             if selected_option == "Run Extraction":
-                self.run_extract_full_res()
-            
-            elif selected_option == "Back to Main Menu":
-                self.current_menu = "main"
-                self.current_option = 0
-            
-            else:
-                # Enter editing mode for the parameter
-                self.input_mode = True
-                self.input_field = selected_option
-                self.input_value = str(self.params[selected_option])
-                
-                if selected_option in boolean_flags:
-                    self.input_prompt = f"Toggle {selected_option} (type 'toggle' or yes/no):"
-                else:
-                    self.input_prompt = f"Enter value for {selected_option}:"
-        
-        # Downsample menu selections
-        elif self.current_menu == "downsample":
-            if selected_option == "Run Downsampling":
-                self.run_downsample()
+                self.run_extract_paired_slices()
             
             elif selected_option == "Back to Main Menu":
                 self.current_menu = "main"
@@ -707,64 +646,21 @@ class MRIUI:
         
         return True
     
-    def run_extract_full_res(self):
-        """Run the extract full resolution script"""
-        self.status_message = "Extracting full resolution images..."
+    def run_extract_paired_slices(self):
+        """Run the extract paired slices script"""
+        self.status_message = "Extracting paired slices..."
         self.draw_menu()
         
         try:
             cmd = [
                 sys.executable, 
-                os.path.join(project_root, "scripts", "extract_full_res.py"),
+                os.path.join(project_root, "scripts", "extract_paired_slices.py"),
                 "--datasets_dir", self.params["datasets_dir"],
-                "--output_dir", self.params["full_res_output_dir"],
+                "--hr_output_dir", self.params["hr_output_dir"],
+                "--lr_output_dir", self.params["lr_output_dir"],
                 "--n_slices", str(self.params["n_slices_extract"]),
                 "--lower_percent", str(self.params["lower_percent"]),
-                "--upper_percent", str(self.params["upper_percent"])
-            ]
-            
-            logger.info(f"Running command: {' '.join(cmd)}")
-            
-            # Temporarily exit curses mode
-            curses.endwin()
-            
-            # Run the process with real-time output
-            print("\nRunning extract_full_res.py...\n")
-            process = subprocess.run(cmd, check=False)
-            print("\nPress any key to return to the UI...")
-            input()
-            
-            # Resume curses mode
-            self.stdscr = curses.initscr()
-            self.init_curses()
-            
-            if process.returncode == 0:
-                self.status_message = "Full resolution extraction completed successfully!"
-                self.error_message = ""
-            else:
-                self.error_message = f"Error during extraction! Check ui.log for details."
-                self.status_message = ""
-        
-        except Exception as e:
-            logger.error(f"Error running extract_full_res.py: {e}")
-            self.error_message = f"Error: {str(e)}"
-            self.status_message = ""
-            
-            # Resume curses mode if exception occurs
-            self.stdscr = curses.initscr()
-            self.init_curses()
-    
-    def run_downsample(self):
-        """Run the downsample script"""
-        self.status_message = "Generating low resolution images..."
-        self.draw_menu()
-        
-        try:
-            cmd = [
-                sys.executable, 
-                os.path.join(project_root, "scripts", "downsample_extract.py"),
-                "--datasets_dir", self.params["datasets_dir"],
-                "--output_dir", self.params["downsample_output_dir"],
+                "--upper_percent", str(self.params["upper_percent"]),
                 "--noise_std", str(self.params["noise_std"]),
                 "--blur_sigma", str(self.params["blur_sigma"])
             ]
@@ -775,7 +671,7 @@ class MRIUI:
             curses.endwin()
             
             # Run the process with real-time output
-            print("\nRunning downsample_extract.py...\n")
+            print("\nRunning extract_paired_slices.py...\n")
             process = subprocess.run(cmd, check=False)
             print("\nPress any key to return to the UI...")
             input()
@@ -785,14 +681,14 @@ class MRIUI:
             self.init_curses()
             
             if process.returncode == 0:
-                self.status_message = "Low resolution image generation completed successfully!"
+                self.status_message = "Paired slices extraction completed successfully!"
                 self.error_message = ""
             else:
-                self.error_message = f"Error during downsampling! Check ui.log for details."
+                self.error_message = f"Error during extraction! Check ui.log for details."
                 self.status_message = ""
         
         except Exception as e:
-            logger.error(f"Error running downsample_extract.py: {e}")
+            logger.error(f"Error running extract_paired_slices.py: {e}")
             self.error_message = f"Error: {str(e)}"
             self.status_message = ""
             

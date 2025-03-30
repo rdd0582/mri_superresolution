@@ -109,7 +109,12 @@ class CombinedLoss(nn.Module):
             window = window.to(device=output.device, dtype=output.dtype)
             
         ssim_val = ssim(output, target, self.window_size, self.sigma, 
-                       self.val_range, self.device, window)
+                       self.val_range, output.device, window)
+        
+        # Clamp the SSIM value to the range [0, 1]
+        # This prevents ssim_loss from becoming negative if ssim_val slightly exceeds 1
+        # Clamping to min=0 also handles potential rare cases where SSIM might be negative
+        ssim_val = torch.clamp(ssim_val, min=0.0, max=1.0)
         
         ssim_loss = 1 - ssim_val
         

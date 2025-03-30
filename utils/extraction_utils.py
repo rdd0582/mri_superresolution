@@ -71,28 +71,36 @@ def generate_filename(subject: str, slice_idx: int, timepoint: Optional[int] = N
 
 def extract_slices_3d(data: np.ndarray, 
                       subject: str, 
-                      output_dir: str, 
+                      hr_output_dir: str,
+                      lr_output_dir: Optional[str] = None,
                       timepoint: Optional[int] = None,
                       n_slices: int = 10, 
                       lower_percent: float = 0.2, 
                       upper_percent: float = 0.8, 
                       target_size: Tuple[int, int] = (320, 240),
-                      preprocess_function=None):
+                      preprocess_function=None,
+                      apply_simulation: bool = False,
+                      noise_std: float = 5.0,
+                      blur_sigma: float = 0.5):
     """
     Extract n_slices equally spaced from the central portion of a 3D volume,
     preprocess (using the provided preprocessing function),
-    and save each slice.
+    and save each slice in both high-resolution and optionally low-resolution formats.
     
     Args:
         data: 3D numpy array with volume data
         subject: Subject identifier for filename generation
-        output_dir: Directory to save processed slices
+        hr_output_dir: Directory to save high-resolution processed slices
+        lr_output_dir: Directory to save low-resolution processed slices (if None, only save HR)
         timepoint: Optional timepoint for 4D data
         n_slices: Number of slices to extract
         lower_percent: Lower percentile of slices to consider
         upper_percent: Upper percentile of slices to consider
         target_size: Target size for resizing as (width, height)
-        preprocess_function: Function to preprocess each slice (should return uint8 array)
+        preprocess_function: Function to preprocess each slice (should accept apply_simulation parameter)
+        apply_simulation: Whether to apply low-resolution simulation for LR images
+        noise_std: Noise standard deviation for simulation
+        blur_sigma: Sigma for Gaussian blur in simulation
     """
     # If no preprocessing function provided, raise an error
     if preprocess_function is None:
@@ -103,17 +111,36 @@ def extract_slices_3d(data: np.ndarray,
     upper_index = int(upper_percent * num_slices)
     slice_indices = np.linspace(lower_index, upper_index, n_slices, dtype=int)
 
+    import cv2  # Import here to avoid circular imports
+    
     for idx in slice_indices:
         slice_data = data[:, :, idx]
         
-        # Process slice using the provided function
-        processed_slice = preprocess_function(slice_data, target_size)
+        # Process slice for high-resolution (no simulation)
+        hr_processed_slice = preprocess_function(slice_data, target_size, 
+                                               apply_simulation=False)
         
-        # Generate filename
+        # Generate filename (same for both HR and LR to maintain pairing)
         filename = generate_filename(subject, idx, timepoint)
-        output_path = os.path.join(output_dir, filename)
         
-        # Save the processed slice
-        import cv2  # Import here to avoid circular imports
-        cv2.imwrite(output_path, processed_slice)
-        print(f"Saved: {output_path}") 
+        # Save the high-resolution slice
+        hr_output_path = os.path.join(hr_output_dir, filename)
+        # Convert from float [0,1] to uint8 [0,255] for saving
+        hr_processed_uint8 = (hr_processed_slice * 255).astype(np.uint8)
+        cv2.imwrite(hr_output_path, hr_processed_uint8)
+        print(f"Saved HR: {hr_output_path}")
+        
+        # If low-resolution output directory is provided, create LR version too
+        if lr_output_dir is not None:
+            # Process slice for low-resolution (with simulation)
+            lr_processed_slice = preprocess_function(slice_data, target_size, 
+                                                  apply_simulation=apply_simulation,
+                                                  noise_std=noise_std,
+                                                  blur_sigma=blur_sigma)
+            
+            # Save the low-resolution slice
+            lr_output_path = os.path.join(lr_output_dir, filename)
+            # Convert from float [0,1] to uint8 [0,255] for saving
+            lr_processed_uint8 = (lr_processed_slice * 255).astype(np.uint8)
+            cv2.imwrite(lr_output_path, lr_processed_uint8)
+            print(f"Saved LR: {lr_output_path}") 

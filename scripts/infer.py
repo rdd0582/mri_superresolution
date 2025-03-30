@@ -119,13 +119,24 @@ def preprocess_image(image_path):
         # Load image
         image = Image.open(image_path).convert('L')
         
-        # Convert to tensor but keep in [0, 1] range
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-            # No normalization to [-1, 1]
-        ])
+        # Convert to numpy array for processing
+        image_np = np.array(image).astype(np.float32)
         
-        tensor = transform(image).unsqueeze(0)  # Add batch dimension
+        # Apply the same preprocessing as during training data generation:
+        # 1. Apply percentile-based windowing/clipping
+        min_percentile = 0.5  # Same as used in extract_paired_slices.py -> preprocess_slice
+        max_percentile = 99.5
+        min_val = np.percentile(image_np, min_percentile)
+        max_val = np.percentile(image_np, max_percentile)
+        image_np = np.clip(image_np, min_val, max_val)
+        
+        # 2. Normalize to [0, 1] range
+        if max_val > min_val:
+            image_np = (image_np - min_val) / (max_val - min_val)
+        
+        # Convert to tensor
+        tensor = torch.from_numpy(image_np).unsqueeze(0).unsqueeze(0)  # Add batch and channel dimensions
+        
         return image, tensor
     
     except Exception as e:

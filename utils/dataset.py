@@ -175,10 +175,10 @@ class MRISuperResDataset(Dataset):
         
         # Add random noise (only to low-res image to simulate scanner noise)
         if random.random() < self.aug_params['noise_prob']:
-            img1_np = np.array(img1).astype(np.float32)
-            noise = np.random.normal(0, self.aug_params['noise_std'] * 255, img1_np.shape)
-            img1_np = np.clip(img1_np + noise, 0, 255).astype(np.uint8)
-            img1 = Image.fromarray(img1_np)
+            img2_np = np.array(img2).astype(np.float32)  # img2 is the low-res image
+            noise = np.random.normal(0, self.aug_params['noise_std'] * 255, img2_np.shape)
+            img2_np = np.clip(img2_np + noise, 0, 255).astype(np.uint8)
+            img2 = Image.fromarray(img2_np)
         
         return img1, img2
     
