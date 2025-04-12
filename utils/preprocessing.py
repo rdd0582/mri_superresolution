@@ -256,7 +256,7 @@ def simulate_15T_data(data, noise_std=5, blur_sigma=0.5):
 def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMethod.CUBIC,
                      equalize=False, window_center=None, window_width=None, 
                      min_percentile=0.5, max_percentile=99.5, resize_method=ResizeMethod.LETTERBOX,
-                     apply_simulation=False, noise_std=5, blur_sigma=0.5):
+                     apply_simulation=False, noise_std=5, blur_sigma=0.5, pad_value=None):
     """
     Process a single MRI slice with options for normalization, windowing, and resizing.
     Can optionally simulate low-resolution effects (blur and noise).
@@ -274,6 +274,7 @@ def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMe
         apply_simulation: Whether to apply low-resolution simulation
         noise_std: Noise standard deviation for simulation (for 0-255 range, internally scaled)
         blur_sigma: Sigma for Gaussian blur in simulation
+        pad_value: Value to use for padding (if None, uses image mean)
         
     Returns:
         Processed slice as float32 array with values in [0, 1]
@@ -309,11 +310,11 @@ def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMe
     # Resize if target size is provided
     if target_size:
         if resize_method == ResizeMethod.LETTERBOX:
-            processed = letterbox_resize(processed, target_size, interpolation)
+            processed = letterbox_resize(processed, target_size, interpolation, pad_value)
         elif resize_method == ResizeMethod.CROP:
             processed = center_crop(processed, target_size)
         elif resize_method == ResizeMethod.PAD:
-            processed = pad_to_size(processed, target_size)
+            processed = pad_to_size(processed, target_size, pad_value)
         elif resize_method == ResizeMethod.STRETCH:
             # Simple resize that may change aspect ratio
             processed = cv2.resize(processed, target_size, 
@@ -321,8 +322,7 @@ def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMe
         else:
             # Use letterbox as default fallback
             max_dim = max(target_size)
-            processed = letterbox_resize(processed, (max_dim, max_dim), interpolation)
-            processed = pad_to_size(processed, (max_dim, max_dim))
+            processed = letterbox_resize(processed, (max_dim, max_dim), interpolation, pad_value)
     
     return processed
 

@@ -107,6 +107,7 @@ class MRIUI:
             "upper_percent": 0.8,
             "noise_std": 5,  # This is appropriate for 0-255 range (scaled internally)
             "blur_sigma": 0.5,
+            "target_size": "256 256",  # Added target_size parameter
             
             # Training params
             "full_res_dir": "./training_data",
@@ -259,6 +260,7 @@ class MRIUI:
             "upper_percent",
             "noise_std",
             "blur_sigma",
+            "target_size",
             "Run Extraction",
             "Back to Main Menu"
         ]
@@ -275,6 +277,11 @@ class MRIUI:
         self.stdscr.attron(curses.color_pair(6))
         self.stdscr.addstr(3, 2, "noise_std: for 0-255 range, will be scaled automatically. Values 1-10 recommended.")
         self.stdscr.attroff(curses.color_pair(6))
+        
+        # Add interpolation info
+        self.stdscr.attron(curses.color_pair(3))
+        self.stdscr.addstr(4, 2, "Uses LANCZOS interpolation for HR and CUBIC for LR with mean-value letterbox padding")
+        self.stdscr.attroff(curses.color_pair(3))
         
         # Draw options
         for i, option in enumerate(self.options):
@@ -662,7 +669,8 @@ class MRIUI:
                 "--lower_percent", str(self.params["lower_percent"]),
                 "--upper_percent", str(self.params["upper_percent"]),
                 "--noise_std", str(self.params["noise_std"]),
-                "--blur_sigma", str(self.params["blur_sigma"])
+                "--blur_sigma", str(self.params["blur_sigma"]),
+                "--target_size", self.params["target_size"]
             ]
             
             logger.info(f"Running command: {' '.join(cmd)}")
@@ -671,6 +679,12 @@ class MRIUI:
             curses.endwin()
             
             # Run the process with real-time output
+            print("\n=== MRI Paired Slice Extraction ===")
+            print(f"Datasets Directory: {self.params['datasets_dir']}")
+            print(f"High-Resolution Output: {self.params['hr_output_dir']} (Using LANCZOS interpolation for resizing)")
+            if self.params["lr_output_dir"]:
+                print(f"Low-Resolution Output: {self.params['lr_output_dir']} (Using CUBIC interpolation for resizing)")
+                print(f"Simulation Settings:")
             print("\nRunning extract_paired_slices.py...\n")
             process = subprocess.run(cmd, check=False)
             print("\nPress any key to return to the UI...")

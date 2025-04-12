@@ -15,26 +15,30 @@ from utils.extraction_utils import generate_bids_identifier, generate_filename, 
 
 import argparse
 
-def preprocess_high_res_slice(slice_data, target_size=(320, 240), 
+def preprocess_high_res_slice(slice_data, target_size=(256, 256), 
                            apply_simulation=False, noise_std=5, blur_sigma=0.5):
     """
     Wrapper function for preprocessing slices.
-    Can generate either high-resolution (using NEAREST interpolation to preserve sharpness)
-    or simulated low-resolution slices (using CUBIC interpolation before simulation).
+    Uses LANCZOS interpolation for high-resolution to preserve sharp details with minimal aliasing.
+    Uses CUBIC interpolation for low-resolution before simulation for smoother, realistic degradation.
     """
+    # Calculate mean intensity for padding value
+    pad_value = np.mean(slice_data)
+    
     # Select interpolation method based on whether it's HR or LR processing
     if apply_simulation:
-        # For LR simulation, use a smoother interpolation before adding blur/noise
+        # For LR simulation, use CUBIC interpolation for smoother, realistic degradation
         interpolation_method = InterpolationMethod.CUBIC
     else:
-        # For HR ground truth, use NEAREST to minimize blur during resizing
-        interpolation_method = InterpolationMethod.NEAREST
+        # For HR ground truth, use LANCZOS to preserve sharp details with minimal aliasing
+        interpolation_method = InterpolationMethod.LANCZOS
         
     processed_slice = preprocess_slice(
         slice_data, 
         target_size=target_size,
         interpolation=interpolation_method,
         resize_method=ResizeMethod.LETTERBOX,
+        pad_value=pad_value,
         apply_simulation=apply_simulation,
         noise_std=noise_std,
         blur_sigma=blur_sigma
@@ -94,9 +98,9 @@ if __name__ == '__main__':
                         help='Lower percentile for slice selection')
     parser.add_argument('--upper_percent', type=float, default=0.8, 
                         help='Upper percentile for slice selection')
-    # Set target_size default to 320x240 for consistent image dimensions
-    parser.add_argument('--target_size', type=int, nargs=2, default=[320, 240], 
-                        help='Target size for resizing slices (width height), default is 320x240')
+    # Set target_size default to 256x256 for consistent image dimensions
+    parser.add_argument('--target_size', type=int, nargs=2, default=[256, 256], 
+                    help='Target size for resizing slices (width height), default is 256x256')
     # Simulation parameters
     parser.add_argument('--noise_std', type=float, default=5, 
                        help='Standard deviation for noise (for 0-255 range, internally scaled)')
@@ -117,7 +121,7 @@ if __name__ == '__main__':
     
     print("=== MRI Paired Slice Extraction ===")
     print(f"Datasets Directory: {datasets_dir}")
-    print(f"High-Resolution Output: {hr_output_dir} (Using NEAREST interpolation for resizing)")
+    print(f"High-Resolution Output: {hr_output_dir} (Using LANCZOS interpolation for resizing)")
     if lr_output_dir:
         print(f"Low-Resolution Output: {lr_output_dir} (Using CUBIC interpolation for resizing)")
         print(f"Simulation Settings:")
