@@ -62,12 +62,6 @@ def create_detailed_comparison(weight_dirs, test_image_dir, output_dir, model_ty
     if model_type == "unet":
         from models.unet_model import UNetSuperRes
         model_class = UNetSuperRes
-    elif model_type == "edsr":
-        from models.edsr_model import EDSRSuperRes
-        model_class = EDSRSuperRes
-    elif model_type == "simple":
-        from models.cnn_model import CNNSuperRes
-        model_class = CNNSuperRes
     else:
         raise ValueError(f"Unknown model type: {model_type}")
     
@@ -88,10 +82,9 @@ def create_detailed_comparison(weight_dirs, test_image_dir, output_dir, model_ty
             # Create model instance based on model type
             if model_type == "unet":
                 model = model_class(in_channels=1, out_channels=1)
-            elif model_type == "edsr":
-                model = model_class(in_channels=1, out_channels=1, scale=1, num_features=64)
-            elif model_type == "simple":
-                model = model_class(in_channels=1, out_channels=1)
+            else:
+                 # This case should not be reached now
+                 raise ValueError(f"Unsupported model type in loading loop: {model_type}")
             
             # Load the model weights
             model.load_state_dict(checkpoint['model_state_dict'])
@@ -188,8 +181,8 @@ def main():
                       help='Directory containing test low-resolution images')
     
     # Model type
-    parser.add_argument('--model_type', type=str, choices=['simple', 'edsr', 'unet'], default='unet',
-                      help='Model architecture used for training')
+    parser.add_argument('--model_type', type=str, choices=['unet'], default='unet',
+                      help='Model architecture used for training (only unet supported)')
     
     # Output directory
     parser.add_argument('--output_dir', type=str, default='./ssim_detailed_comparison',

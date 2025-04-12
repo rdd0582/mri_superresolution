@@ -179,24 +179,9 @@ def train(args):
             out_channels=1,
             base_filters=args.base_filters
         )
-    elif args.model_type == "edsr":
-        from models.edsr_model import EDSRSuperRes
-        model = EDSRSuperRes(
-            in_channels=1,
-            out_channels=1,
-            scale=args.scale,
-            num_features=args.num_features,
-            num_res_blocks=args.num_res_blocks
-        )
-    elif args.model_type == "simple":
-        from models.cnn_model import CNNSuperRes
-        model = CNNSuperRes(
-            in_channels=1,
-            out_channels=1,
-            num_features=args.num_features,
-            num_blocks=args.num_blocks
-        )
     else:
+        # Since we only support unet now, this should ideally not be reached if args are parsed correctly.
+        # Keeping it for robustness, or it could be removed if we're certain model_type is always 'unet'.
         raise ValueError(f"Unknown model type: {args.model_type}")
     
     model = model.to(device)
@@ -527,20 +512,12 @@ def parse_args():
                       help='Directory containing low-quality MRI slices')
     
     # Model selection parameter
-    parser.add_argument('--model_type', type=str, choices=['simple', 'edsr', 'unet'], default='unet',
-                      help='Model architecture to use')
+    parser.add_argument('--model_type', type=str, choices=['unet'], default='unet',
+                      help='Model architecture to use (only unet is supported)')
     
     # Model-specific parameters
     parser.add_argument('--base_filters', type=int, default=32,
                       help='Number of base filters in the UNet model')
-    parser.add_argument('--scale', type=int, default=1,
-                      help='Scale factor for EDSR model')
-    parser.add_argument('--num_features', type=int, default=64,
-                      help='Number of features for CNN/EDSR models')
-    parser.add_argument('--num_blocks', type=int, default=8,
-                      help='Number of residual blocks in CNN model')
-    parser.add_argument('--num_res_blocks', type=int, default=16,
-                      help='Number of residual blocks in EDSR model')
     
     # Training parameters
     parser.add_argument('--batch_size', type=int, default=8,

@@ -51,23 +51,6 @@ def load_model(model_type, checkpoint_path, device, **kwargs):
                 out_channels=1,
                 base_filters=kwargs.get('base_filters', 64)
             ).to(device)
-        elif model_type == "edsr":
-            from models.edsr_model import EDSRSuperRes
-            model = EDSRSuperRes(
-                in_channels=1,
-                out_channels=1,
-                scale=kwargs.get('scale', 1),
-                num_features=kwargs.get('num_features', 64),
-                num_res_blocks=kwargs.get('num_res_blocks', 16)
-            ).to(device)
-        elif model_type == "simple":
-            from models.cnn_model import CNNSuperRes
-            model = CNNSuperRes(
-                in_channels=1,
-                out_channels=1,
-                num_features=kwargs.get('num_features', 64),
-                num_blocks=kwargs.get('num_blocks', 8)
-            ).to(device)
         else:
             raise ValueError(f"Unknown model type: {model_type}")
         
@@ -252,6 +235,7 @@ def process_single_image(model, input_path, output_path, target_path=None, devic
     
     # Process target image if provided
     target_tensor = None
+    metrics = None  # Initialize metrics to None
     if target_path and os.path.exists(target_path):
         _, target_tensor = preprocess_image(target_path)
         target_tensor = target_tensor.to(device)
@@ -330,113 +314,6 @@ def process_single_image(model, input_path, output_path, target_path=None, devic
     
     return output_image, metrics
 
-def process_batch(model, input_dir, output_dir, device, target_dir=None, save_visualizations=False, use_amp=False):
-    """Process a batch of images."""
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Collect image paths
-    input_files = sorted([f for f in os.listdir(input_dir) 
-                         if f.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff'))])
-    
-    # Setup metrics collection
-    metrics_sum = {}
-    metrics_count = 0
-    
-    # Process each image
-    start_time = time.time()
-    for i, img_file in enumerate(input_files):
-        input_path = os.path.join(input_dir, img_file)
-        output_path = os.path.join(output_dir, img_file)
-        
-        target_path = None
-        if target_dir and os.path.exists(target_dir):
-            potential_target = os.path.join(target_dir, img_file)
-            if os.path.exists(potential_target):
-                target_path = potential_target
-        
-        # Process image
-        logger.info(f"Processing {i+1}/{len(input_files)}: {img_file}")
-        
-        # Load and preprocess input image
-        _, tensor = preprocess_image(input_path)
-        tensor = tensor.to(device)
-        
-        # Process target image if provided
-        target_tensor = None
-        if target_path:
-            _, target_tensor = preprocess_image(target_path)
-            target_tensor = target_tensor.to(device)
-        
-        # Model inference
-        model.eval()
-        with torch.no_grad():
-            if use_amp and AMP_AVAILABLE and device.type == 'cuda':
-                with autocast('cuda'):
-                    output_tensor = model(tensor)
-            else:
-                output_tensor = model(tensor)
-        
-        # Calculate metrics if target is available
-        if target_tensor is not None:
-            metrics = calculate_metrics(output_tensor, target_tensor)
-            for metric_name, metric_value in metrics.items():
-                if metric_name not in metrics_sum:
-                    metrics_sum[metric_name] = 0.0
-                metrics_sum[metric_name] += metric_value
-            metrics_count += 1
-        
-        # Convert output tensor to image and save
-        output_image = postprocess_tensor(output_tensor)
-        output_image.save(output_path)
-        
-        # Save comparisons if requested
-        if save_visualizations and target_tensor is not None:
-            vis_dir = os.path.join(output_dir, "comparisons")
-            os.makedirs(vis_dir, exist_ok=True)
-            
-            # Create comparison visualization
-            plt.figure(figsize=(12, 4))
-            
-            # Input
-            plt.subplot(1, 3, 1)
-            plt.title("Input (Low Quality)")
-            input_img = Image.open(input_path).convert('L')
-            plt.imshow(np.array(input_img), cmap='gray')
-            plt.axis('off')
-            
-            # Output
-            plt.subplot(1, 3, 2)
-            plt.title("Output (Enhanced)")
-            plt.imshow(np.array(output_image), cmap='gray')
-            plt.axis('off')
-            
-            # Target
-            plt.subplot(1, 3, 3)
-            plt.title("Target (High Quality)")
-            target_img = Image.open(target_path).convert('L')
-            plt.imshow(np.array(target_img), cmap='gray')
-            plt.axis('off')
-            
-            plt.tight_layout()
-            plt.savefig(os.path.join(vis_dir, f"compare_{img_file}"))
-            plt.close()
-        
-        # Clean up GPU memory
-        if device.type == 'cuda':
-            torch.cuda.empty_cache()
-    
-    # Calculate and report average metrics
-    if metrics_count > 0:
-        logger.info("===== Average Metrics =====")
-        for metric_name, metric_sum in metrics_sum.items():
-            avg_value = metric_sum / metrics_count
-            logger.info(f"Average {metric_name.upper()}: {avg_value:.4f}")
-    
-    # Report processing time
-    elapsed = time.time() - start_time
-    logger.info(f"Processed {len(input_files)} images in {elapsed:.2f} seconds "
-               f"({len(input_files)/elapsed:.2f} images/sec)")
-
 def main(args):
     """Main inference function."""
     # Set device
@@ -470,36 +347,19 @@ def main(args):
             checkpoint_path, 
             device,
             base_filters=args.base_filters,
-            num_features=args.num_features,
-            scale=args.scale,
-            num_blocks=args.num_blocks,
-            num_res_blocks=args.num_res_blocks
         )
         
-        # Process images
-        if args.batch_mode:
-            # Process all images in the input directory
-            process_batch(
-                model=model,
-                input_dir=args.input,
-                output_dir=args.output,
-                device=device,
-                target_dir=args.target,
-                save_visualizations=args.save_visualizations,
-                use_amp=use_amp
-            )
-        else:
-            # Process a single image
-            process_single_image(
-                model=model,
-                input_path=args.input,
-                output_path=args.output,
-                target_path=args.target,
-                device=device,
-                show_comparison=args.show_comparison,
-                show_diff=args.show_diff,
-                use_amp=use_amp
-            )
+        # Process a single image
+        process_single_image(
+            model=model,
+            input_path=args.input,
+            output_path=args.output,
+            target_path=args.target,
+            device=device,
+            show_comparison=args.show_comparison,
+            show_diff=args.show_diff,
+            use_amp=use_amp
+        )
             
         logger.info("Inference completed successfully!")
         return 0
@@ -514,37 +374,25 @@ def parse_args():
     
     # Paths
     parser.add_argument('--input', type=str, required=True,
-                      help='Path to input image or directory')
+                      help='Path to input image')
     parser.add_argument('--output', type=str, required=True,
-                      help='Path to output image or directory')
+                      help='Path to output image')
     parser.add_argument('--target', type=str, default=None,
-                      help='Path to target image or directory (for comparison)')
+                      help='Path to target image (for comparison)')
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoints',
                       help='Directory containing model checkpoints')
     parser.add_argument('--checkpoint_path', type=str, default=None,
                       help='Specific checkpoint file path to use (overrides automatic checkpoint finding)')
     
     # Model selection parameter
-    parser.add_argument('--model_type', type=str, choices=['simple', 'edsr', 'unet'], default='unet',
-                      help='Model architecture to use')
+    parser.add_argument('--model_type', type=str, choices=['unet'], default='unet',
+                      help='Model architecture to use (only unet is supported)')
     
     # Model-specific parameters
     parser.add_argument('--base_filters', type=int, default=64,
                       help='Number of base filters in the UNet model')
-    parser.add_argument('--scale', type=int, default=1,
-                      help='Scale factor for EDSR model')
-    parser.add_argument('--num_features', type=int, default=64,
-                      help='Number of features for CNN/EDSR models')
-    parser.add_argument('--num_blocks', type=int, default=8,
-                      help='Number of residual blocks in CNN model')
-    parser.add_argument('--num_res_blocks', type=int, default=16,
-                      help='Number of residual blocks in EDSR model')
     
     # Inference options
-    parser.add_argument('--batch_mode', action='store_true', 
-                        help="Process all images in the input directory")
-    parser.add_argument('--save_visualizations', action='store_true', 
-                        help="Save comparison visualizations (batch mode)")
     parser.add_argument('--show_comparison', action='store_true', 
                         help="Show comparison visualization")
     parser.add_argument('--show_diff', action='store_true', 
