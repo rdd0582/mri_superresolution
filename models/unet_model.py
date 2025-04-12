@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -35,33 +34,37 @@ class Down(nn.Module):
         return self.maxpool_conv(x)
 
 class Up(nn.Module):
-    """Upscaling then DoubleConv"""
-    def __init__(self, in_ch_up, in_ch_skip, out_channels, bilinear=True):
+    """Upscaling with PixelShuffle then DoubleConv"""
+    def __init__(self, in_ch_up, in_ch_skip, out_channels):
         """
         Args:
             in_ch_up (int): Number of channels coming from the layer below (needs upsampling).
             in_ch_skip (int): Number of channels from the skip connection.
             out_channels (int): Number of output channels for this block.
-            bilinear (bool): Whether to use bilinear upsampling. If False, uses ConvTranspose2d.
         """
         super().__init__()
-        self.bilinear = bilinear
-
-        # If bilinear, use the normal convolutions to reduce the number of channels
-        if bilinear:
-            self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-            # After concatenation, channels will be in_ch_skip + in_ch_up
-            self.conv = DoubleConv(in_ch_skip + in_ch_up, out_channels)
-        else:
-            # Original ConvTranspose2d halves the channels before concat
-            self.up = nn.ConvTranspose2d(in_ch_up, in_ch_up // 2, kernel_size=2, stride=2)
-            # After concatenation, channels will be in_ch_skip + (in_ch_up // 2)
-            self.conv = DoubleConv(in_ch_skip + in_ch_up // 2, out_channels)
+        
+        # Define scale factor for upsampling
+        scale_factor = 2
+        
+        # Convolutional layer before PixelShuffle
+        # Output channels need to be in_ch_up * scale_factor^2 for proper reshaping
+        self.conv_pre_shuffle = nn.Conv2d(in_ch_up, in_ch_up * (scale_factor ** 2), 
+                                          kernel_size=3, padding=1)
+        
+        # PixelShuffle layer for learned upsampling
+        self.pixel_shuffle = nn.PixelShuffle(upscale_factor=scale_factor)
+        
+        # After concatenation, channels will be in_ch_skip + in_ch_up
+        self.conv = DoubleConv(in_ch_skip + in_ch_up, out_channels)
 
     def forward(self, x1, x2):
         # x1: feature map from previous layer (e.g., bottleneck) - channels = in_ch_up
         # x2: skip connection feature map - channels = in_ch_skip
-        x1 = self.up(x1)
+        
+        # Apply conv + pixel shuffle for upsampling
+        x1 = self.conv_pre_shuffle(x1)
+        x1 = self.pixel_shuffle(x1)
 
         # Pad x1 to match x2 size if necessary
         # Input tensors (x1, x2) dimensions: [N, C, H, W]
@@ -94,22 +97,19 @@ class OutConv(nn.Module):
 class UNetSuperRes(nn.Module):
     """
     U-Net for MRI quality enhancement (preserves resolution).
-    Uses bilinear upsampling by default to avoid checkerboard artifacts.
+    Uses PixelShuffle upsampling for learnable upscaling that avoids checkerboard artifacts.
 
     Args:
         in_channels (int): Number of input image channels (e.g., 1 for grayscale).
         out_channels (int): Number of output image channels (e.g., 1 for grayscale).
         base_filters (int): Number of filters in the first convolution layer.
                             Subsequent layers scale based on this.
-        bilinear (bool): Whether to use bilinear upsampling in the decoder.
-                         Set to False to use ConvTranspose2d (prone to artifacts).
     """
-    def __init__(self, in_channels=1, out_channels=1, base_filters=32, bilinear=True):
+    def __init__(self, in_channels=1, out_channels=1, base_filters=32):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.base_filters = base_filters
-        self.bilinear = bilinear
         f = base_filters # Shortcut for filter count
 
         # Encoder Path
@@ -120,11 +120,11 @@ class UNetSuperRes(nn.Module):
         self.down4 = Down(f*8, f*16)                    # Bottleneck channels: f*16
 
         # Decoder Path
-        # Arguments for Up: (in_ch_up, in_ch_skip, out_channels, bilinear)
-        self.up1 = Up(f*16, f*8, f*8, bilinear)         # Input: f*16 (up), f*8 (skip) -> Output: f*8
-        self.up2 = Up(f*8, f*4, f*4, bilinear)          # Input: f*8 (up), f*4 (skip) -> Output: f*4
-        self.up3 = Up(f*4, f*2, f*2, bilinear)          # Input: f*4 (up), f*2 (skip) -> Output: f*2
-        self.up4 = Up(f*2, f, f, bilinear)              # Input: f*2 (up), f (skip) -> Output: f
+        # Arguments for Up: (in_ch_up, in_ch_skip, out_channels)
+        self.up1 = Up(f*16, f*8, f*8)         # Input: f*16 (up), f*8 (skip) -> Output: f*8
+        self.up2 = Up(f*8, f*4, f*4)          # Input: f*8 (up), f*4 (skip) -> Output: f*4
+        self.up3 = Up(f*4, f*2, f*2)          # Input: f*4 (up), f*2 (skip) -> Output: f*2
+        self.up4 = Up(f*2, f, f)              # Input: f*2 (up), f (skip) -> Output: f
 
         # Final Output Layer
         self.outc = OutConv(f, out_channels)
@@ -142,11 +142,10 @@ class UNetSuperRes(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-            # Initialize ConvTranspose2d if used
-            elif isinstance(m, nn.ConvTranspose2d):
-                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-                 if m.bias is not None:
-                     nn.init.constant_(m.bias, 0)
+            # Initialize PixelShuffle's preceding Conv2d layers with care
+            elif isinstance(m, nn.PixelShuffle):
+                # PixelShuffle itself has no weights, but we ensure preceding Conv2d is properly initialized
+                pass
 
     def forward(self, x):
         # Encoder

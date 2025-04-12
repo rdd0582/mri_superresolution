@@ -19,12 +19,21 @@ def preprocess_high_res_slice(slice_data, target_size=(320, 240),
                            apply_simulation=False, noise_std=5, blur_sigma=0.5):
     """
     Wrapper function for preprocessing slices.
-    Can generate either high-resolution or simulated low-resolution slices.
+    Can generate either high-resolution (using NEAREST interpolation to preserve sharpness)
+    or simulated low-resolution slices (using CUBIC interpolation before simulation).
     """
+    # Select interpolation method based on whether it's HR or LR processing
+    if apply_simulation:
+        # For LR simulation, use a smoother interpolation before adding blur/noise
+        interpolation_method = InterpolationMethod.CUBIC
+    else:
+        # For HR ground truth, use NEAREST to minimize blur during resizing
+        interpolation_method = InterpolationMethod.NEAREST
+        
     processed_slice = preprocess_slice(
         slice_data, 
         target_size=target_size,
-        interpolation=InterpolationMethod.CUBIC,
+        interpolation=interpolation_method,
         resize_method=ResizeMethod.LETTERBOX,
         apply_simulation=apply_simulation,
         noise_std=noise_std,
@@ -108,9 +117,9 @@ if __name__ == '__main__':
     
     print("=== MRI Paired Slice Extraction ===")
     print(f"Datasets Directory: {datasets_dir}")
-    print(f"High-Resolution Output: {hr_output_dir}")
+    print(f"High-Resolution Output: {hr_output_dir} (Using NEAREST interpolation for resizing)")
     if lr_output_dir:
-        print(f"Low-Resolution Output: {lr_output_dir}")
+        print(f"Low-Resolution Output: {lr_output_dir} (Using CUBIC interpolation for resizing)")
         print(f"Simulation Settings:")
         print(f"  - Noise Standard Deviation: {args.noise_std}")
         print(f"  - Gaussian Blur Sigma: {args.blur_sigma}")
