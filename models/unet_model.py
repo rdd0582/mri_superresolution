@@ -34,7 +34,7 @@ class Down(nn.Module):
         return self.maxpool_conv(x)
 
 class Up(nn.Module):
-    """Upscaling with PixelShuffle then DoubleConv"""
+    """Upscaling using Bilinear Interpolation then DoubleConv (No Attention)"""
     def __init__(self, in_ch_up, in_ch_skip, out_channels):
         """
         Args:
@@ -43,44 +43,37 @@ class Up(nn.Module):
             out_channels (int): Number of output channels for this block.
         """
         super().__init__()
-        
-        # Define scale factor for upsampling
-        scale_factor = 2
-        
-        # Convolutional layer before PixelShuffle
-        # Output channels need to be in_ch_up * scale_factor^2 for proper reshaping
-        self.conv_pre_shuffle = nn.Conv2d(in_ch_up, in_ch_up * (scale_factor ** 2), 
-                                          kernel_size=3, padding=1)
-        
-        # PixelShuffle layer for learned upsampling
-        self.pixel_shuffle = nn.PixelShuffle(upscale_factor=scale_factor)
-        
+
+        # Upsampling layer using Bilinear interpolation
+        self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+
+        # Convolution after upsampling to potentially refine features
+        # Input: in_ch_up, Output: in_ch_up
+        self.conv_after_up = nn.Conv2d(in_ch_up, in_ch_up, kernel_size=1)
+
         # After concatenation, channels will be in_ch_skip + in_ch_up
         self.conv = DoubleConv(in_ch_skip + in_ch_up, out_channels)
 
     def forward(self, x1, x2):
         # x1: feature map from previous layer (e.g., bottleneck) - channels = in_ch_up
         # x2: skip connection feature map - channels = in_ch_skip
-        
-        # Apply conv + pixel shuffle for upsampling
-        x1 = self.conv_pre_shuffle(x1)
-        x1 = self.pixel_shuffle(x1)
+
+        # Apply upsampling and convolution
+        x1 = self.up(x1)
+        x1 = self.conv_after_up(x1)
 
         # Pad x1 to match x2 size if necessary
-        # Input tensors (x1, x2) dimensions: [N, C, H, W]
         diffY = x2.size()[2] - x1.size()[2]
         diffX = x2.size()[3] - x1.size()[3]
 
         if diffY > 0 or diffX > 0:
-             # Padding format: (pad_left, pad_right, pad_top, pad_bottom)
             x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
                             diffY // 2, diffY - diffY // 2])
-        # Optional: Crop x2 if it's larger than x1 (less common with standard padding)
         elif diffY < 0 or diffX < 0:
              x2 = x2[:, :, abs(diffY) // 2 : x2.size()[2] - (abs(diffY) - abs(diffY) // 2),
                        abs(diffX) // 2 : x2.size()[3] - (abs(diffX) - abs(diffX) // 2)]
 
-        # Concatenate along the channel dimension
+        # Directly concatenate the original skip connection features (x2)
         x = torch.cat([x2, x1], dim=1)
         return self.conv(x)
 
@@ -97,7 +90,7 @@ class OutConv(nn.Module):
 class UNetSuperRes(nn.Module):
     """
     U-Net for MRI quality enhancement (preserves resolution).
-    Uses PixelShuffle upsampling for learnable upscaling that avoids checkerboard artifacts.
+    Uses Bilinear Upsampling + Conv in the decoder path (No Attention).
 
     Args:
         in_channels (int): Number of input image channels (e.g., 1 for grayscale).

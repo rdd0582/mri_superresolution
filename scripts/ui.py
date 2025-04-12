@@ -123,6 +123,9 @@ class MRIUI:
             "learning_rate": 1e-4,
             "weight_decay": 1e-5,
             "ssim_weight": 0.7,
+            "perceptual_weight": 0.0,
+            "vgg_layer_idx": 35,
+            "perceptual_loss_type": 'l1',
             "validation_split": 0.2,
             "patience": 10,
             "num_workers": get_optimal_workers(),  # Set based on system capabilities
@@ -328,6 +331,9 @@ class MRIUI:
             "learning_rate",
             "weight_decay",
             "ssim_weight",
+            "perceptual_weight",
+            "vgg_layer_idx",
+            "perceptual_loss_type",
             "validation_split",
             "patience",
             "num_workers",
@@ -364,14 +370,20 @@ class MRIUI:
         
         # Draw note about required parameters
         self.stdscr.attron(curses.color_pair(4))
-        self.stdscr.addstr(3, 2, "* Required parameters")
+        self.stdscr.addstr(3, 2, "* Required parameters | Set perceptual_weight > 0 to enable VGG Loss")
         self.stdscr.attroff(curses.color_pair(4))
+        
+        # Add note about derived L1 weight
+        self.stdscr.attron(curses.color_pair(6))
+        self.stdscr.addstr(4, 2, "Note: L1 weight = 1.0 - ssim_weight - perceptual_weight")
+        self.stdscr.attroff(curses.color_pair(6))
         
         # Show scroll indicators if needed
         if start_index > 0:
-            self.stdscr.addstr(3, width // 2, "↑ More options above")
+            self.stdscr.addstr(4, width // 2, "↑ More options above")
         
         # Draw options
+        option_display_y = 5
         for i in range(min(visible_options, len(self.options))):
             option_index = start_index + i
             if option_index >= len(self.options):
@@ -386,22 +398,22 @@ class MRIUI:
                 param_name = option
                 if option in required_params:
                     param_name = f"{option}*"
-                param_name = param_name.ljust(21)  # Extra space for *
+                param_name = param_name.ljust(23)
                 param_value = str(self.params[option])
                 
                 # Show different formatting for boolean options
                 if option in flag_options:
                     param_value = "Enabled" if self.params[option] else "Disabled"
                 
-                self.stdscr.addstr(4 + i, 4, param_name)
+                self.stdscr.addstr(option_display_y + i, 4, param_name)
                 self.stdscr.attroff(attr)  # Turn off highlight for value
                 
                 # Use a different color for the parameter value
                 self.stdscr.attron(curses.color_pair(6))
-                self.stdscr.addstr(4 + i, 4 + len(param_name) + 2, param_value)
+                self.stdscr.addstr(option_display_y + i, 4 + len(param_name) + 2, param_value)
                 self.stdscr.attroff(curses.color_pair(6))
             else:
-                self.stdscr.addstr(4 + i, 4, option)
+                self.stdscr.addstr(option_display_y + i, 4, option)
                 self.stdscr.attroff(attr)
         
         # Show scroll indicators if needed
@@ -522,6 +534,9 @@ class MRIUI:
                         'show_comparison', 'show_diff', 'batch_mode', 
                         'save_visualizations']
         
+        # Store potential error message
+        validation_error = None
+        
         if key == 10:  # Enter key - confirm input
             # For boolean flags, toggle the value or set based on input
             if self.input_field in boolean_flags:
@@ -529,30 +544,62 @@ class MRIUI:
                     self.params[self.input_field] = not self.params[self.input_field]
                 else:
                     self.params[self.input_field] = (self.input_value.lower() in ['true', 'yes', 'y', '1'])
-            else:
-                self.params[self.input_field] = self.input_value
-            
-                # Convert numeric values to appropriate types
-                if self.input_field in ['n_slices_extract', 'base_filters', 'scale', 'num_features', 
-                                      'num_blocks', 'num_res_blocks', 'batch_size', 'epochs', 
-                                      'num_workers', 'seed']:
-                    try:
-                        self.params[self.input_field] = int(self.input_value)
-                    except ValueError:
-                        pass  # Keep as string if not convertible
+            else: # Handle non-boolean parameters
+                original_value = self.params[self.input_field]
+                try:
+                    # Attempt type conversion and validation
+                    if self.input_field in ['n_slices_extract', 'base_filters', 'scale', 'num_features', 
+                                            'num_blocks', 'num_res_blocks', 'batch_size', 'epochs', 
+                                            'patience', 'num_workers', 'seed', 'vgg_layer_idx']: # Added patience, vgg_layer_idx
+                        new_value = int(self.input_value)
+                    elif self.input_field in ['lower_percent', 'upper_percent', 'noise_std', 'blur_sigma',
+                                            'learning_rate', 'weight_decay', 'ssim_weight', 
+                                            'perceptual_weight', 'validation_split']: # Added perceptual_weight
+                        new_value = float(self.input_value)
+                        # Validation for weights
+                        if self.input_field in ['ssim_weight', 'perceptual_weight']:
+                            if not (0 <= new_value <= 1):
+                                validation_error = f"{self.input_field} must be between 0.0 and 1.0"
+                            else:
+                                # Check sum constraint
+                                other_weight_field = 'perceptual_weight' if self.input_field == 'ssim_weight' else 'ssim_weight'
+                                other_weight_val = float(self.params[other_weight_field]) # Ensure float comparison
+                                if new_value + other_weight_val > 1.0:
+                                    validation_error = f"Sum of ssim_weight ({other_weight_val if self.input_field == 'perceptual_weight' else new_value:.2f}) and perceptual_weight ({new_value if self.input_field == 'perceptual_weight' else other_weight_val:.2f}) cannot exceed 1.0"
+                    elif self.input_field == 'perceptual_loss_type':
+                        if self.input_value.lower() not in ['l1', 'l2', 'mse']:
+                            validation_error = "perceptual_loss_type must be 'l1', 'l2', or 'mse'"
+                        else:
+                            new_value = self.input_value.lower()
+                    else: # String parameters like paths, target_size
+                        new_value = self.input_value
                         
-                elif self.input_field in ['lower_percent', 'upper_percent', 'noise_std', 'blur_sigma',
-                                       'learning_rate', 'weight_decay', 'ssim_weight', 'validation_split']:
-                    try:
-                        self.params[self.input_field] = float(self.input_value)
-                    except ValueError:
-                        pass  # Keep as string if not convertible
-            
-            # Exit input mode
-            self.input_mode = False
+                    # If validation passed, update the parameter
+                    if validation_error is None:
+                        self.params[self.input_field] = new_value
+                        self.error_message = "" # Clear previous errors on successful update
+                    else:
+                        self.error_message = validation_error # Show validation error
+                        self.params[self.input_field] = original_value # Revert to original value
+
+                except ValueError:
+                    # Handle conversion error
+                    expected_type = "integer" if self.input_field in ['n_slices_extract', 'base_filters', 'scale', 'num_features', 'num_blocks', 'num_res_blocks', 'batch_size', 'epochs', 'patience', 'num_workers', 'seed', 'vgg_layer_idx'] else "float"
+                    self.error_message = f"Invalid input for {self.input_field}. Expected {expected_type}."
+                    self.params[self.input_field] = original_value # Revert
+                    validation_error = self.error_message # Ensure error persists
+                    
+            # Exit input mode only if there was no validation error
+            if validation_error is None:
+                self.input_mode = False
+            else:
+                # Keep input mode active to allow correction
+                self.input_value = str(self.params[self.input_field]) # Reset input display to (potentially reverted) value
+                pass 
         
         elif key == 27:  # Escape key - cancel input
             self.input_mode = False
+            self.error_message = "" # Clear error message on cancel
         
         elif key == curses.KEY_BACKSPACE or key == 127 or key == 8:  # Backspace
             self.input_value = self.input_value[:-1]
@@ -749,6 +796,9 @@ class MRIUI:
                 "--learning_rate", str(self.params["learning_rate"]),
                 "--weight_decay", str(self.params["weight_decay"]),
                 "--ssim_weight", str(self.params["ssim_weight"]),
+                "--perceptual_weight", str(self.params["perceptual_weight"]),
+                "--vgg_layer_idx", str(self.params["vgg_layer_idx"]),
+                "--perceptual_loss_type", self.params["perceptual_loss_type"],
                 "--validation_split", str(self.params["validation_split"]),
                 "--patience", str(self.params["patience"]),
                 "--num_workers", str(self.params["num_workers"]),

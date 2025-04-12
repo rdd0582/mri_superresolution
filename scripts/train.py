@@ -260,7 +260,10 @@ def train(args):
     
     # Create loss function and metrics
     criterion = CombinedLoss(
-        alpha=args.ssim_weight,
+        ssim_weight=args.ssim_weight,
+        perceptual_weight=args.perceptual_weight,
+        vgg_layer_idx=args.vgg_layer_idx,
+        perceptual_loss_type=args.perceptual_loss_type,
         window_size=11,
         sigma=1.5,
         val_range=1.0,  # For [0, 1] normalized data
@@ -282,6 +285,7 @@ def train(args):
         "learning_rate": args.learning_rate,
         "weight_decay": args.weight_decay,
         "ssim_weight": args.ssim_weight,
+        "perceptual_weight": args.perceptual_weight,
         "augmentation": args.augmentation,
         "validation_split": args.validation_split,
         "patience": args.patience,
@@ -291,7 +295,7 @@ def train(args):
 
     # Training loop
     best_val_loss = float('inf')
-    patience_counter = 0
+    patience_counter = 0  # Counts consecutive validation epochs without improvement
     
     # Visualization frequency (only save images every X epochs)
     vis_frequency = max(1, args.epochs // 20)  # Approx 20 visualizations over the full training
@@ -308,6 +312,9 @@ def train(args):
         else:
             # For smaller datasets, validate every epoch
             val_frequency = 1
+        
+        # Calculate effective patience based on current validation frequency
+        effective_patience = args.patience
         
         epoch_start_time = time.time()
         
@@ -441,7 +448,7 @@ def train(args):
                 
                 log_message(f"Saved best model with validation loss: {val_loss:.6f}")
             else:
-                patience_counter += 1
+                patience_counter += 1  # Increment counter for validation epochs without improvement
         else:
             # If we skip validation, don't increment patience counter
             # For logging purposes
@@ -483,6 +490,8 @@ def train(args):
             )
         
         # Early stopping - only check when validation is performed
+        # Note: patience counter only increments on validation epochs, so effective patience
+        # depends on validation frequency (less frequent validation = slower early stopping)
         if val_loss != "N/A" and patience_counter >= args.patience:
             log_message(f"Early stopping triggered after {epoch + 1} epochs")
             break
@@ -544,6 +553,12 @@ def parse_args():
                       help='Weight decay for optimizer')
     parser.add_argument('--ssim_weight', type=float, default=0.7,
                       help='Weight for SSIM loss component (0-1)')
+    parser.add_argument('--perceptual_weight', type=float, default=0.0,
+                        help='Weight for Perceptual loss component (0-1, set > 0 to enable)')
+    parser.add_argument('--vgg_layer_idx', type=int, default=35,
+                        help='VGG19 layer index for perceptual loss features (e.g., 35 for relu5_4)')
+    parser.add_argument('--perceptual_loss_type', type=str, default='l1', choices=['l1', 'l2', 'mse'],
+                        help='Type of distance metric for perceptual loss (l1 or l2/mse)')
     parser.add_argument('--validation_split', type=float, default=0.2,
                       help='Fraction of data to use for validation')
     parser.add_argument('--patience', type=int, default=10,
