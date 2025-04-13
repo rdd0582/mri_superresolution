@@ -81,7 +81,9 @@ def extract_slices_3d(data: np.ndarray,
                       preprocess_function=None,
                       apply_simulation: bool = False,
                       noise_std: float = 5.0,
-                      blur_sigma: float = 0.5):
+                      blur_sigma: float = 0.5,
+                      kspace_crop_factor: float = 0.5,
+                      use_kspace_simulation: bool = True):
     """
     Extract n_slices equally spaced from the central portion of a 3D volume,
     preprocess (using the provided preprocessing function),
@@ -101,6 +103,8 @@ def extract_slices_3d(data: np.ndarray,
         apply_simulation: Whether to apply low-resolution simulation for LR images
         noise_std: Noise standard deviation for simulation
         blur_sigma: Sigma for Gaussian blur in simulation
+        kspace_crop_factor: Factor to determine how much of k-space to keep (0.5 = 50%)
+        use_kspace_simulation: Whether to use k-space based simulation instead of blur+noise
     """
     # If no preprocessing function provided, raise an error
     if preprocess_function is None:
@@ -136,7 +140,9 @@ def extract_slices_3d(data: np.ndarray,
             lr_processed_slice = preprocess_function(slice_data, target_size, 
                                                   apply_simulation=apply_simulation,
                                                   noise_std=noise_std,
-                                                  blur_sigma=blur_sigma)
+                                                  blur_sigma=blur_sigma,
+                                                  kspace_crop_factor=kspace_crop_factor,
+                                                  use_kspace_simulation=use_kspace_simulation)
             
             # Save the low-resolution slice
             lr_output_path = os.path.join(lr_output_dir, filename)

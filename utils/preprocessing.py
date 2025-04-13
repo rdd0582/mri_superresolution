@@ -23,8 +23,8 @@ class InterpolationMethod(Enum):
 
 def letterbox_resize(image: np.ndarray, 
                      target_size: Tuple[int, int], 
-                     interpolation: InterpolationMethod = InterpolationMethod.AREA,
-                     pad_value: Optional[int] = None) -> np.ndarray:
+                     interpolation: InterpolationMethod = InterpolationMethod.LANCZOS,
+                     pad_value: Optional[float] = None) -> np.ndarray:
     """
     Resize an image to fit within target_size while preserving its aspect ratio.
     
@@ -47,7 +47,7 @@ def letterbox_resize(image: np.ndarray,
     
     # Compute padding value
     if pad_value is None:
-        pad_value = int(image.mean())
+        pad_value = image.mean()  # Removed int() casting to preserve float values for [0,1] images
     
     # Create canvas and place the resized image
     canvas = np.full((target_h, target_w), pad_value, dtype=image.dtype)
@@ -82,7 +82,7 @@ def center_crop(image: np.ndarray, target_size: Tuple[int, int]) -> np.ndarray:
     
     # If the image is smaller than the target size, pad it
     if cropped.shape[0] < target_h or cropped.shape[1] < target_w:
-        pad_value = int(image.mean())
+        pad_value = image.mean()  # Use float mean value for [0,1] images
         result = np.full((target_h, target_w), pad_value, dtype=image.dtype)
         paste_y = (target_h - cropped.shape[0]) // 2
         paste_x = (target_w - cropped.shape[1]) // 2
@@ -93,7 +93,7 @@ def center_crop(image: np.ndarray, target_size: Tuple[int, int]) -> np.ndarray:
 
 def pad_to_size(image: np.ndarray, 
                 target_size: Tuple[int, int], 
-                pad_value: Optional[int] = None) -> np.ndarray:
+                pad_value: Optional[float] = None) -> np.ndarray:
     """
     Pad an image to the target size without resizing.
     
@@ -110,7 +110,7 @@ def pad_to_size(image: np.ndarray,
     
     # Compute padding value
     if pad_value is None:
-        pad_value = int(image.mean())
+        pad_value = image.mean()  # Removed int() casting for [0,1] images
     
     # Create canvas and place the image
     canvas = np.full((target_h, target_w), pad_value, dtype=image.dtype)
@@ -253,13 +253,87 @@ def simulate_15T_data(data, noise_std=5, blur_sigma=0.5):
     
     return simulated
 
+def simulate_low_field_mri(data, kspace_crop_factor=0.5, noise_std=5):
+    """
+    Simulate a low-field MRI image using k-space manipulation and proper Rician noise.
+    
+    This function:
+    1. Transforms the image to k-space using FFT
+    2. Crops the k-space to simulate lower resolution
+    3. Transforms back to image space using IFFT
+    4. Adds Rician noise to simulate lower SNR
+    
+    Args:
+        data: Input image data in [0,1] range
+        kspace_crop_factor: Factor to determine how much of k-space to keep (0.5 = 50%)
+        noise_std: Noise standard deviation (will be scaled by 1/255 for [0,1] range)
+    
+    Returns:
+        Simulated low-field MRI image in [0,1] range
+    """
+    # Scale input to appropriate range for FFT
+    # Preserve original min/max for rescaling back later
+    orig_min, orig_max = data.min(), data.max()
+    
+    # Convert to k-space using FFT
+    kspace = np.fft.fft2(data)
+    kspace = np.fft.fftshift(kspace)  # Shift to center the low frequencies
+    
+    # Get dimensions
+    rows, cols = kspace.shape
+    center_row, center_col = rows // 2, cols // 2
+    
+    # Calculate crop size
+    crop_size_row = int(rows * kspace_crop_factor)
+    crop_size_col = int(cols * kspace_crop_factor)
+    
+    # Create a mask (1 for kept regions, 0 for discarded regions)
+    mask = np.zeros((rows, cols), dtype=np.complex128)
+    row_start = center_row - crop_size_row // 2
+    row_end = center_row + crop_size_row // 2
+    col_start = center_col - crop_size_col // 2
+    col_end = center_col + crop_size_col // 2
+    
+    # Apply mask to keep only the center of k-space
+    mask[row_start:row_end, col_start:col_end] = 1
+    low_res_kspace = kspace * mask
+    
+    # Transform back to image space
+    low_res_image = np.fft.ifftshift(low_res_kspace)
+    low_res_image = np.fft.ifft2(low_res_image)
+    
+    # Get real and imaginary components
+    real_component = np.real(low_res_image)
+    imag_component = np.imag(low_res_image)
+    
+    # Scale noise_std to be appropriate for [0,1] range data
+    scaled_noise_std = noise_std / 255.0
+    
+    # Add Gaussian noise to both real and imaginary components
+    real_noisy = real_component + np.random.normal(0, scaled_noise_std, real_component.shape)
+    imag_noisy = imag_component + np.random.normal(0, scaled_noise_std, imag_component.shape)
+    
+    # Compute magnitude (this creates Rician noise distribution)
+    magnitude = np.sqrt(real_noisy**2 + imag_noisy**2)
+    
+    # Normalize back to [0,1] range
+    simulated = (magnitude - magnitude.min()) / (magnitude.max() - magnitude.min())
+    simulated = simulated * (orig_max - orig_min) + orig_min
+    
+    return simulated
+
 def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMethod.CUBIC,
                      equalize=False, window_center=None, window_width=None, 
                      min_percentile=0.5, max_percentile=99.5, resize_method=ResizeMethod.LETTERBOX,
-                     apply_simulation=False, noise_std=5, blur_sigma=0.5, pad_value=None):
+                     apply_simulation=False, noise_std=5, blur_sigma=0.5, pad_value=None,
+                     kspace_crop_factor=0.5, use_kspace_simulation=True):
     """
     Process a single MRI slice with options for normalization, windowing, and resizing.
     Can optionally simulate low-resolution effects (blur and noise).
+    
+    Note: This function uses the specified interpolation method (default CUBIC) for all resize operations.
+    For MRI super-resolution, it's recommended to use LANCZOS for HR images and CUBIC for LR images,
+    which should be specified by the caller.
     
     Args:
         slice_data: 2D numpy array with the MRI slice data
@@ -274,7 +348,9 @@ def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMe
         apply_simulation: Whether to apply low-resolution simulation
         noise_std: Noise standard deviation for simulation (for 0-255 range, internally scaled)
         blur_sigma: Sigma for Gaussian blur in simulation
-        pad_value: Value to use for padding (if None, uses image mean)
+        pad_value: Value to use for padding (if None, uses image mean after normalization)
+        kspace_crop_factor: Factor to determine how much of k-space to keep (0.5 = 50%)
+        use_kspace_simulation: Whether to use k-space based simulation (True) or the old method (False)
         
     Returns:
         Processed slice as float32 array with values in [0, 1]
@@ -297,9 +373,18 @@ def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMe
     if max_val > min_val:
         processed = (processed - min_val) / (max_val - min_val)
     
+    # Calculate padding value after normalization if None was provided
+    # This ensures the padding value is in the same [0,1] range as the normalized image
+    calculated_pad_value = pad_value
+    if pad_value is None and target_size is not None and resize_method == ResizeMethod.LETTERBOX:
+        calculated_pad_value = processed.mean()
+    
     # Apply simulation if requested (after normalization but before resizing)
     if apply_simulation:
-        processed = simulate_15T_data(processed, noise_std=noise_std, blur_sigma=blur_sigma)
+        if use_kspace_simulation:
+            processed = simulate_low_field_mri(processed, kspace_crop_factor=kspace_crop_factor, noise_std=noise_std)
+        else:
+            processed = simulate_15T_data(processed, noise_std=noise_std, blur_sigma=blur_sigma)
         # Clip after simulation to ensure values stay in [0, 1] range
         processed = np.clip(processed, 0, 1)
     
@@ -310,19 +395,18 @@ def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMe
     # Resize if target size is provided
     if target_size:
         if resize_method == ResizeMethod.LETTERBOX:
-            processed = letterbox_resize(processed, target_size, interpolation, pad_value)
+            processed = letterbox_resize(processed, target_size, interpolation, calculated_pad_value)
         elif resize_method == ResizeMethod.CROP:
             processed = center_crop(processed, target_size)
         elif resize_method == ResizeMethod.PAD:
-            processed = pad_to_size(processed, target_size, pad_value)
+            processed = pad_to_size(processed, target_size, calculated_pad_value)
         elif resize_method == ResizeMethod.STRETCH:
-            # Simple resize that may change aspect ratio
-            processed = cv2.resize(processed, target_size, 
-                                 interpolation=interpolation.value)
+            # Simple resize that may change aspect ratio - use the specified interpolation
+            processed = cv2.resize(processed, target_size, interpolation=interpolation.value)
         else:
             # Use letterbox as default fallback
             max_dim = max(target_size)
-            processed = letterbox_resize(processed, (max_dim, max_dim), interpolation, pad_value)
+            processed = letterbox_resize(processed, (max_dim, max_dim), interpolation, calculated_pad_value)
     
     return processed
 

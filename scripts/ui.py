@@ -107,7 +107,8 @@ class MRIUI:
         # Define parameters with discrete options
         self.discrete_params = {
             'perceptual_loss_type': ['l1', 'l2', 'mse'],
-            'vgg_layer_idx': [16, 19, 22, 25, 29, 32, 35, 38, 42, 45, 49]  # Common VGG16 layer indices for perceptual loss
+            'vgg_layer_idx': [16, 19, 22, 25, 29, 32, 35, 38, 42, 45, 49],  # Common VGG16 layer indices for perceptual loss
+            'use_kspace_simulation': [True, False]  # Option to toggle between k-space and old simulation method
         }
         
         self.params = {
@@ -121,6 +122,8 @@ class MRIUI:
             "noise_std": 5,  # This is appropriate for 0-255 range (scaled internally)
             "blur_sigma": 0.5,
             "target_size": "256 256",  # Added target_size parameter
+            "kspace_crop_factor": 0.5,  # Added k-space crop factor parameter
+            "use_kspace_simulation": True,  # Default to using k-space simulation
             
             # Training params
             "full_res_dir": "./training_data",
@@ -275,6 +278,8 @@ class MRIUI:
             "noise_std",
             "blur_sigma",
             "target_size",
+            "kspace_crop_factor",
+            "use_kspace_simulation",
             "Run Extraction",
             "Back to Main Menu"
         ]
@@ -297,9 +302,14 @@ class MRIUI:
         self.stdscr.addstr(4, 2, "Uses LANCZOS interpolation for HR and CUBIC for LR with mean-value letterbox padding")
         self.stdscr.attroff(curses.color_pair(3))
         
+        # Add k-space simulation info
+        self.stdscr.attron(curses.color_pair(3))
+        self.stdscr.addstr(5, 2, "K-space simulation applies FFT, center crop, IFFT, and proper Rician noise")
+        self.stdscr.attroff(curses.color_pair(3))
+        
         # --- Start: Scrolling Logic ---
         # Calculate available space (adjust lines used for title, info, status)
-        info_lines = 3 # Title, 2 info lines
+        info_lines = 4 # Title, 3 info lines
         footer_lines = 3 # Status bar lines + 1 for padding
         header_footer_lines = info_lines + footer_lines 
         visible_options = height - header_footer_lines - 1 # Subtract 1 for the first option's y offset
@@ -310,7 +320,7 @@ class MRIUI:
         # --- End: Scrolling Logic ---
         
         # --- Start: Scroll Indicators ---
-        option_display_y = 5 # Start drawing options below info lines
+        option_display_y = 6 # Start drawing options below info lines
         if start_index > 0:
             self.stdscr.addstr(option_display_y, width // 2, "↑ More options above")
             option_display_y += 1 # Push options down if top scroll indicator is shown
@@ -337,7 +347,14 @@ class MRIUI:
                 # Check if this parameter has a selection menu
                 has_selection = option in self.boolean_flags or option in self.discrete_params
                 
-                self.stdscr.addstr(current_display_y, 4, param_name)
+                # Custom display names for certain parameters
+                display_name = param_name
+                if option == "use_kspace_simulation":
+                    display_name = "Simulation Method".ljust(20)
+                elif option == "kspace_crop_factor":
+                    display_name = "K-space Center (%)".ljust(20)
+                
+                self.stdscr.addstr(current_display_y, 4, display_name)
                 self.stdscr.attroff(attr)  # Turn off highlight for value
                 
                 # Use a different color for the parameter value
@@ -347,10 +364,23 @@ class MRIUI:
                     if option in self.boolean_flags:
                         display_value = "Enabled" if self.params[option] else "Disabled"
                         self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, f"{display_value} [Select]")
+                    elif option == "use_kspace_simulation":
+                        display_value = "K-space" if self.params[option] else "Blur + Noise"
+                        self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, f"{display_value} [Select]")
                     else:
                         self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, f"{param_value} [Select]")
                 else:
-                    self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, param_value)
+                    # Custom display for certain parameters
+                    if option == "kspace_crop_factor":
+                        try:
+                            # Convert crop factor to percentage
+                            percentage = float(param_value) * 100
+                            self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, f"{percentage:.0f}%")
+                        except (ValueError, TypeError):
+                            # Fallback if conversion fails
+                            self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, param_value)
+                    else:
+                        self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, param_value)
                 self.stdscr.attroff(curses.color_pair(6))
             else:
                 self.stdscr.addstr(current_display_y, 4, option)
@@ -651,7 +681,7 @@ class MRIUI:
                     new_value = int(self.input_value)
                 elif self.input_field in ['lower_percent', 'upper_percent', 'noise_std', 'blur_sigma',
                                         'learning_rate', 'weight_decay', 'ssim_weight', 
-                                        'perceptual_weight', 'validation_split']:
+                                        'perceptual_weight', 'validation_split', 'kspace_crop_factor']:
                     new_value = float(self.input_value)
                     # Validation for weights
                     if self.input_field in ['ssim_weight', 'perceptual_weight']:
@@ -663,6 +693,10 @@ class MRIUI:
                             other_weight_val = float(self.params[other_weight_field]) # Ensure float comparison
                             if new_value + other_weight_val > 1.0:
                                 validation_error = f"Sum of ssim_weight ({other_weight_val if self.input_field == 'perceptual_weight' else new_value:.2f}) and perceptual_weight ({new_value if self.input_field == 'perceptual_weight' else other_weight_val:.2f}) cannot exceed 1.0"
+                    # Validation for kspace_crop_factor
+                    elif self.input_field == 'kspace_crop_factor':
+                        if not (0 < new_value <= 1):
+                            validation_error = f"K-space crop factor must be between 0 and 1 (0% to 100% of center k-space)"
                 else: # String parameters like paths
                     new_value = self.input_value
                     
@@ -813,7 +847,12 @@ class MRIUI:
                 "--upper_percent", str(self.params["upper_percent"]),
                 "--noise_std", str(self.params["noise_std"]),
                 "--blur_sigma", str(self.params["blur_sigma"]),
+                "--kspace_crop_factor", str(self.params["kspace_crop_factor"]),
             ]
+            
+            # Add use_kspace_simulation flag if set to True
+            if self.params["use_kspace_simulation"]:
+                cmd.append("--use_kspace_simulation")
             
             # Split target_size into separate arguments
             target_size_values = self.params["target_size"].split()
@@ -1194,6 +1233,9 @@ class MRIUI:
         # Set current_selection based on the current value
         if param_name in self.boolean_flags:
             current_selection = 0 if current_value else 1  # 0 for Enabled, 1 for Disabled
+        elif param_name == 'use_kspace_simulation':
+            # For use_kspace_simulation, we need to handle the boolean value
+            current_selection = 0 if current_value else 1  # 0 for True, 1 for False
         else:
             # Try to find the current value in the options list
             try:
@@ -1239,7 +1281,14 @@ class MRIUI:
             for i in range(start_idx, end_idx):
                 attr = curses.color_pair(5) | Colors.HIGHLIGHT if i == current_selection else curses.color_pair(1)
                 option_stdscr.attron(attr)
-                option_stdscr.addstr(6 + i - start_idx, 4, str(options[i]))
+                
+                # Format display text based on parameter type
+                display_text = str(options[i])
+                if param_name == 'use_kspace_simulation':
+                    # For use_kspace_simulation, show a more descriptive text
+                    display_text = 'K-space Simulation' if options[i] else 'Blur + Noise (Legacy)'
+                
+                option_stdscr.addstr(6 + i - start_idx, 4, display_text)
                 option_stdscr.attroff(attr)
             
             # Show scroll indicator
@@ -1260,6 +1309,12 @@ class MRIUI:
                 if param_name in self.boolean_flags:
                     # For boolean options, map "Enabled"/"Disabled" to True/False
                     self.params[param_name] = (options[current_selection] == "Enabled")
+                elif param_name == 'use_kspace_simulation':
+                    # For use_kspace_simulation, set the boolean value directly
+                    self.params[param_name] = options[current_selection]
+                    display_value = 'K-space Simulation' if options[current_selection] else 'Blur + Noise (Legacy)'
+                    self.status_message = f"Updated {param_name} to {display_value}"
+                    return
                 else:
                     # For non-boolean options, use the selected value
                     self.params[param_name] = options[current_selection]
