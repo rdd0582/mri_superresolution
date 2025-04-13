@@ -813,8 +813,11 @@ class MRIUI:
                 "--upper_percent", str(self.params["upper_percent"]),
                 "--noise_std", str(self.params["noise_std"]),
                 "--blur_sigma", str(self.params["blur_sigma"]),
-                "--target_size", self.params["target_size"]
             ]
+            
+            # Split target_size into separate arguments
+            target_size_values = self.params["target_size"].split()
+            cmd.extend(["--target_size"] + target_size_values)
             
             logger.info(f"Running command: {' '.join(cmd)}")
             
