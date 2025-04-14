@@ -38,7 +38,7 @@ sys.path.append(str(project_root))
 
 # Import project modules
 from utils.losses import SSIM
-from utils.preprocessing import tensor_to_numpy, denormalize_from_range
+from utils.preprocessing import tensor_to_numpy, letterbox_resize, InterpolationMethod, ResizeMethod
 
 def load_model(model_type, checkpoint_path, device, **kwargs):
     """Load the appropriate model with weights from checkpoint."""
@@ -116,6 +116,19 @@ def preprocess_image(image_path):
         # 2. Normalize to [0, 1] range
         if max_val > min_val:
             image_np = (image_np - min_val) / (max_val - min_val)
+        
+        # 3. Apply letterbox resize with mean intensity padding to match training preprocessing
+        h, w = image_np.shape
+        target_size = (256, 256)  # Use standard target size for MRI processing
+        
+        # Use mean intensity for padding to match training data preprocessing
+        pad_value = image_np.mean()
+        image_np = letterbox_resize(
+            image_np,
+            target_size,
+            interpolation=InterpolationMethod.CUBIC,
+            pad_value=pad_value
+        )
         
         # Convert to tensor
         tensor = torch.from_numpy(image_np).unsqueeze(0).unsqueeze(0)  # Add batch and channel dimensions

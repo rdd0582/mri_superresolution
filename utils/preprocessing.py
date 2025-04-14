@@ -426,11 +426,6 @@ def tensor_to_numpy(tensor):
         
     return img
 
-def denormalize_from_range(tensor, low=-1.0, high=1.0):
-    """Denormalize tensor from [low, high] to [0, 1]."""
-    # Convert to float32 range [0, 1]
-    return (tensor - low) / (high - low)
-
 def numpy_to_tensor(array, device='cpu'):
     """Convert a numpy array to a PyTorch tensor with proper channel dimensions."""
     # Ensure array is float32
