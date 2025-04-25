@@ -34,7 +34,7 @@ class Down(nn.Module):
         return self.maxpool_conv(x)
 
 class Up(nn.Module):
-    """Upscaling using Bilinear Interpolation then DoubleConv (No Attention)"""
+    """Upscaling using ConvTranspose2d then DoubleConv"""
     def __init__(self, in_ch_up, in_ch_skip, out_channels):
         """
         Args:
@@ -43,54 +43,32 @@ class Up(nn.Module):
             out_channels (int): Number of output channels for this block.
         """
         super().__init__()
-
-        # Upsampling layer using Bilinear interpolation
-        self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
-
-        # Convolution after upsampling to potentially refine features
-        # Input: in_ch_up, Output: in_ch_up
-        self.conv_after_up = nn.Conv2d(in_ch_up, in_ch_up, kernel_size=1)
-
-        # After concatenation, channels will be in_ch_skip + in_ch_up
-        self.conv = DoubleConv(in_ch_skip + in_ch_up, out_channels)
+        # ConvTranspose2d halves the input channels from the layer below AND doubles spatial resolution
+        self.up = nn.ConvTranspose2d(in_ch_up, in_ch_up // 2, kernel_size=2, stride=2)
+        # DoubleConv takes concatenated channels: skip_channels + upsampled_channels (which has in_ch_up // 2 channels)
+        self.conv = DoubleConv(in_ch_skip + (in_ch_up // 2), out_channels)
 
     def forward(self, x1, x2):
         # x1: feature map from previous layer (e.g., bottleneck) - channels = in_ch_up
         # x2: skip connection feature map - channels = in_ch_skip
+        x1 = self.up(x1) # Upsample and halve channels
 
-        # Apply upsampling and convolution
-        x1 = self.up(x1)
-        x1 = self.conv_after_up(x1)
-
-        # Pad x1 to match x2 size if necessary
+        # Pad x1 to match x2 size if necessary (ConvTranspose2d might create off-by-one)
         diffY = x2.size()[2] - x1.size()[2]
         diffX = x2.size()[3] - x1.size()[3]
+        if diffY != 0 or diffX != 0:
+            x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2, # Pad left/right
+                            diffY // 2, diffY - diffY // 2]) # Pad top/bottom
 
-        if diffY > 0 or diffX > 0:
-            x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
-                            diffY // 2, diffY - diffY // 2])
-        elif diffY < 0 or diffX < 0:
-             x2 = x2[:, :, abs(diffY) // 2 : x2.size()[2] - (abs(diffY) - abs(diffY) // 2),
-                       abs(diffX) // 2 : x2.size()[3] - (abs(diffX) - abs(diffX) // 2)]
-
-        # Directly concatenate the original skip connection features (x2)
-        x = torch.cat([x2, x1], dim=1)
-        return self.conv(x)
-
-class OutConv(nn.Module):
-    """Final 1x1 convolution to map features to output channels"""
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
-
-    def forward(self, x):
-        # Return logits; apply activation in the main model's forward pass
+        # Concatenate skip connection features
+        x = torch.cat([x2, x1], dim=1) # Concatenated channels: in_ch_skip + in_ch_up // 2
         return self.conv(x)
 
 class UNetSuperRes(nn.Module):
     """
-    U-Net for MRI quality enhancement (preserves resolution).
-    Uses Bilinear Upsampling + Conv in the decoder path (No Attention).
+    U-Net for MRI Super-Resolution (2x spatial upscaling).
+    Uses ConvTranspose2d for learned upsampling in the decoder path.
+    Has 3 downsampling stages and 4 upsampling stages.
 
     Args:
         in_channels (int): Number of input image channels (e.g., 1 for grayscale).
@@ -103,59 +81,62 @@ class UNetSuperRes(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.base_filters = base_filters
-        f = base_filters # Shortcut for filter count
+        f = base_filters
 
-        # Encoder Path
-        self.inc = DoubleConv(in_channels, f)            # Output channels: f
-        self.down1 = Down(f, f*2)                       # Output channels: f*2
-        self.down2 = Down(f*2, f*4)                     # Output channels: f*4
-        self.down3 = Down(f*4, f*8)                     # Output channels: f*8
-        self.down4 = Down(f*8, f*16)                    # Bottleneck channels: f*16
+        # Encoder Path (3 stages)
+        self.inc = DoubleConv(in_channels, f)     # Out: f,   1x res
+        self.down1 = Down(f, f*2)                # Out: f*2, 1/2 res
+        self.down2 = Down(f*2, f*4)              # Out: f*4, 1/4 res
+        self.down3 = Down(f*4, f*8)              # Out: f*8, 1/8 res (bottleneck)
 
-        # Decoder Path
-        # Arguments for Up: (in_ch_up, in_ch_skip, out_channels)
-        self.up1 = Up(f*16, f*8, f*8)         # Input: f*16 (up), f*8 (skip) -> Output: f*8
-        self.up2 = Up(f*8, f*4, f*4)          # Input: f*8 (up), f*4 (skip) -> Output: f*4
-        self.up3 = Up(f*4, f*2, f*2)          # Input: f*4 (up), f*2 (skip) -> Output: f*2
-        self.up4 = Up(f*2, f, f)              # Input: f*2 (up), f (skip) -> Output: f
+        # Decoder Path (4 stages) using ConvTranspose2d in Up
+        # Up(in_ch_up, in_ch_skip, out_channels)
+        self.up1 = Up(f*8, f*4, f*4)           # Input: f*8(1/8res), f*4(1/4res) -> Output: f*4, 1/4 res
+        self.up2 = Up(f*4, f*2, f*2)           # Input: f*4(1/4res), f*2(1/2res) -> Output: f*2, 1/2 res
+        self.up3 = Up(f*2, f, f)               # Input: f*2(1/2res), f(1x res)   -> Output: f,   1x res
 
-        # Final Output Layer
-        self.outc = OutConv(f, out_channels)
+        # Final 2x Upsampling Stage (No skip connection, just learned upsampling + refinement)
+        self.final_up = nn.ConvTranspose2d(f, f // 2, kernel_size=2, stride=2) # Input: f(1x res) -> Output: f//2, 2x res
+        self.final_conv = nn.Sequential(
+            # Refine features after upsampling
+            nn.Conv2d(f // 2, f // 2, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(f // 2),
+            nn.ReLU(inplace=True),
+            # Map to output channels
+            nn.Conv2d(f // 2, out_channels, kernel_size=1)
+        )
 
-        # Initialize weights
         self._initialize_weights()
 
     def _initialize_weights(self):
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
+            if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
+                # Use Kaiming He initialization for Conv layers
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-                # Bias is already handled (set to False or initialized to 0 if present)
-                if m.bias is not None and m.bias.requires_grad: # Check if bias exists and requires grad
-                     nn.init.constant_(m.bias, 0)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.BatchNorm2d):
+                # Initialize BatchNorm weights to 1 and biases to 0
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-            # Initialize PixelShuffle's preceding Conv2d layers with care
-            elif isinstance(m, nn.PixelShuffle):
-                # PixelShuffle itself has no weights, but we ensure preceding Conv2d is properly initialized
-                pass
+            # No specific initialization needed for PixelShuffle
 
     def forward(self, x):
         # Encoder
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x5 = self.down4(x4) # Bottleneck features
+        x1 = self.inc(x)    # Features at 1x res (channels: f)
+        x2 = self.down1(x1) # Features at 1/2 res (channels: f*2)
+        x3 = self.down2(x2) # Features at 1/4 res (channels: f*4)
+        x4 = self.down3(x3) # Bottleneck features at 1/8 res (channels: f*8)
 
         # Decoder
-        x = self.up1(x5, x4)
-        x = self.up2(x, x3)
-        x = self.up3(x, x2)
-        x = self.up4(x, x1)
+        x = self.up1(x4, x3) # Upsample x4(1/8) -> 1/4 res, concat with x3(1/4) -> Output: 1/4 res (channels: f*4)
+        x = self.up2(x, x2)  # Upsample x(1/4) -> 1/2 res, concat with x2(1/2) -> Output: 1/2 res (channels: f*2)
+        x = self.up3(x, x1)  # Upsample x(1/2) -> 1x res, concat with x1(1x)   -> Output: 1x res (channels: f)
 
-        # Final convolution and activation
-        logits = self.outc(x)
+        # Final Upsampling and Output Conv
+        x = self.final_up(x)    # Upsample x(1x) -> 2x res (channels: f//2)
+        logits = self.final_conv(x) # Refine and map to output channels at 2x res
+
         # Apply clamp activation to constrain output to [0, 1]
         return torch.clamp(logits, min=0.0, max=1.0)
 

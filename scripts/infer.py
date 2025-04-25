@@ -11,7 +11,9 @@ import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import numpy as np
 import logging
+import torch.nn.functional as F
 import matplotlib.colors as colors
+from skimage.exposure import match_histograms
 
 # Configure logging
 logging.basicConfig(
@@ -117,18 +119,20 @@ def preprocess_image(image_path):
         if max_val > min_val:
             image_np = (image_np - min_val) / (max_val - min_val)
         
-        # 3. Apply letterbox resize with mean intensity padding to match training preprocessing
+        # 3. REMOVED: Apply letterbox resize with mean intensity padding to match training preprocessing
+        # The model should handle the input size directly for super-resolution.
         h, w = image_np.shape
-        target_size = (256, 256)  # Use standard target size for MRI processing
-        
-        # Use mean intensity for padding to match training data preprocessing
-        pad_value = image_np.mean()
-        image_np = letterbox_resize(
-            image_np,
-            target_size,
-            interpolation=InterpolationMethod.CUBIC,
-            pad_value=pad_value
-        )
+        if h % 8 != 0 or w % 8 != 0:
+            logger.warning(f"Input image dimensions ({h}x{w}) are not divisible by 8. "
+                           "This might affect performance or spatial accuracy due to model pooling layers.")
+        # target_size = (256, 256)  # Use standard target size for MRI processing
+        # pad_value = image_np.mean()
+        # image_np = letterbox_resize(
+        #     image_np,
+        #     target_size,
+        #     interpolation=InterpolationMethod.CUBIC,
+        #     pad_value=pad_value
+        # )
         
         # Convert to tensor
         tensor = torch.from_numpy(image_np).unsqueeze(0).unsqueeze(0)  # Add batch and channel dimensions
@@ -243,67 +247,143 @@ def process_single_image(model, input_path, output_path, target_path=None, devic
     Process a single image for super-resolution.
     """
     # Load and preprocess input image
-    image, tensor = preprocess_image(input_path)
-    tensor = tensor.to(device)
+    input_pil_image_orig, input_tensor = preprocess_image(input_path)
+    input_tensor = input_tensor.to(device)
     
     # Process target image if provided
     target_tensor = None
+    target_pil_image = None # Store original PIL image for visualization
     metrics = None  # Initialize metrics to None
     if target_path and os.path.exists(target_path):
-        _, target_tensor = preprocess_image(target_path)
-        target_tensor = target_tensor.to(device)
+        try:
+            # Load target image without resizing, only apply clipping/normalization
+            target_pil_image = Image.open(target_path).convert('L')
+            target_np = np.array(target_pil_image).astype(np.float32)
+
+            # Apply clipping/normalization (same as input)
+            min_percentile = 0.5
+            max_percentile = 99.5
+            min_val = np.percentile(target_np, min_percentile)
+            max_val = np.percentile(target_np, max_percentile)
+            target_np = np.clip(target_np, min_val, max_val)
+            if max_val > min_val:
+                target_np = (target_np - min_val) / (max_val - min_val)
+
+            # Convert to tensor without resizing
+            target_tensor = torch.from_numpy(target_np).unsqueeze(0).unsqueeze(0) # Add batch/channel
+            target_tensor = target_tensor.to(device)
+            logger.info(f"Loaded target image {target_path} with shape {target_tensor.shape[-2:]}")
+
+        except Exception as e:
+            logger.error(f"Error processing target image {target_path}: {e}")
+            target_pil_image = None # Reset if error occurred
+            target_tensor = None
     
     # Model inference
     model.eval()
     with torch.no_grad():
         if use_amp and AMP_AVAILABLE and device.type == 'cuda':
             with autocast('cuda'):
-                output_tensor = model(tensor)
+                output_tensor = model(input_tensor)
         else:
-            output_tensor = model(tensor)
+            output_tensor = model(input_tensor)
     
+    # --- Histogram Matching Step --- Start
+    # Convert output tensor to numpy float [0, 1]
+    output_np_raw = tensor_to_numpy(output_tensor.squeeze(0).cpu())
+
+    # Initialize the array to be saved/visualized
+    output_np_adjusted = output_np_raw
+
+    if target_pil_image is not None:
+        try:
+            logger.info("Applying histogram matching using target image as reference.")
+            # Create reference numpy array from target PIL image
+            target_np_ref_orig = np.array(target_pil_image).astype(np.float32)
+
+            # Apply the SAME clipping and normalization as preprocessing to get the reference distribution
+            min_percentile = 0.5
+            max_percentile = 99.5
+            min_val = np.percentile(target_np_ref_orig, min_percentile)
+            max_val = np.percentile(target_np_ref_orig, max_percentile)
+            target_np_ref_norm = np.clip(target_np_ref_orig, min_val, max_val)
+            if max_val > min_val:
+                target_np_ref_norm = (target_np_ref_norm - min_val) / (max_val - min_val)
+            else:
+                target_np_ref_norm = np.zeros_like(target_np_ref_norm) # Avoid division by zero
+
+            # Perform histogram matching
+            output_np_adjusted = match_histograms(
+                output_np_raw,
+                reference=target_np_ref_norm,
+                channel_axis=None if output_np_raw.ndim == 2 else -1 # Handle grayscale
+            )
+            # Clip result to [0, 1] as matching might slightly exceed bounds
+            output_np_adjusted = np.clip(output_np_adjusted, 0.0, 1.0)
+
+        except Exception as e:
+            logger.error(f"Error during histogram matching: {e}. Using raw model output.")
+            output_np_adjusted = output_np_raw # Fallback to raw output on error
+    # --- Histogram Matching Step --- End
+
     # Calculate metrics if target is available
     if target_tensor is not None:
+        # Ensure target tensor matches output tensor size for metric calculation
+        output_shape = output_tensor.shape[-2:]
+        target_shape = target_tensor.shape[-2:]
+        if output_shape != target_shape:
+            logger.warning(f"Target shape {target_shape} differs from output shape {output_shape}. "
+                           f"Resizing target to {output_shape} for metrics calculation using bicubic interpolation.")
+            target_tensor = F.interpolate(target_tensor, size=output_shape, mode='bicubic', align_corners=False)
+
         metrics = calculate_metrics(output_tensor, target_tensor)
         for metric_name, metric_value in metrics.items():
             logger.info(f"{metric_name.upper()}: {metric_value:.4f}")
     
-    # Convert output tensor to image and save
-    output_image = postprocess_tensor(output_tensor)
+    # Convert the (potentially adjusted) numpy array to PIL Image
+    output_np_uint8 = (output_np_adjusted * 255).astype(np.uint8)
+    output_image = Image.fromarray(output_np_uint8)
     output_image.save(output_path)
     logger.info(f"Enhanced image saved to {output_path}")
     
     # Display comparison if requested
     if show_comparison:
         plt.figure(figsize=(12, 6))
-        plt.subplot(1, 3 if target_tensor is not None else 2, 1)
+        plt.subplot(1, 3 if target_pil_image is not None else 2, 1)
         plt.title("Input (Low Quality)")
-        plt.imshow(np.array(image), cmap='gray')
+        plt.imshow(np.array(input_pil_image_orig), cmap='gray')
         plt.axis('off')
         
-        plt.subplot(1, 3 if target_tensor is not None else 2, 2)
+        plt.subplot(1, 3 if target_pil_image is not None else 2, 2)
         plt.title("Output (Enhanced)")
         plt.imshow(np.array(output_image), cmap='gray')
         plt.axis('off')
         
-        if target_tensor is not None:
-            target_image = postprocess_tensor(target_tensor)
+        if target_pil_image is not None: # Use original PIL image for visualization
             plt.subplot(1, 3, 3)
             plt.title("Target (High Quality)")
-            plt.imshow(np.array(target_image), cmap='gray')
+            plt.imshow(np.array(target_pil_image), cmap='gray')
             plt.axis('off')
         
         plt.tight_layout()
         plt.show()
     
     # Show difference map if requested
-    if show_diff and target_tensor is not None:
-        target_image = postprocess_tensor(target_tensor)
-        
+    if show_diff and target_pil_image is not None:
+        # Ensure target PIL image is resized to match output image for diff map calculation
+        target_np_for_diff = np.array(target_pil_image).astype(np.float32) / 255.0
+        output_np_for_diff = np.array(output_image).astype(np.float32) / 255.0
+
+        if target_np_for_diff.shape != output_np_for_diff.shape:
+            # Need to resize the numpy target image using Pillow/OpenCV for visualization diff
+            # Using Pillow resize for simplicity
+            target_pil_resized = target_pil_image.resize(output_image.size, Image.BICUBIC)
+            target_np_for_diff = np.array(target_pil_resized).astype(np.float32) / 255.0
+            logger.warning(f"Resized target image for difference map visualization.")
+
         # Calculate difference
-        diff = np.abs(np.array(output_image).astype(np.float32) - 
-                     np.array(target_image).astype(np.float32))
-        
+        diff = np.abs(output_np_for_diff - target_np_for_diff)
+
         # Normalize and colorize difference
         plt.figure(figsize=(12, 4))
         plt.subplot(1, 3, 1)
@@ -313,7 +393,8 @@ def process_single_image(model, input_path, output_path, target_path=None, devic
         
         plt.subplot(1, 3, 2)
         plt.title("Target")
-        plt.imshow(np.array(target_image), cmap='gray')
+        # Show the potentially resized target used for the diff map
+        plt.imshow(target_np_for_diff * 255.0, cmap='gray')
         plt.axis('off')
         
         plt.subplot(1, 3, 3)
