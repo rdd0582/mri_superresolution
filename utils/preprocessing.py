@@ -32,7 +32,7 @@ def letterbox_resize(image: np.ndarray,
         image: Input image (2D numpy array)
         target_size: Target size as (width, height)
         interpolation: Interpolation method to use
-        pad_value: Value to use for padding (if None, uses image mean)
+        pad_value: Value to use for padding (if None, uses 0)
         
     Returns:
         Resized and padded image
@@ -47,7 +47,7 @@ def letterbox_resize(image: np.ndarray,
     
     # Compute padding value
     if pad_value is None:
-        pad_value = image.mean()  # Removed int() casting to preserve float values for [0,1] images
+        pad_value = 0.0  # Use zero padding instead of mean
     
     # Create canvas and place the resized image
     canvas = np.full((target_h, target_w), pad_value, dtype=image.dtype)
@@ -82,7 +82,7 @@ def center_crop(image: np.ndarray, target_size: Tuple[int, int]) -> np.ndarray:
     
     # If the image is smaller than the target size, pad it
     if cropped.shape[0] < target_h or cropped.shape[1] < target_w:
-        pad_value = image.mean()  # Use float mean value for [0,1] images
+        pad_value = 0.0  # Use zero padding instead of mean
         result = np.full((target_h, target_w), pad_value, dtype=image.dtype)
         paste_y = (target_h - cropped.shape[0]) // 2
         paste_x = (target_w - cropped.shape[1]) // 2
@@ -100,7 +100,7 @@ def pad_to_size(image: np.ndarray,
     Args:
         image: Input image (2D numpy array)
         target_size: Target size as (width, height)
-        pad_value: Value to use for padding (if None, uses image mean)
+        pad_value: Value to use for padding (if None, uses 0)
         
     Returns:
         Padded image
@@ -110,7 +110,7 @@ def pad_to_size(image: np.ndarray,
     
     # Compute padding value
     if pad_value is None:
-        pad_value = image.mean()  # Removed int() casting for [0,1] images
+        pad_value = 0.0  # Use zero padding instead of mean
     
     # Create canvas and place the image
     canvas = np.full((target_h, target_w), pad_value, dtype=image.dtype)
@@ -125,8 +125,8 @@ def pad_to_size(image: np.ndarray,
     return canvas
 
 def robust_normalize(slice_data: np.ndarray, 
-                     lower_percentile: float = 1, 
-                     upper_percentile: float = 99,
+                     lower_percentile: float = 0.5, 
+                     upper_percentile: float = 99.5,
                      target_range: Tuple[float, float] = (0, 1)) -> np.ndarray:
     """
     Apply robust normalization by clipping intensities at the given percentiles and
@@ -134,8 +134,8 @@ def robust_normalize(slice_data: np.ndarray,
     
     Args:
         slice_data: Input image data
-        lower_percentile: Lower percentile for clipping
-        upper_percentile: Upper percentile for clipping
+        lower_percentile: Lower percentile for clipping (default: 0.5)
+        upper_percentile: Upper percentile for clipping (default: 99.5)
         target_range: Target range for normalization
         
     Returns:
@@ -325,7 +325,7 @@ def simulate_low_field_mri(data, kspace_crop_factor=0.5, noise_std=5):
 def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMethod.CUBIC,
                      equalize=False, window_center=None, window_width=None, 
                      min_percentile=0.5, max_percentile=99.5, resize_method=ResizeMethod.LETTERBOX,
-                     apply_simulation=False, noise_std=5, blur_sigma=0.5, pad_value=None,
+                     apply_simulation=False, noise_std=5, blur_sigma=0.5, pad_value=0.0,
                      kspace_crop_factor=0.5, use_kspace_simulation=True):
     """
     Process a single MRI slice with options for normalization, windowing, and resizing.
@@ -348,7 +348,7 @@ def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMe
         apply_simulation: Whether to apply low-resolution simulation
         noise_std: Noise standard deviation for simulation (for 0-255 range, internally scaled)
         blur_sigma: Sigma for Gaussian blur in simulation
-        pad_value: Value to use for padding (if None, uses image mean after normalization)
+        pad_value: Value to use for padding (default: 0.0)
         kspace_crop_factor: Factor to determine how much of k-space to keep (0.5 = 50%)
         use_kspace_simulation: Whether to use k-space based simulation (True) or the old method (False)
         
@@ -373,11 +373,8 @@ def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMe
     if max_val > min_val:
         processed = (processed - min_val) / (max_val - min_val)
     
-    # Calculate padding value after normalization if None was provided
-    # This ensures the padding value is in the same [0,1] range as the normalized image
+    # Calculate padding value - use the provided pad_value (default is now 0.0)
     calculated_pad_value = pad_value
-    if pad_value is None and target_size is not None and resize_method == ResizeMethod.LETTERBOX:
-        calculated_pad_value = processed.mean()
     
     # Apply simulation if requested (after normalization but before resizing)
     if apply_simulation:

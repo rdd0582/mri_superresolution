@@ -124,14 +124,6 @@ class MRISuperResDataset(Dataset):
         full_tensor = self.transform(full_image)
         low_tensor = self.transform(low_image)
         
-        # Apply normalization if enabled
-        if self.normalize:
-            # Ensure values are in [0, 1]
-            if full_tensor.max() > 1.0:
-                full_tensor = full_tensor / 255.0
-            if low_tensor.max() > 1.0:
-                low_tensor = low_tensor / 255.0
-        
         # Cache result if cache is enabled
         if self.cache_size > 0:
             # Remove oldest item if cache is full

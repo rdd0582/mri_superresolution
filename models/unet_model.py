@@ -156,7 +156,7 @@ class UNetSuperRes(nn.Module):
 
         # Final convolution and activation
         logits = self.outc(x)
-        # Apply sigmoid activation to constrain output to [0, 1]
-        return torch.sigmoid(logits)
+        # Apply clamp activation to constrain output to [0, 1]
+        return torch.clamp(logits, min=0.0, max=1.0)
 
 
