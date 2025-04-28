@@ -197,7 +197,7 @@ def train(args):
     
     # Create scheduler
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode='min', factor=0.5, patience=args.patience // 2, verbose=True
+        optimizer, mode='min', factor=0.5, patience=args.patience // 2
     )
 
     # Create dataset with normalization to [0, 1] range
@@ -412,8 +412,16 @@ def train(args):
             val_loss /= len(val_loader)
             val_ssim /= len(val_loader)
             
+            # Store previous learning rate to detect changes
+            prev_lr = optimizer.param_groups[0]['lr']
+            
             # Update learning rate
             scheduler.step(val_loss)
+            
+            # Check if learning rate changed
+            current_lr = optimizer.param_groups[0]['lr']
+            if current_lr != prev_lr:
+                log_message(f"Learning rate adjusted from {prev_lr:.2e} to {current_lr:.2e}")
             
             # Check for best model
             if val_loss < best_val_loss:
@@ -528,7 +536,7 @@ def parse_args():
                       help='Initial learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-5,
                       help='Weight decay for optimizer')
-    parser.add_argument('--ssim_weight', type=float, default=0.7,
+    parser.add_argument('--ssim_weight', type=float, default=0.3,
                       help='Weight for SSIM loss component (0-1)')
     parser.add_argument('--perceptual_weight', type=float, default=0.0,
                         help='Weight for Perceptual loss component (0-1, set > 0 to enable)')

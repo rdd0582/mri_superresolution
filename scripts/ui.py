@@ -107,8 +107,7 @@ class MRIUI:
         # Define parameters with discrete options
         self.discrete_params = {
             'perceptual_loss_type': ['l1', 'l2', 'mse'],
-            'vgg_layer_idx': [16, 19, 22, 25, 29, 32, 35, 38, 42, 45, 49],  # Common VGG16 layer indices for perceptual loss
-            'use_kspace_simulation': [True, False]  # Option to toggle between k-space and old simulation method
+            'vgg_layer_idx': [16, 19, 22, 25, 29, 32, 35, 38, 42, 45, 49]  # Common VGG16 layer indices for perceptual loss
         }
         
         self.params = {
@@ -120,10 +119,8 @@ class MRIUI:
             "lower_percent": 0.2,
             "upper_percent": 0.8,
             "noise_std": 5,  # This is appropriate for 0-255 range (scaled internally)
-            "blur_sigma": 0.5,
             "target_size": "256 256",  # Added target_size parameter
             "kspace_crop_factor": 0.5,  # Added k-space crop factor parameter
-            "use_kspace_simulation": True,  # Default to using k-space simulation
             
             # Training params
             "full_res_dir": "./training_data",
@@ -134,7 +131,7 @@ class MRIUI:
             "epochs": 100,
             "learning_rate": 1e-4,
             "weight_decay": 1e-5,
-            "ssim_weight": 0.7,
+            "ssim_weight": 0.3,
             "perceptual_weight": 0.0,
             "vgg_layer_idx": 35,
             "perceptual_loss_type": 'l1',
@@ -276,10 +273,8 @@ class MRIUI:
             "lower_percent",
             "upper_percent",
             "noise_std",
-            "blur_sigma",
             "target_size",
             "kspace_crop_factor",
-            "use_kspace_simulation",
             "Run Extraction",
             "Back to Main Menu"
         ]
@@ -304,7 +299,7 @@ class MRIUI:
         
         # Add k-space simulation info
         self.stdscr.attron(curses.color_pair(3))
-        self.stdscr.addstr(5, 2, "K-space simulation applies FFT, center crop, IFFT, and proper Rician noise")
+        self.stdscr.addstr(5, 2, "K-space simulation applies FFT, center crop, adds noise to k-space, IFFT, and produces Rician noise")
         self.stdscr.attroff(curses.color_pair(3))
         
         # --- Start: Scrolling Logic ---
@@ -349,9 +344,7 @@ class MRIUI:
                 
                 # Custom display names for certain parameters
                 display_name = param_name
-                if option == "use_kspace_simulation":
-                    display_name = "Simulation Method".ljust(20)
-                elif option == "kspace_crop_factor":
+                if option == "kspace_crop_factor":
                     display_name = "K-space Center (%)".ljust(20)
                 
                 self.stdscr.addstr(current_display_y, 4, display_name)
@@ -363,9 +356,6 @@ class MRIUI:
                     # Add [Select] indicator for parameters with dropdown menus
                     if option in self.boolean_flags:
                         display_value = "Enabled" if self.params[option] else "Disabled"
-                        self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, f"{display_value} [Select]")
-                    elif option == "use_kspace_simulation":
-                        display_value = "K-space" if self.params[option] else "Blur + Noise"
                         self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, f"{display_value} [Select]")
                     else:
                         self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, f"{param_value} [Select]")
@@ -679,7 +669,7 @@ class MRIUI:
                                       'batch_size', 'epochs', 
                                       'patience', 'num_workers', 'seed', 'vgg_layer_idx']: 
                     new_value = int(self.input_value)
-                elif self.input_field in ['lower_percent', 'upper_percent', 'noise_std', 'blur_sigma',
+                elif self.input_field in ['lower_percent', 'upper_percent', 'noise_std',
                                         'learning_rate', 'weight_decay', 'ssim_weight', 
                                         'perceptual_weight', 'validation_split', 'kspace_crop_factor']:
                     new_value = float(self.input_value)
@@ -846,13 +836,8 @@ class MRIUI:
                 "--lower_percent", str(self.params["lower_percent"]),
                 "--upper_percent", str(self.params["upper_percent"]),
                 "--noise_std", str(self.params["noise_std"]),
-                "--blur_sigma", str(self.params["blur_sigma"]),
                 "--kspace_crop_factor", str(self.params["kspace_crop_factor"]),
             ]
-            
-            # Add use_kspace_simulation flag if set to True
-            if self.params["use_kspace_simulation"]:
-                cmd.append("--use_kspace_simulation")
             
             # Split target_size into separate arguments
             target_size_values = self.params["target_size"].split()
@@ -870,6 +855,11 @@ class MRIUI:
             if self.params["lr_output_dir"]:
                 print(f"Low-Resolution Output: {self.params['lr_output_dir']} (Using CUBIC interpolation for resizing)")
                 print(f"Simulation Settings:")
+                print(f"  - Simulation Method: K-space manipulation with Rician noise")
+                print(f"  - K-space Crop Factor: {self.params['kspace_crop_factor']} (keeping {float(self.params['kspace_crop_factor'])*100:.0f}% of center k-space)")
+                print(f"  - Noise Standard Deviation: {self.params['noise_std']}")
+            else:
+                print("Low-Resolution Simulation: Disabled")
             print("\nRunning extract_paired_slices.py...\n")
             process = subprocess.run(cmd, check=False)
             print("\nPress any key to return to the UI...")

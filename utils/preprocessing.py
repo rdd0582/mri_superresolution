@@ -223,36 +223,6 @@ def apply_windowing(image: np.ndarray,
     
     return windowed
 
-def simulate_15T_data(data, noise_std=5, blur_sigma=0.5):
-    """
-    Simulate a 1.5T image from high-quality data by applying Gaussian blur and adding
-    Rician-like noise.
-    
-    Args:
-        data: Input image data in [0,1] range
-        noise_std: Noise standard deviation (will be scaled by 1/255 for [0,1] range)
-        blur_sigma: Sigma for Gaussian blur
-    
-    Returns:
-        Simulated 1.5T image in [0,1] range
-    """
-    # Scale noise_std to be appropriate for [0,1] range data
-    # (original values were for [0,255] range)
-    scaled_noise_std = noise_std / 255.0
-    
-    # Apply Gaussian blur to mimic a smoother appearance
-    blurred = ndimage.gaussian_filter(data, sigma=blur_sigma)
-    
-    # Create Rician-like noise by combining two independent Gaussian noise fields
-    # with appropriate scale for [0,1] range
-    noise1 = np.random.normal(0, scaled_noise_std, data.shape)
-    noise2 = np.random.normal(0, scaled_noise_std, data.shape)
-    
-    # Apply Rician noise model
-    simulated = np.sqrt((blurred + noise1)**2 + noise2**2)
-    
-    return simulated
-
 def simulate_low_field_mri(data, kspace_crop_factor=0.5, noise_std=5):
     """
     Simulate a low-field MRI image using k-space manipulation and proper Rician noise.
@@ -260,8 +230,9 @@ def simulate_low_field_mri(data, kspace_crop_factor=0.5, noise_std=5):
     This function:
     1. Transforms the image to k-space using FFT
     2. Crops the k-space to simulate lower resolution
-    3. Transforms back to image space using IFFT
-    4. Adds Rician noise to simulate lower SNR
+    3. Adds complex Gaussian noise to k-space
+    4. Transforms back to image space using IFFT
+    5. Takes magnitude to produce Rician distributed noise
     
     Args:
         data: Input image data in [0,1] range
@@ -298,23 +269,23 @@ def simulate_low_field_mri(data, kspace_crop_factor=0.5, noise_std=5):
     mask[row_start:row_end, col_start:col_end] = 1
     low_res_kspace = kspace * mask
     
+    # Scale noise_std for k-space (need to scale for complex noise in frequency domain)
+    # Using theoretical adjustment for the fact that noise in k-space propagates differently
+    # to image space than when added directly to image space
+    scaled_noise_std = (noise_std / 255.0) * np.sqrt(rows * cols) / 10
+    
+    # Add complex Gaussian noise to k-space
+    # Real and imaginary components get independent noise
+    noise_real = np.random.normal(0, scaled_noise_std, low_res_kspace.shape)
+    noise_imag = np.random.normal(0, scaled_noise_std, low_res_kspace.shape)
+    noisy_kspace = low_res_kspace + noise_real + 1j * noise_imag
+    
     # Transform back to image space
-    low_res_image = np.fft.ifftshift(low_res_kspace)
-    low_res_image = np.fft.ifft2(low_res_image)
+    noisy_image = np.fft.ifftshift(noisy_kspace)
+    noisy_image = np.fft.ifft2(noisy_image)
     
-    # Get real and imaginary components
-    real_component = np.real(low_res_image)
-    imag_component = np.imag(low_res_image)
-    
-    # Scale noise_std to be appropriate for [0,1] range data
-    scaled_noise_std = noise_std / 255.0
-    
-    # Add Gaussian noise to both real and imaginary components
-    real_noisy = real_component + np.random.normal(0, scaled_noise_std, real_component.shape)
-    imag_noisy = imag_component + np.random.normal(0, scaled_noise_std, imag_component.shape)
-    
-    # Compute magnitude (this creates Rician noise distribution)
-    magnitude = np.sqrt(real_noisy**2 + imag_noisy**2)
+    # Take magnitude to get Rician distributed noise
+    magnitude = np.abs(noisy_image)
     
     # Normalize back to [0,1] range
     simulated = (magnitude - magnitude.min()) / (magnitude.max() - magnitude.min())
@@ -325,11 +296,11 @@ def simulate_low_field_mri(data, kspace_crop_factor=0.5, noise_std=5):
 def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMethod.CUBIC,
                      equalize=False, window_center=None, window_width=None, 
                      min_percentile=0.5, max_percentile=99.5, resize_method=ResizeMethod.LETTERBOX,
-                     apply_simulation=False, noise_std=5, blur_sigma=0.5, pad_value=0.0,
+                     apply_simulation=False, noise_std=5, pad_value=0.0,
                      kspace_crop_factor=0.5, use_kspace_simulation=True):
     """
     Process a single MRI slice with options for normalization, windowing, and resizing.
-    Can optionally simulate low-resolution effects (blur and noise).
+    Can optionally simulate low-resolution effects.
     
     Note: This function uses the specified interpolation method (default CUBIC) for all resize operations.
     For MRI super-resolution, it's recommended to use LANCZOS for HR images and CUBIC for LR images,
@@ -347,10 +318,9 @@ def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMe
         resize_method: Method for resizing (letterbox, crop, stretch, pad)
         apply_simulation: Whether to apply low-resolution simulation
         noise_std: Noise standard deviation for simulation (for 0-255 range, internally scaled)
-        blur_sigma: Sigma for Gaussian blur in simulation
         pad_value: Value to use for padding (default: 0.0)
         kspace_crop_factor: Factor to determine how much of k-space to keep (0.5 = 50%)
-        use_kspace_simulation: Whether to use k-space based simulation (True) or the old method (False)
+        use_kspace_simulation: Whether to use k-space based simulation (True)
         
     Returns:
         Processed slice as float32 array with values in [0, 1]
@@ -378,10 +348,7 @@ def preprocess_slice(slice_data, target_size=None, interpolation=InterpolationMe
     
     # Apply simulation if requested (after normalization but before resizing)
     if apply_simulation:
-        if use_kspace_simulation:
-            processed = simulate_low_field_mri(processed, kspace_crop_factor=kspace_crop_factor, noise_std=noise_std)
-        else:
-            processed = simulate_15T_data(processed, noise_std=noise_std, blur_sigma=blur_sigma)
+        processed = simulate_low_field_mri(processed, kspace_crop_factor=kspace_crop_factor, noise_std=noise_std)
         # Clip after simulation to ensure values stay in [0, 1] range
         processed = np.clip(processed, 0, 1)
     

@@ -16,8 +16,8 @@ from utils.extraction_utils import generate_bids_identifier, generate_filename, 
 import argparse
 
 def preprocess_high_res_slice(slice_data, target_size=(256, 256), 
-                           apply_simulation=False, noise_std=5, blur_sigma=0.5,
-                           kspace_crop_factor=0.5, use_kspace_simulation=True):
+                           apply_simulation=False, noise_std=5,
+                           kspace_crop_factor=0.5):
     """
     Wrapper function for preprocessing slices.
     Uses LANCZOS interpolation for high-resolution to preserve sharp details with minimal aliasing.
@@ -25,9 +25,10 @@ def preprocess_high_res_slice(slice_data, target_size=(256, 256),
     
     For low-field simulation:
     1. Transforms to k-space using FFT
-    2. Crops the k-space center to simulate lower resolution (when use_kspace_simulation=True)
-    3. Transforms back to image space using IFFT
-    4. Adds Rician noise to simulate proper MRI magnitude image noise
+    2. Crops the k-space center to simulate lower resolution
+    3. Adds complex Gaussian noise to k-space
+    4. Transforms back to image space using IFFT
+    5. Takes magnitude to produce Rician distributed noise
     """
     # We'll set pad_value to None, letting the preprocessing function calculate 
     # the mean after normalization for proper [0,1] range padding
@@ -49,9 +50,7 @@ def preprocess_high_res_slice(slice_data, target_size=(256, 256),
         pad_value=pad_value,  # Now None, will be calculated after normalization
         apply_simulation=apply_simulation,
         noise_std=noise_std,
-        blur_sigma=blur_sigma,
-        kspace_crop_factor=kspace_crop_factor,
-        use_kspace_simulation=use_kspace_simulation
+        kspace_crop_factor=kspace_crop_factor
     )
     
     # Return float [0,1] image (conversion to uint8 happens in extract_slices_3d)
@@ -59,8 +58,8 @@ def preprocess_high_res_slice(slice_data, target_size=(256, 256),
 
 def extract_slices(nifti_file, hr_output_dir, lr_output_dir,
                    n_slices=10, lower_percent=0.2, upper_percent=0.8, 
-                   target_size=(320, 240), noise_std=5, blur_sigma=0.5,
-                   kspace_crop_factor=0.5, use_kspace_simulation=True):
+                   target_size=(320, 240), noise_std=5,
+                   kspace_crop_factor=0.5):
     """
     Load a NIfTI file and extract slices from a full‐resolution scan.
     Creates both high-resolution and low-resolution versions.
@@ -76,9 +75,8 @@ def extract_slices(nifti_file, hr_output_dir, lr_output_dir,
                           upper_percent=upper_percent, target_size=target_size,
                           preprocess_function=preprocess_high_res_slice,
                           apply_simulation=True,
-                          noise_std=noise_std, blur_sigma=blur_sigma,
-                          kspace_crop_factor=kspace_crop_factor,
-                          use_kspace_simulation=use_kspace_simulation)
+                          noise_std=noise_std,
+                          kspace_crop_factor=kspace_crop_factor)
     elif data.ndim == 4:
         num_timepoints = data.shape[3]
         print(f"Processing 4D file with {num_timepoints} time points: {nifti_file}")
@@ -90,9 +88,8 @@ def extract_slices(nifti_file, hr_output_dir, lr_output_dir,
                               upper_percent=upper_percent, target_size=target_size,
                               preprocess_function=preprocess_high_res_slice,
                               apply_simulation=True,
-                              noise_std=noise_std, blur_sigma=blur_sigma,
-                              kspace_crop_factor=kspace_crop_factor,
-                              use_kspace_simulation=use_kspace_simulation)
+                              noise_std=noise_std,
+                              kspace_crop_factor=kspace_crop_factor)
     else:
         print(f"Unexpected data dimensionality for {nifti_file}: {data.ndim}D")
         return
@@ -119,14 +116,9 @@ if __name__ == '__main__':
     # Simulation parameters
     parser.add_argument('--noise_std', type=float, default=5, 
                        help='Standard deviation for noise (for 0-255 range, internally scaled)')
-    parser.add_argument('--blur_sigma', type=float, default=0.5, 
-                       help='Sigma for Gaussian blur (default: 0.5)')
     # K-space simulation parameters
     parser.add_argument('--kspace_crop_factor', type=float, default=0.5,
                       help='Factor to determine how much of k-space to keep (0.5 = 50%)')
-    parser.add_argument('--use_kspace_simulation', action='store_true', default=True,
-                      help='Use k-space based simulation instead of the older method')
-
 
     args = parser.parse_args()
 
@@ -145,12 +137,8 @@ if __name__ == '__main__':
     if lr_output_dir:
         print(f"Low-Resolution Output: {lr_output_dir} (Using CUBIC interpolation for resizing)")
         print(f"Simulation Settings:")
-        if args.use_kspace_simulation:
-            print(f"  - Simulation Method: K-space manipulation with Rician noise")
-            print(f"  - K-space Crop Factor: {args.kspace_crop_factor} (keeping {args.kspace_crop_factor*100:.0f}% of center k-space)")
-        else:
-            print(f"  - Simulation Method: Gaussian blur with Rician-like noise")
-            print(f"  - Gaussian Blur Sigma: {args.blur_sigma}")
+        print(f"  - Simulation Method: K-space manipulation with Rician noise")
+        print(f"  - K-space Crop Factor: {args.kspace_crop_factor} (keeping {args.kspace_crop_factor*100:.0f}% of center k-space)")
         print(f"  - Noise Standard Deviation: {args.noise_std}")
     else:
         print("Low-Resolution Simulation: Disabled")
@@ -177,8 +165,6 @@ if __name__ == '__main__':
                                            upper_percent=args.upper_percent,
                                            target_size=tuple(args.target_size),
                                            noise_std=args.noise_std,
-                                           blur_sigma=args.blur_sigma,
-                                           kspace_crop_factor=args.kspace_crop_factor,
-                                           use_kspace_simulation=args.use_kspace_simulation)
+                                           kspace_crop_factor=args.kspace_crop_factor)
                         except Exception as e:
                             print(f"Error processing {nifti_path}: {e}") 

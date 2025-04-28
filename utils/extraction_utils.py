@@ -4,7 +4,7 @@ import re
 import numpy as np
 from typing import Tuple, Optional, List
 import cv2  # Ensure cv2 is imported at the top level if not already
-from utils.preprocessing import simulate_low_field_mri, simulate_15T_data, robust_normalize, letterbox_resize, InterpolationMethod  # Import simulation and normalization functions
+from utils.preprocessing import simulate_low_field_mri, robust_normalize, letterbox_resize, InterpolationMethod  # Import simulation and normalization functions
 
 def generate_bids_identifier(nifti_file: str) -> str:
     """
@@ -83,9 +83,7 @@ def extract_slices_3d(data: np.ndarray,
                       preprocess_function=None,
                       apply_simulation: bool = False, # Note: apply_simulation in preprocess_function is now only for HR
                       noise_std: float = 5.0,
-                      blur_sigma: float = 0.5,
-                      kspace_crop_factor: float = 0.5,
-                      use_kspace_simulation: bool = True):
+                      kspace_crop_factor: float = 0.5):
     """
     Extract n_slices equally spaced from the central portion of a 3D volume,
     preprocess (using the provided preprocessing function),
@@ -105,9 +103,7 @@ def extract_slices_3d(data: np.ndarray,
         preprocess_function: Function to preprocess each slice (should return HR slice at target_size)
         apply_simulation: Whether to generate and save LR images (simulation settings below are used if True)
         noise_std: Noise standard deviation for simulation
-        blur_sigma: Sigma for Gaussian blur in simulation (if use_kspace_simulation=False)
-        kspace_crop_factor: Factor to determine how much of k-space to keep (if use_kspace_simulation=True)
-        use_kspace_simulation: Whether to use k-space based simulation (True) or blur+noise (False)
+        kspace_crop_factor: Factor to determine how much of k-space to keep
     """
     # If no preprocessing function provided, raise an error
     if preprocess_function is None:
@@ -146,14 +142,9 @@ def extract_slices_3d(data: np.ndarray,
             normalized_slice = robust_normalize(slice_data, lower_percentile=0.5, upper_percentile=99.5, target_range=(0, 1))
             
             # b. Apply simulation to the normalized slice
-            if use_kspace_simulation:
-                simulated_slice = simulate_low_field_mri(normalized_slice, 
-                                                         kspace_crop_factor=kspace_crop_factor, 
-                                                         noise_std=noise_std)
-            else:
-                simulated_slice = simulate_15T_data(normalized_slice, 
-                                                   noise_std=noise_std, 
-                                                   blur_sigma=blur_sigma)
+            simulated_slice = simulate_low_field_mri(normalized_slice, 
+                                                     kspace_crop_factor=kspace_crop_factor, 
+                                                     noise_std=noise_std)
             
             # c. Clip after simulation to ensure values stay in [0, 1] range
             simulated_slice = np.clip(simulated_slice, 0, 1)
