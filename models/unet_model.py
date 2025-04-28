@@ -3,23 +3,34 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DoubleConv(nn.Module):
-    """(Convolution => [BN] => ReLU) * 2"""
-    def __init__(self, in_channels, out_channels, mid_channels=None):
+    """(Convolution => [GN] => LeakyReLU) * 2 with residual connection"""
+    def __init__(self, in_channels, out_channels, mid_channels=None, dilation=1):
         super().__init__()
         if not mid_channels:
             mid_channels = out_channels
+        
+        # Whether to use residual connection (only when input and output channels match)
+        self.use_residual = (in_channels == out_channels)
+        
         self.double_conv = nn.Sequential(
-            # Set bias=False because BatchNorm has learnable bias (beta)
+            # First conv block
             nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(mid_channels),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.GroupNorm(num_groups=8, num_channels=mid_channels),
+            nn.LeakyReLU(negative_slope=0.2, inplace=True),
+            
+            # Second conv block with dilation for increased receptive field
+            nn.Conv2d(mid_channels, out_channels, kernel_size=3, 
+                     padding=dilation, dilation=dilation, bias=False),
+            nn.GroupNorm(num_groups=8, num_channels=out_channels),
+            nn.LeakyReLU(negative_slope=0.2, inplace=True)
         )
 
     def forward(self, x):
-        return self.double_conv(x)
+        conv_out = self.double_conv(x)
+        # Add residual connection if input and output channels match
+        if self.use_residual:
+            return conv_out + x
+        return conv_out
 
 class Down(nn.Module):
     """Downscaling with MaxPool then DoubleConv"""
@@ -34,7 +45,7 @@ class Down(nn.Module):
         return self.maxpool_conv(x)
 
 class Up(nn.Module):
-    """Upscaling using ConvTranspose2d then DoubleConv"""
+    """Upscaling using bilinear interpolation + convolution to reduce checkerboard artifacts"""
     def __init__(self, in_ch_up, in_ch_skip, out_channels):
         """
         Args:
@@ -43,9 +54,15 @@ class Up(nn.Module):
             out_channels (int): Number of output channels for this block.
         """
         super().__init__()
-        # ConvTranspose2d halves the input channels from the layer below AND doubles spatial resolution
-        self.up = nn.ConvTranspose2d(in_ch_up, in_ch_up // 2, kernel_size=2, stride=2)
-        # DoubleConv takes concatenated channels: skip_channels + upsampled_channels (which has in_ch_up // 2 channels)
+        # Replace ConvTranspose2d with bilinear upsampling followed by 1x1 conv
+        self.up = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Conv2d(in_ch_up, in_ch_up // 2, kernel_size=1, bias=False),
+            nn.GroupNorm(num_groups=8, num_channels=in_ch_up // 2),
+            nn.LeakyReLU(negative_slope=0.2, inplace=True)
+        )
+        
+        # DoubleConv takes concatenated channels: skip_channels + upsampled_channels
         self.conv = DoubleConv(in_ch_skip + (in_ch_up // 2), out_channels)
 
     def forward(self, x1, x2):
@@ -53,7 +70,7 @@ class Up(nn.Module):
         # x2: skip connection feature map - channels = in_ch_skip
         x1 = self.up(x1) # Upsample and halve channels
 
-        # Pad x1 to match x2 size if necessary (ConvTranspose2d might create off-by-one)
+        # Pad x1 to match x2 size if necessary
         diffY = x2.size()[2] - x1.size()[2]
         diffX = x2.size()[3] - x1.size()[3]
         if diffY != 0 or diffX != 0:
@@ -64,10 +81,27 @@ class Up(nn.Module):
         x = torch.cat([x2, x1], dim=1) # Concatenated channels: in_ch_skip + in_ch_up // 2
         return self.conv(x)
 
+class PixelShuffleUp(nn.Module):
+    """Upsampling module using PixelShuffle for better artifact-free upsampling"""
+    def __init__(self, in_channels, out_channels, scale_factor=2):
+        super().__init__()
+        # For PixelShuffle, we need channels = out_channels * scale_factor^2
+        self.conv = nn.Conv2d(in_channels, out_channels * scale_factor**2, kernel_size=3, padding=1)
+        self.pixel_shuffle = nn.PixelShuffle(scale_factor)
+        self.norm = nn.GroupNorm(num_groups=8, num_channels=out_channels)
+        self.act = nn.LeakyReLU(negative_slope=0.2, inplace=True)
+        
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.pixel_shuffle(x)
+        x = self.norm(x)
+        x = self.act(x)
+        return x
+
 class UNetSuperRes(nn.Module):
     """
     U-Net for MRI Super-Resolution (2x spatial upscaling).
-    Uses ConvTranspose2d for learned upsampling in the decoder path.
+    Uses dual-branch decoder with bilinear upsampling and PixelShuffle.
     Has 3 downsampling stages and 4 upsampling stages.
 
     Args:
@@ -89,21 +123,33 @@ class UNetSuperRes(nn.Module):
         self.down2 = Down(f*2, f*4)              # Out: f*4, 1/4 res
         self.down3 = Down(f*4, f*8)              # Out: f*8, 1/8 res (bottleneck)
 
-        # Decoder Path (4 stages) using ConvTranspose2d in Up
-        # Up(in_ch_up, in_ch_skip, out_channels)
+        # Decoder Path (4 stages) with dual-branch upsampling
+        # Bilinear+Conv branch
         self.up1 = Up(f*8, f*4, f*4)           # Input: f*8(1/8res), f*4(1/4res) -> Output: f*4, 1/4 res
         self.up2 = Up(f*4, f*2, f*2)           # Input: f*4(1/4res), f*2(1/2res) -> Output: f*2, 1/2 res
         self.up3 = Up(f*2, f, f)               # Input: f*2(1/2res), f(1x res)   -> Output: f,   1x res
 
-        # Final 2x Upsampling Stage (No skip connection, just learned upsampling + refinement)
-        self.final_up = nn.ConvTranspose2d(f, f // 2, kernel_size=2, stride=2) # Input: f(1x res) -> Output: f//2, 2x res
+        # Final 2x Upsampling with dual branch
+        # Branch 1: Bilinear interpolation + Conv
+        self.final_up_bilinear = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Conv2d(f, f // 2, kernel_size=3, padding=1, bias=False),
+            nn.GroupNorm(num_groups=8, num_channels=f // 2),
+            nn.LeakyReLU(negative_slope=0.2, inplace=True)
+        )
+        
+        # Branch 2: PixelShuffle branch
+        self.final_up_pixelshuffle = PixelShuffleUp(f, f // 2)
+        
+        # Fusion and final convolution
         self.final_conv = nn.Sequential(
-            # Refine features after upsampling
-            nn.Conv2d(f // 2, f // 2, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(f // 2),
-            nn.ReLU(inplace=True),
+            # Fuse features from both branches: f//2 + f//2 = f channels
+            nn.Conv2d(f, f // 2, kernel_size=3, padding=1, bias=False),
+            nn.GroupNorm(num_groups=8, num_channels=f // 2),
+            nn.LeakyReLU(negative_slope=0.2, inplace=True),
             # Map to output channels
-            nn.Conv2d(f // 2, out_channels, kernel_size=1)
+            nn.Conv2d(f // 2, out_channels, kernel_size=1),
+            nn.Sigmoid()  # Replace clamp with sigmoid for smoother gradients
         )
 
         self._initialize_weights()
@@ -112,14 +158,13 @@ class UNetSuperRes(nn.Module):
         for m in self.modules():
             if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
                 # Use Kaiming He initialization for Conv layers
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='leaky_relu')
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm2d):
-                # Initialize BatchNorm weights to 1 and biases to 0
+            elif isinstance(m, nn.GroupNorm):
+                # Initialize GroupNorm weights to 1 and biases to 0
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-            # No specific initialization needed for PixelShuffle
 
     def forward(self, x):
         # Encoder
@@ -133,11 +178,14 @@ class UNetSuperRes(nn.Module):
         x = self.up2(x, x2)  # Upsample x(1/4) -> 1/2 res, concat with x2(1/2) -> Output: 1/2 res (channels: f*2)
         x = self.up3(x, x1)  # Upsample x(1/2) -> 1x res, concat with x1(1x)   -> Output: 1x res (channels: f)
 
-        # Final Upsampling and Output Conv
-        x = self.final_up(x)    # Upsample x(1x) -> 2x res (channels: f//2)
-        logits = self.final_conv(x) # Refine and map to output channels at 2x res
-
-        # Apply clamp activation to constrain output to [0, 1]
-        return torch.clamp(logits, min=0.0, max=1.0)
+        # Final Upsampling with dual branch (2x res)
+        x_bilinear = self.final_up_bilinear(x)
+        x_pixelshuffle = self.final_up_pixelshuffle(x)
+        
+        # Concatenate both branches
+        x = torch.cat([x_bilinear, x_pixelshuffle], dim=1)
+        
+        # Final convolution and activation
+        return self.final_conv(x)
 
 
