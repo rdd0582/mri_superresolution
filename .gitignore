@@ -37,6 +37,9 @@ venv/
 
 # ---------------------------
 # Output and temporary files
+/.VSCodeCounter
+/test_results
+/test_dataset
 
 # Ignore generated output images
 output.png

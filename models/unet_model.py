@@ -1,6 +1,18 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.nn.init as init
+
+def icnr(w, scale=2, init_method=init.kaiming_normal_):
+    """Initialise `w` (shape: out_c, in_c, k, k) with ICNR."""
+    out_c, in_c, k, _ = w.shape
+    # number of sub-bands
+    sub_c = out_c // (scale ** 2)
+    w2 = torch.zeros(sub_c, in_c, k, k)
+    init_method(w2)                         # e.g. He normal
+    w2 = w2.repeat_interleave(scale ** 2, dim=0)
+    with torch.no_grad():
+        w.copy_(w2)
 
 class DoubleConv(nn.Module):
     """(Convolution => [GN] => LeakyReLU) * 2 with residual connection"""
@@ -91,6 +103,9 @@ class PixelShuffleUp(nn.Module):
         self.norm = nn.GroupNorm(num_groups=8, num_channels=out_channels)
         self.act = nn.LeakyReLU(negative_slope=0.2, inplace=True)
         
+        # Apply ICNR initialization to reduce checkerboard artifacts
+        icnr(self.conv.weight, scale_factor)
+        
     def forward(self, x):
         x = self.conv(x)
         x = self.pixel_shuffle(x)
@@ -141,10 +156,13 @@ class UNetSuperRes(nn.Module):
         # Branch 2: PixelShuffle branch
         self.final_up_pixelshuffle = PixelShuffleUp(f, f // 2)
         
+        # Learnable parameter for fusing bilinear and pixelshuffle outputs
+        self.alpha = nn.Parameter(torch.zeros(1))
+        
         # Fusion and final convolution
         self.final_conv = nn.Sequential(
-            # Fuse features from both branches: f//2 + f//2 = f channels
-            nn.Conv2d(f, f // 2, kernel_size=3, padding=1, bias=False),
+            # Process combined feature maps with half the original channel count
+            nn.Conv2d(f // 2, f // 2, kernel_size=3, padding=1, bias=False),
             nn.GroupNorm(num_groups=8, num_channels=f // 2),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
             # Map to output channels
@@ -182,8 +200,9 @@ class UNetSuperRes(nn.Module):
         x_bilinear = self.final_up_bilinear(x)
         x_pixelshuffle = self.final_up_pixelshuffle(x)
         
-        # Concatenate both branches
-        x = torch.cat([x_bilinear, x_pixelshuffle], dim=1)
+        # Fuse bilinear and pixelshuffle outputs with learned weighting
+        alpha_weight = torch.sigmoid(self.alpha)
+        x = alpha_weight * x_bilinear + (1 - alpha_weight) * x_pixelshuffle
         
         # Final convolution and activation
         return self.final_conv(x)
