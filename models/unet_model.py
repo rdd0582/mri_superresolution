@@ -166,8 +166,7 @@ class UNetSuperRes(nn.Module):
             nn.GroupNorm(num_groups=8, num_channels=f // 2),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
             # Map to output channels
-            nn.Conv2d(f // 2, out_channels, kernel_size=1),
-            nn.Sigmoid()  # Replace clamp with sigmoid for smoother gradients
+            nn.Conv2d(f // 2, out_channels, kernel_size=1)
         )
 
         self._initialize_weights()
@@ -204,7 +203,8 @@ class UNetSuperRes(nn.Module):
         alpha_weight = torch.sigmoid(self.alpha)
         x = alpha_weight * x_bilinear + (1 - alpha_weight) * x_pixelshuffle
         
-        # Final convolution and activation
-        return self.final_conv(x)
+        # Final convolution followed by sigmoid to bound output in [0, 1]
+        x = self.final_conv(x)
+        return torch.sigmoid(x)
 
 

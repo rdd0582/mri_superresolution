@@ -286,20 +286,8 @@ def train(args):
     vis_frequency = max(1, args.epochs // 20)  # Approx 20 visualizations over the full training
     
     for epoch in range(args.epochs):
-        # Determine validation frequency based on dataset size and training progress
-        # Validate more frequently at the start and end of training, less in the middle for large datasets
-        if len(train_loader) > 100:
-            # For large datasets, validate less frequently in the middle
-            if epoch < 5 or epoch >= args.epochs - 5:
-                val_frequency = 1  # Validate every epoch at start and end
-            else:
-                val_frequency = max(2, min(5, len(train_loader) // 20))  # Adaptive frequency based on dataset size
-        else:
-            # For smaller datasets, validate every epoch
-            val_frequency = 1
-        
-        # Calculate effective patience based on current validation frequency
-        effective_patience = args.patience
+        # Always validate every epoch
+        val_frequency = 1
         
         epoch_start_time = time.time()
         

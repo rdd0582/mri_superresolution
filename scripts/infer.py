@@ -287,6 +287,7 @@ def process_single_image(model, input_path, output_path, target_path=None, devic
                 output_tensor = model(input_tensor)
         else:
             output_tensor = model(input_tensor)
+        output_tensor = torch.clamp(output_tensor, 0.0, 1.0)
     
     # --- Histogram Matching Step --- Start
     # Convert output tensor to numpy float [0, 1]
