@@ -177,7 +177,8 @@ def train(args):
         model = UNetSuperRes(
             in_channels=1,
             out_channels=1,
-            base_filters=args.base_filters
+            base_filters=args.base_filters,
+            initial_alpha=args.initial_alpha
         )
     else:
         # Since we only support unet now, this should ideally not be reached if args are parsed correctly.
@@ -271,6 +272,7 @@ def train(args):
         "weight_decay": args.weight_decay,
         "ssim_weight": args.ssim_weight,
         "perceptual_weight": args.perceptual_weight,
+        "initial_alpha": args.initial_alpha,
         "augmentation": args.augmentation,
         "validation_split": args.validation_split,
         "patience": args.patience,
@@ -532,6 +534,8 @@ def parse_args():
                         help='VGG19 layer index for perceptual loss features (e.g., 35 for relu5_4)')
     parser.add_argument('--perceptual_loss_type', type=str, default='l1', choices=['l1', 'l2', 'mse'],
                         help='Type of distance metric for perceptual loss (l1 or l2/mse)')
+    parser.add_argument('--initial_alpha', type=float, default=0.0,
+                        help='Initial weight for blending bilinear and pixelshuffle outputs')
     parser.add_argument('--validation_split', type=float, default=0.2,
                       help='Fraction of data to use for validation')
     parser.add_argument('--patience', type=int, default=10,

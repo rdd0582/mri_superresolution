@@ -133,6 +133,7 @@ class MRIUI:
             "weight_decay": 1e-5,
             "ssim_weight": 0.3,
             "perceptual_weight": 0.0,
+            "initial_alpha": 0.0,  # Initial blending weight for bilinear vs pixelshuffle
             "vgg_layer_idx": 35,
             "perceptual_loss_type": 'l1',
             "validation_split": 0.2,
@@ -407,6 +408,7 @@ class MRIUI:
             "weight_decay",
             "ssim_weight",
             "perceptual_weight",
+            "initial_alpha",
             "vgg_layer_idx",
             "perceptual_loss_type",
             "validation_split",
@@ -489,7 +491,21 @@ class MRIUI:
                     else:
                         self.stdscr.addstr(option_display_y + i, 4 + len(param_name) + 2, f"{param_value} [Select]")
                 else:
-                    self.stdscr.addstr(option_display_y + i, 4 + len(param_name) + 2, param_value)
+                    # --- Start: Custom display for initial_alpha ---
+                    if option == "initial_alpha":
+                        try:
+                            import math
+                            alpha_in = float(self.params["initial_alpha"])
+                            bilinear_pct = 100 * (1 / (1 + math.exp(-alpha_in / 100.0)))
+                            pixel_pct = 100 - bilinear_pct
+                            formatted_val = f"{alpha_in} (B:{bilinear_pct:.0f}% / P:{pixel_pct:.0f}%)"
+                            self.stdscr.addstr(option_display_y + i, 4 + len(param_name) + 2, formatted_val)
+                        except Exception:
+                            # Fallback to raw value on error
+                            self.stdscr.addstr(option_display_y + i, 4 + len(param_name) + 2, param_value)
+                    else:
+                        self.stdscr.addstr(option_display_y + i, 4 + len(param_name) + 2, param_value)
+                    # --- End: Custom display for initial_alpha ---
                 self.stdscr.attroff(curses.color_pair(6))
             else:
                 self.stdscr.addstr(option_display_y + i, 4, option)
@@ -597,7 +613,21 @@ class MRIUI:
                     else:
                         self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, f"{param_value} [Select]")
                 else:
-                    self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, param_value)
+                    # --- Start: Custom display for initial_alpha ---
+                    if option == "initial_alpha":
+                        try:
+                            import math
+                            alpha_in = float(self.params["initial_alpha"])
+                            bilinear_pct = 100 * (1 / (1 + math.exp(-alpha_in / 100.0)))
+                            pixel_pct = 100 - bilinear_pct
+                            formatted_val = f"{alpha_in} (B:{bilinear_pct:.0f}% / P:{pixel_pct:.0f}%)"
+                            self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, formatted_val)
+                        except Exception:
+                            # Fallback to raw value on error
+                            self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, param_value)
+                    else:
+                        self.stdscr.addstr(current_display_y, 4 + len(param_name) + 2, param_value)
+                    # --- End: Custom display for initial_alpha ---
                 self.stdscr.attroff(curses.color_pair(6))
             else:
                 # If it's the Select Checkpoint option, show the currently selected checkpoint
@@ -671,7 +701,8 @@ class MRIUI:
                     new_value = int(self.input_value)
                 elif self.input_field in ['lower_percent', 'upper_percent', 'noise_std',
                                         'learning_rate', 'weight_decay', 'ssim_weight', 
-                                        'perceptual_weight', 'validation_split', 'kspace_crop_factor']:
+                                        'perceptual_weight', 'validation_split', 'kspace_crop_factor',
+                                        'initial_alpha']:
                     new_value = float(self.input_value)
                     # Validation for weights
                     if self.input_field in ['ssim_weight', 'perceptual_weight']:
@@ -913,6 +944,7 @@ class MRIUI:
                 "--weight_decay", str(self.params["weight_decay"]),
                 "--ssim_weight", str(self.params["ssim_weight"]),
                 "--perceptual_weight", str(self.params["perceptual_weight"]),
+                "--initial_alpha", str(self.params["initial_alpha"]),
                 "--vgg_layer_idx", str(self.params["vgg_layer_idx"]),
                 "--perceptual_loss_type", self.params["perceptual_loss_type"],
                 "--validation_split", str(self.params["validation_split"]),

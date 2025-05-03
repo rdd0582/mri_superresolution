@@ -124,8 +124,9 @@ class UNetSuperRes(nn.Module):
         out_channels (int): Number of output image channels (e.g., 1 for grayscale).
         base_filters (int): Number of filters in the first convolution layer.
                             Subsequent layers scale based on this.
+        
     """
-    def __init__(self, in_channels=1, out_channels=1, base_filters=32):
+    def __init__(self, in_channels=1, out_channels=1, base_filters=32, initial_alpha=0.0):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -157,7 +158,9 @@ class UNetSuperRes(nn.Module):
         self.final_up_pixelshuffle = PixelShuffleUp(f, f // 2)
         
         # Learnable parameter for fusing bilinear and pixelshuffle outputs
-        self.alpha = nn.Parameter(torch.zeros(1))
+        # Convert initial_alpha from percentage (0-100) to [0-1] range
+        initial_alpha_normalized = initial_alpha / 100.0
+        self.alpha = nn.Parameter(torch.tensor(initial_alpha_normalized, dtype=torch.float32))
         
         # Fusion and final convolution
         self.final_conv = nn.Sequential(

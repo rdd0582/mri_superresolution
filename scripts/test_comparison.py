@@ -11,6 +11,7 @@ import argparse
 import time
 import logging
 from skimage.metrics import peak_signal_noise_ratio as calculate_psnr
+import random
 
 # Add the project root directory to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -35,8 +36,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def extract_test_slice(test_dataset_dir, hr_output_dir, lr_output_dir):
-    """Extract a single slice from test dataset"""
-    logger.info(f"Extracting a single slice from {test_dataset_dir}...")
+    """Extract 10 slices from test dataset, then pick one random pair."""
+    logger.info(f"Extracting 10 slices from {test_dataset_dir}...")
     
     # Find a suitable nifti file in the test dataset
     nifti_file = None
@@ -55,43 +56,39 @@ def extract_test_slice(test_dataset_dir, hr_output_dir, lr_output_dir):
     
     logger.info(f"Using NIfTI file: {nifti_file}")
     
-    # Extract a single slice
+    # Extract 10 slices
     try:
         extract_slices(
             nifti_file,
             hr_output_dir,
             lr_output_dir,
-            n_slices=1,  # Extract just one slice
-            lower_percent=0.45,  # Get a slice near the middle
+            n_slices=10,
+            lower_percent=0.45,
             upper_percent=0.55,
-            target_size=(256, 256),  # Use 256x256 for HR, LR will be automatically 128x128
+            target_size=(256, 256),
             noise_std=5,
             kspace_crop_factor=0.5
         )
-        
         # Find the extracted files
         hr_files = [f for f in os.listdir(hr_output_dir) if f.endswith('.png')]
         lr_files = [f for f in os.listdir(lr_output_dir) if f.endswith('.png')]
-        
         if not hr_files or not lr_files:
             logger.error("No files were extracted")
             return None
-        
         # Find matching pairs
-        for hr_file in hr_files:
-            if hr_file in lr_files:
-                return {
-                    'hr': os.path.join(hr_output_dir, hr_file),
-                    'lr': os.path.join(lr_output_dir, hr_file)
-                }
-        
-        # If no exact match found, return the first file of each
-        logger.warning("No exact matching pairs found, using first files")
+        matching_pairs = [f for f in hr_files if f in lr_files]
+        if not matching_pairs:
+            logger.warning("No exact matching pairs found, using first files")
+            return {
+                'hr': os.path.join(hr_output_dir, hr_files[0]),
+                'lr': os.path.join(lr_output_dir, lr_files[0])
+            }
+        # Pick a random pair
+        chosen = random.choice(matching_pairs)
         return {
-            'hr': os.path.join(hr_output_dir, hr_files[0]),
-            'lr': os.path.join(lr_output_dir, lr_files[0])
+            'hr': os.path.join(hr_output_dir, chosen),
+            'lr': os.path.join(lr_output_dir, chosen)
         }
-        
     except Exception as e:
         logger.error(f"Error extracting slice from {nifti_file}: {e}")
         return None
@@ -298,8 +295,13 @@ def main():
     try:
         from scripts.infer import find_best_checkpoint
         checkpoint_path = find_best_checkpoint(args.checkpoint_dir, args.model_type)
-        # Set base_filters=32 to match the model in the checkpoint
-        model = load_model(args.model_type, checkpoint_path, device, base_filters=64)
+        # Try to auto-detect base_filters from checkpoint
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+        base_filters = 128  # default
+        if isinstance(checkpoint, dict) and 'base_filters' in checkpoint:
+            base_filters = checkpoint['base_filters']
+        logger.info(f"Using base_filters={base_filters}")
+        model = load_model(args.model_type, checkpoint_path, device, base_filters=base_filters)
     except Exception as e:
         logger.error(f"Error loading model: {e}")
         return
