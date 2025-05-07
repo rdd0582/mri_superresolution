@@ -1,10 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
-from torch.autograd import Variable
 import torchvision.models as models
-import torchvision.transforms as transforms
 
 # VGG normalization constants
 VGG_MEAN = [0.485, 0.456, 0.406]

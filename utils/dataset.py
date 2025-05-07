@@ -2,7 +2,7 @@ import os
 import random
 import numpy as np
 from pathlib import Path
-from torch.utils.data import Dataset, Subset
+from torch.utils.data import Dataset
 from PIL import Image
 import torchvision.transforms.functional as TF
 import torchvision.transforms as transforms

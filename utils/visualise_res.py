@@ -1,5 +1,3 @@
-
-
 import os
 import nibabel as nib
 import numpy as np
@@ -106,11 +104,8 @@ def extract_middle_slice(nifti_file, output_dir="./png_slices"):
             with Image.open(png_path) as saved_img:
                 saved_width, saved_height = saved_img.size
                 # Only print verification if dimensions differ or for debugging
-                # print(f"Processed {base_name}: Original slice {width}x{height}, Saved PNG {saved_width}x{saved_height}")
                 if (width, height) != (saved_width, saved_height):
                      print(f"ERROR: Dimension mismatch for {png_path}! Original: {width}x{height}, Saved: {saved_width}x{saved_height}")
-                     # Decide if you want to return None or the original dimensions despite mismatch
-                     # return None
         except Exception as verify_e:
             print(f"Warning: Could not verify saved PNG dimensions for {png_path}: {str(verify_e)}")
 
@@ -126,8 +121,6 @@ def extract_middle_slice(nifti_file, output_dir="./png_slices"):
     except Exception as e:
         print(f"Error: Could not process {nifti_file}: {type(e).__name__} - {str(e)}")
         # Optionally print traceback for debugging
-        # import traceback
-        # traceback.print_exc()
         return None
 
 def analyze_resolutions(resolutions):
@@ -303,7 +296,6 @@ def main(root_dir="./datasets", output_png_dir="./png_slices", output_viz_file="
     processed_count = 0
     error_count = 0
     for i, nifti_file in enumerate(nifti_files):
-        # print(f"Processing file {i+1}/{len(nifti_files)}: {nifti_file}") # Uncomment for verbose progress
         resolution = extract_middle_slice(nifti_file, output_dir=output_png_dir)
         if resolution:
             resolutions.append(resolution)
@@ -344,13 +336,4 @@ def main(root_dir="./datasets", output_png_dir="./png_slices", output_viz_file="
 
 
 if __name__ == "__main__":
-    # Example usage: You might want to pass arguments via command line later
-    # import argparse
-    # parser = argparse.ArgumentParser(description="Analyze NIfTI spatial resolutions.")
-    # parser.add_argument('--root_dir', type=str, default='./datasets', help='Root directory containing datasets.')
-    # parser.add_argument('--png_dir', type=str, default='./png_slices', help='Directory to save extracted PNG slices.')
-    # parser.add_argument('--viz_file', type=str, default='spatial_resolution_histogram.png', help='Output filename for visualizations.')
-    # args = parser.parse_args()
-    # main(root_dir=args.root_dir, output_png_dir=args.png_dir, output_viz_file=args.viz_file)
-
     main() # Use default paths for now

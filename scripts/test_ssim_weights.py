@@ -3,8 +3,6 @@ import os
 import subprocess
 import argparse
 import glob
-from PIL import Image
-import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 

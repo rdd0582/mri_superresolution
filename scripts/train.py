@@ -6,13 +6,10 @@ import sys
 import time
 import numpy as np
 import logging
-from pathlib import Path
-from datetime import datetime
 import random
 import multiprocessing
 
 import torch
-import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
@@ -89,15 +86,9 @@ def log_message(message, message_type="info"):
             # Format params nicely for the logger, excluding the 'type' field itself
             params_str = ", ".join([f"{k}={v}" for k, v in message.items() if k != 'type'])
             logger.info(f"Training Parameters: {params_str}")
-        # Add other specific dict types here if needed for special logger formatting
-        # else:
-            # Fallback for other dictionary types: currently does nothing for the logger
-            # logger.info(f"[{message_type.upper()}] {message}") # Example if fallback needed
-            pass
+        pass
     else:
-        # Log simple string messages directly - REMOVED to avoid duplication with JSON output
-        # logger.info(str(message)) # Ensure message is string
-        pass # Simple string messages are already printed as JSON
+        pass
 
 def save_example_images(low_res, high_res, output, epoch, save_dir):
     """Save sample images to visualize model performance"""
@@ -181,8 +172,6 @@ def train(args):
             initial_alpha=args.initial_alpha
         )
     else:
-        # Since we only support unet now, this should ideally not be reached if args are parsed correctly.
-        # Keeping it for robustness, or it could be removed if we're certain model_type is always 'unet'.
         raise ValueError(f"Unknown model type: {args.model_type}")
     
     model = model.to(device)
@@ -204,7 +193,6 @@ def train(args):
     # Create dataset with normalization to [0, 1] range
     transform = transforms.Compose([
         transforms.ToTensor(),
-        # Removing the normalization to [-1, 1]
     ])
     
     dataset = MRISuperResDataset(
@@ -433,8 +421,6 @@ def train(args):
             else:
                 patience_counter += 1  # Increment counter for validation epochs without improvement
         else:
-            # If we skip validation, don't increment patience counter
-            # For logging purposes
             val_loss = "N/A"
             val_ssim = "N/A"
         
@@ -473,8 +459,6 @@ def train(args):
             )
         
         # Early stopping - only check when validation is performed
-        # Note: patience counter only increments on validation epochs, so effective patience
-        # depends on validation frequency (less frequent validation = slower early stopping)
         if val_loss != "N/A" and patience_counter >= args.patience:
             log_message(f"Early stopping triggered after {epoch + 1} epochs")
             break

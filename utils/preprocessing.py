@@ -4,7 +4,6 @@ import numpy as np
 import torch
 from enum import Enum
 from typing import Tuple, Optional, Union, Dict, List
-import scipy.ndimage as ndimage
 
 class ResizeMethod(Enum):
     """Enumeration of different resize methods."""

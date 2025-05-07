@@ -8,38 +8,6 @@ import matplotlib.pyplot as plt
 from torchvision import transforms
 from PIL import Image
 
-def load_best_models(weight_dirs):
-    """
-    Load the best model checkpoints for each SSIM weight
-    
-    Args:
-        weight_dirs: Dictionary mapping SSIM weights to their output directories
-    
-    Returns:
-        Dictionary mapping SSIM weights to loaded model states
-    """
-    models = {}
-    
-    for weight, dir_path in weight_dirs.items():
-        # Find the best model checkpoint
-        checkpoint_path = os.path.join(dir_path, f'best_model_*.pth')
-        checkpoint_files = glob.glob(checkpoint_path)
-        
-        if not checkpoint_files:
-            print(f"Warning: No checkpoint found for SSIM weight {weight}")
-            continue
-            
-        # Load the checkpoint
-        checkpoint_path = checkpoint_files[0]
-        try:
-            checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'))
-            models[weight] = checkpoint
-            print(f"Loaded model for SSIM weight {weight} from {checkpoint_path}")
-        except Exception as e:
-            print(f"Error loading checkpoint for SSIM weight {weight}: {e}")
-    
-    return models
-
 def create_detailed_comparison(weight_dirs, test_image_dir, output_dir, model_type="unet"):
     """
     Create a detailed comparison of the models with different SSIM weights

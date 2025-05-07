@@ -4,11 +4,8 @@ import sys
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from pathlib import Path
 import cv2
-from PIL import Image
 import argparse
-import time
 import logging
 from skimage.metrics import peak_signal_noise_ratio as calculate_psnr
 import random
@@ -20,9 +17,8 @@ if project_root not in sys.path:
 
 # Import project modules
 from scripts.extract_paired_slices import extract_slices
-from scripts.infer import load_model, preprocess_image, postprocess_tensor
+from scripts.infer import load_model, preprocess_image, find_best_checkpoint
 from utils.losses import SSIM
-from utils.preprocessing import InterpolationMethod, letterbox_resize
 
 # Configure logging
 logging.basicConfig(
@@ -297,7 +293,6 @@ def main():
     # Load model
     logger.info("Loading model...")
     try:
-        from scripts.infer import find_best_checkpoint
         checkpoint_path = find_best_checkpoint(args.checkpoint_dir, args.model_type)
         # Try to auto-detect base_filters from checkpoint
         checkpoint = torch.load(checkpoint_path, map_location=device)

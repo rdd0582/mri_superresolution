@@ -114,9 +114,6 @@ def extract_slices_3d(data: np.ndarray,
     upper_index = int(upper_percent * num_slices)
     slice_indices = np.linspace(lower_index, upper_index, n_slices, dtype=int)
 
-    # Import cv2 locally within the function if preferred, or ensure it's imported globally
-    # import cv2 
-    
     for idx in slice_indices:
         slice_data = data[:, :, idx].astype(np.float32) # Ensure float32 for processing
         

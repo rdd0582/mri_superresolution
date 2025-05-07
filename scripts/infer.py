@@ -2,17 +2,13 @@
 import argparse
 import os
 import sys
-import json
-import time
 from pathlib import Path
 import torch
 from PIL import Image
-import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import numpy as np
 import logging
 import torch.nn.functional as F
-import matplotlib.colors as colors
 from skimage.exposure import match_histograms
 
 # Configure logging
@@ -28,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # Try to import AMP
 try:
-    from torch.amp import autocast, GradScaler
+    from torch.amp import autocast
     AMP_AVAILABLE = True
 except ImportError:
     AMP_AVAILABLE = False
@@ -40,7 +36,7 @@ sys.path.append(str(project_root))
 
 # Import project modules
 from utils.losses import SSIM
-from utils.preprocessing import tensor_to_numpy, letterbox_resize, InterpolationMethod, ResizeMethod
+from utils.preprocessing import tensor_to_numpy
 
 def load_model(model_type, checkpoint_path, device, **kwargs):
     """Load the appropriate model with weights from checkpoint."""
@@ -119,20 +115,10 @@ def preprocess_image(image_path):
         if max_val > min_val:
             image_np = (image_np - min_val) / (max_val - min_val)
         
-        # 3. REMOVED: Apply letterbox resize with mean intensity padding to match training preprocessing
-        # The model should handle the input size directly for super-resolution.
         h, w = image_np.shape
         if h % 8 != 0 or w % 8 != 0:
             logger.warning(f"Input image dimensions ({h}x{w}) are not divisible by 8. "
                            "This might affect performance or spatial accuracy due to model pooling layers.")
-        # target_size = (256, 256)  # Use standard target size for MRI processing
-        # pad_value = image_np.mean()
-        # image_np = letterbox_resize(
-        #     image_np,
-        #     target_size,
-        #     interpolation=InterpolationMethod.CUBIC,
-        #     pad_value=pad_value
-        # )
         
         # Convert to tensor
         tensor = torch.from_numpy(image_np).unsqueeze(0).unsqueeze(0)  # Add batch and channel dimensions

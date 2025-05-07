@@ -18,7 +18,7 @@ sys.path.append(str(project_root))
 
 # Import from other scripts
 from scripts.extract_paired_slices import extract_slices
-from scripts.infer import load_model, preprocess_image, calculate_metrics, process_single_image
+from scripts.infer import load_model, process_single_image
 
 # Configure logging
 logging.basicConfig(

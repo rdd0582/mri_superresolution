@@ -3,9 +3,7 @@ import os
 import sys
 import subprocess
 import logging
-import json
 import random
-from pathlib import Path
 
 # Add the project root directory to the path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -45,7 +43,7 @@ import curses
 
 # Import colorama for Windows color support
 try:
-    from colorama import init, Fore, Back, Style
+    from colorama import init
     init()  # Initialize colorama
     USE_COLORAMA = True
 except ImportError:
@@ -288,14 +286,11 @@ class MRIUI:
         self.stdscr.addstr(2, 2, "Extract Paired Slices (HR & LR)")
         self.stdscr.attroff(curses.color_pair(2))
         
-        # Add simulation explanation
-        self.stdscr.attron(curses.color_pair(6))
-        self.stdscr.addstr(3, 2, "noise_std: for 0-255 range, will be scaled automatically. Values 1-10 recommended.")
-        self.stdscr.attroff(curses.color_pair(6))
+        
         
         # Add interpolation info
         self.stdscr.attron(curses.color_pair(3))
-        self.stdscr.addstr(4, 2, "Uses LANCZOS interpolation for HR and CUBIC for LR with mean-value letterbox padding")
+        self.stdscr.addstr(4, 2, "Uses LANCZOS interpolation for HR and CUBIC for LR with zero padding")
         self.stdscr.attroff(curses.color_pair(3))
         
         # Add k-space simulation info
@@ -393,7 +388,6 @@ class MRIUI:
         common_options = [
             "full_res_dir",
             "low_res_dir",
-            # "model_type" <- REMOVED FROM HERE
         ]
         
         # Model-specific options that should only be shown when the respective model is selected
@@ -525,7 +519,6 @@ class MRIUI:
             "input_image",
             "output_image",
             "target_image",
-            # "model_type", <- REMOVED FROM HERE
             "checkpoint_dir",
             "Select Checkpoint" 
         ]
@@ -1078,16 +1071,9 @@ class MRIUI:
                 # Look for checkpoints matching the model type (unet only now)
                 for file in sorted(os.listdir(checkpoint_dir)):
                     # Simplified check: Just look for .pth files as only UNet is supported
-                    # If you want to be stricter, check for 'unet' in filename:
-                    # if file.endswith('.pth') and model_type in file:
                     if file.endswith('.pth'): 
                         self.available_checkpoints.append(file)
                 
-                # Removed fallback logic as we only expect UNet checkpoints now
-                # if not self.available_checkpoints:
-                #     self.available_checkpoints = [file for file in sorted(os.listdir(checkpoint_dir)) 
-                #                                 if file.endswith('.pth')]
-            
             return self.available_checkpoints
         except Exception as e:
             logger.error(f"Error getting checkpoints: {e}")
@@ -1377,7 +1363,7 @@ def main():
     try:
         # Initialize colorama for Windows color support
         if USE_COLORAMA:
-            init()
+            pass
         
         # Run the curses application
         return curses.wrapper(lambda stdscr: MRIUI(stdscr).run())
