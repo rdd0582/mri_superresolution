@@ -191,7 +191,11 @@ def calculate_metrics(hr_image, upscaled_image):
     mae = np.abs(hr_image - upscaled_image).mean()
     
     # Calculate PSNR (peak signal-to-noise ratio)
-    psnr = calculate_psnr(hr_image, upscaled_image, data_range=1.0)
+    # Handle potential division by zero if images are identical (MSE=0)
+    if mse < 1e-10: # Use a small threshold to avoid floating point issues
+        psnr = 100.0 # Assign a high finite value for perfect reconstruction
+    else:
+        psnr = calculate_psnr(hr_image, upscaled_image, data_range=1.0)
     
     return {
         'ssim': ssim_value,
