@@ -1,11 +1,19 @@
-colorama==0.4.6
-matplotlib==3.10.1
-nibabel==5.3.2
-numpy==2.2.4
-opencv_python==4.11.0.86
-pandas==2.2.3
-Pillow==11.1.0
-scipy==1.15.2
-torch==2.6.0+cu124
-torchvision==0.21.0+cu124
-tqdm==4.67.1
+# PyTorch (CUDA 11.8) - Use the specified index URL if needed
+# pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+torch
+torchvision
+torchaudio
+
+# Core libraries
+numpy
+matplotlib
+opencv-python
+Pillow
+scikit-image
+pandas
+nibabel
+
+# Utilities
+tqdm
+colorama; sys_platform == "win32"  # Only needed on Windows for UI colors
+tensorboard  # Optional: For experiment logging
